@@ -1,0 +1,4 @@
+﻿Asset is governed by the Asset Store EULA; however, the following components are governed by the licenses indicated below:
+A. LuckiestGuy Font
+Apache License 2.0
+January 2004 http://www.apache.org/licenses/
