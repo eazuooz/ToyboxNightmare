@@ -14,22 +14,22 @@ namespace UnityGameFramework.Runtime
 {
     internal sealed class PlaySoundInfo : IReference
     {
-        private Entity m_BindingEntity;
-        private Vector3 m_WorldPosition;
-        private object m_UserData;
+        private Entity mBindingEntity;
+        private Vector3 mWorldPosition;
+        private object mUserData;
 
         public PlaySoundInfo()
         {
-            m_BindingEntity = null;
-            m_WorldPosition = Vector3.zero;
-            m_UserData = null;
+            mBindingEntity = null;
+            mWorldPosition = Vector3.zero;
+            mUserData = null;
         }
 
         public Entity BindingEntity
         {
             get
             {
-                return m_BindingEntity;
+                return mBindingEntity;
             }
         }
 
@@ -37,7 +37,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_WorldPosition;
+                return mWorldPosition;
             }
         }
 
@@ -45,24 +45,24 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_UserData;
+                return mUserData;
             }
         }
 
         public static PlaySoundInfo Create(Entity bindingEntity, Vector3 worldPosition, object userData)
         {
             PlaySoundInfo playSoundInfo = ReferencePool.Acquire<PlaySoundInfo>();
-            playSoundInfo.m_BindingEntity = bindingEntity;
-            playSoundInfo.m_WorldPosition = worldPosition;
-            playSoundInfo.m_UserData = userData;
+            playSoundInfo.mBindingEntity = bindingEntity;
+            playSoundInfo.mWorldPosition = worldPosition;
+            playSoundInfo.mUserData = userData;
             return playSoundInfo;
         }
 
         public void Clear()
         {
-            m_BindingEntity = null;
-            m_WorldPosition = Vector3.zero;
-            m_UserData = null;
+            mBindingEntity = null;
+            mWorldPosition = Vector3.zero;
+            mUserData = null;
         }
     }
 }

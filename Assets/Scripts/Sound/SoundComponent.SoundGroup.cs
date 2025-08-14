@@ -18,25 +18,25 @@ namespace UnityGameFramework.Runtime
         private sealed class SoundGroup
         {
             [SerializeField]
-            private string m_Name = null;
+            private string mName = null;
 
             [SerializeField]
-            private bool m_AvoidBeingReplacedBySamePriority = false;
+            private bool mAvoidBeingReplacedBySamePriority = false;
 
             [SerializeField]
-            private bool m_Mute = false;
+            private bool mMute = false;
 
             [SerializeField, Range(0f, 1f)]
-            private float m_Volume = 1f;
+            private float mVolume = 1f;
 
             [SerializeField]
-            private int m_AgentHelperCount = 1;
+            private int mAgentHelperCount = 1;
 
             public string Name
             {
                 get
                 {
-                    return m_Name;
+                    return mName;
                 }
             }
 
@@ -44,7 +44,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_AvoidBeingReplacedBySamePriority;
+                    return mAvoidBeingReplacedBySamePriority;
                 }
             }
 
@@ -52,7 +52,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_Mute;
+                    return mMute;
                 }
             }
 
@@ -60,7 +60,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_Volume;
+                    return mVolume;
                 }
             }
 
@@ -68,7 +68,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_AgentHelperCount;
+                    return mAgentHelperCount;
                 }
             }
         }

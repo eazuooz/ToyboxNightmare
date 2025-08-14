@@ -28,29 +28,29 @@ namespace UnityGameFramework.Runtime
         private static readonly int AssetsStringLength = "Assets".Length;
 
         [SerializeField]
-        private bool m_EnableCachedAssets = true;
+        private bool mEnableCachedAssets = true;
 
         [SerializeField]
-        private int m_LoadAssetCountPerFrame = 1;
+        private int mLoadAssetCountPerFrame = 1;
 
         [SerializeField]
-        private float m_MinLoadAssetRandomDelaySeconds = 0f;
+        private float mMinLoadAssetRandomDelaySeconds = 0f;
 
         [SerializeField]
-        private float m_MaxLoadAssetRandomDelaySeconds = 0f;
+        private float mMaxLoadAssetRandomDelaySeconds = 0f;
 
-        private string m_ReadOnlyPath = null;
-        private string m_ReadWritePath = null;
-        private Dictionary<string, UnityEngine.Object> m_CachedAssets = null;
-        private GameFrameworkLinkedList<LoadAssetInfo> m_LoadAssetInfos = null;
-        private GameFrameworkLinkedList<LoadSceneInfo> m_LoadSceneInfos = null;
-        private GameFrameworkLinkedList<UnloadSceneInfo> m_UnloadSceneInfos = null;
+        private string mReadOnlyPath = null;
+        private string mReadWritePath = null;
+        private Dictionary<string, UnityEngine.Object> mCachedAssets = null;
+        private GameFrameworkLinkedList<LoadAssetInfo> mLoadAssetInfos = null;
+        private GameFrameworkLinkedList<LoadSceneInfo> mLoadSceneInfos = null;
+        private GameFrameworkLinkedList<UnloadSceneInfo> mUnloadSceneInfos = null;
 
         public string ReadOnlyPath
         {
             get
             {
-                return m_ReadOnlyPath;
+                return mReadOnlyPath;
             }
         }
 
@@ -58,7 +58,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ReadWritePath;
+                return mReadWritePath;
             }
         }
 
@@ -374,7 +374,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_LoadAssetInfos.Count;
+                return mLoadAssetInfos.Count;
             }
         }
 
@@ -406,12 +406,12 @@ namespace UnityGameFramework.Runtime
 
         private void Awake()
         {
-            m_ReadOnlyPath = null;
-            m_ReadWritePath = null;
-            m_CachedAssets = new Dictionary<string, UnityEngine.Object>(StringComparer.Ordinal);
-            m_LoadAssetInfos = new GameFrameworkLinkedList<LoadAssetInfo>();
-            m_LoadSceneInfos = new GameFrameworkLinkedList<LoadSceneInfo>();
-            m_UnloadSceneInfos = new GameFrameworkLinkedList<UnloadSceneInfo>();
+            mReadOnlyPath = null;
+            mReadWritePath = null;
+            mCachedAssets = new Dictionary<string, UnityEngine.Object>(StringComparer.Ordinal);
+            mLoadAssetInfos = new GameFrameworkLinkedList<LoadAssetInfo>();
+            mLoadSceneInfos = new GameFrameworkLinkedList<LoadSceneInfo>();
+            mUnloadSceneInfos = new GameFrameworkLinkedList<UnloadSceneInfo>();
 
             BaseComponent baseComponent = GetComponent<BaseComponent>();
             if (baseComponent == null)
@@ -433,11 +433,11 @@ namespace UnityGameFramework.Runtime
 
         private void Update()
         {
-            if (m_LoadAssetInfos.Count > 0)
+            if (mLoadAssetInfos.Count > 0)
             {
                 int count = 0;
-                LinkedListNode<LoadAssetInfo> current = m_LoadAssetInfos.First;
-                while (current != null && count < m_LoadAssetCountPerFrame)
+                LinkedListNode<LoadAssetInfo> current = mLoadAssetInfos.First;
+                while (current != null && count < mLoadAssetCountPerFrame)
                 {
                     LoadAssetInfo loadAssetInfo = current.Value;
                     float elapseSeconds = (float)(DateTime.UtcNow - loadAssetInfo.StartTime).TotalSeconds;
@@ -456,9 +456,9 @@ namespace UnityGameFramework.Runtime
                                 asset = UnityEditor.AssetDatabase.LoadMainAssetAtPath(loadAssetInfo.AssetName);
                             }
 
-                            if (m_EnableCachedAssets && asset != null)
+                            if (mEnableCachedAssets && asset != null)
                             {
-                                m_CachedAssets.Add(loadAssetInfo.AssetName, asset);
+                                mCachedAssets.Add(loadAssetInfo.AssetName, asset);
                             }
 #endif
                         }
@@ -479,7 +479,7 @@ namespace UnityGameFramework.Runtime
                         }
 
                         LinkedListNode<LoadAssetInfo> next = current.Next;
-                        m_LoadAssetInfos.Remove(loadAssetInfo);
+                        mLoadAssetInfos.Remove(loadAssetInfo);
                         current = next;
                         count++;
                     }
@@ -495,9 +495,9 @@ namespace UnityGameFramework.Runtime
                 }
             }
 
-            if (m_LoadSceneInfos.Count > 0)
+            if (mLoadSceneInfos.Count > 0)
             {
-                LinkedListNode<LoadSceneInfo> current = m_LoadSceneInfos.First;
+                LinkedListNode<LoadSceneInfo> current = mLoadSceneInfos.First;
                 while (current != null)
                 {
                     LoadSceneInfo loadSceneInfo = current.Value;
@@ -519,7 +519,7 @@ namespace UnityGameFramework.Runtime
                         }
 
                         LinkedListNode<LoadSceneInfo> next = current.Next;
-                        m_LoadSceneInfos.Remove(loadSceneInfo);
+                        mLoadSceneInfos.Remove(loadSceneInfo);
                         current = next;
                     }
                     else
@@ -534,9 +534,9 @@ namespace UnityGameFramework.Runtime
                 }
             }
 
-            if (m_UnloadSceneInfos.Count > 0)
+            if (mUnloadSceneInfos.Count > 0)
             {
-                LinkedListNode<UnloadSceneInfo> current = m_UnloadSceneInfos.First;
+                LinkedListNode<UnloadSceneInfo> current = mUnloadSceneInfos.First;
                 while (current != null)
                 {
                     UnloadSceneInfo unloadSceneInfo = current.Value;
@@ -558,7 +558,7 @@ namespace UnityGameFramework.Runtime
                         }
 
                         LinkedListNode<UnloadSceneInfo> next = current.Next;
-                        m_UnloadSceneInfos.Remove(unloadSceneInfo);
+                        mUnloadSceneInfos.Remove(unloadSceneInfo);
                         current = next;
                     }
                     else
@@ -577,7 +577,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_ReadOnlyPath = readOnlyPath;
+            mReadOnlyPath = readOnlyPath;
         }
 
         public void SetReadWritePath(string readWritePath)
@@ -588,7 +588,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_ReadWritePath = readWritePath;
+            mReadWritePath = readWritePath;
         }
 
         public void SetResourceMode(ResourceMode resourceMode)
@@ -782,7 +782,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_LoadAssetInfos.AddLast(new LoadAssetInfo(assetName, assetType, priority, DateTime.UtcNow, m_MinLoadAssetRandomDelaySeconds + (float)Utility.Random.GetRandomDouble() * (m_MaxLoadAssetRandomDelaySeconds - m_MinLoadAssetRandomDelaySeconds), loadAssetCallbacks, userData));
+            mLoadAssetInfos.AddLast(new LoadAssetInfo(assetName, assetType, priority, DateTime.UtcNow, mMinLoadAssetRandomDelaySeconds + (float)Utility.Random.GetRandomDouble() * (mMaxLoadAssetRandomDelaySeconds - mMinLoadAssetRandomDelaySeconds), loadAssetCallbacks, userData));
         }
 
         public void UnloadAsset(object asset)
@@ -853,7 +853,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_LoadSceneInfos.AddLast(new LoadSceneInfo(asyncOperation, sceneAssetName, priority, DateTime.UtcNow, loadSceneCallbacks, userData));
+            mLoadSceneInfos.AddLast(new LoadSceneInfo(asyncOperation, sceneAssetName, priority, DateTime.UtcNow, loadSceneCallbacks, userData));
         }
 
         public void UnloadScene(string sceneAssetName, UnloadSceneCallbacks unloadSceneCallbacks)
@@ -894,7 +894,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_UnloadSceneInfos.AddLast(new UnloadSceneInfo(asyncOperation, sceneAssetName, unloadSceneCallbacks, userData));
+            mUnloadSceneInfos.AddLast(new UnloadSceneInfo(asyncOperation, sceneAssetName, unloadSceneCallbacks, userData));
 #else
             if (SceneManager.UnloadScene(SceneComponent.GetSceneName(sceneAssetName)))
             {
@@ -1150,7 +1150,7 @@ namespace UnityGameFramework.Runtime
 
         private bool HasCachedAsset(string assetName)
         {
-            if (!m_EnableCachedAssets)
+            if (!mEnableCachedAssets)
             {
                 return false;
             }
@@ -1160,12 +1160,12 @@ namespace UnityGameFramework.Runtime
                 return false;
             }
 
-            return m_CachedAssets.ContainsKey(assetName);
+            return mCachedAssets.ContainsKey(assetName);
         }
 
         private UnityEngine.Object GetCachedAsset(string assetName)
         {
-            if (!m_EnableCachedAssets)
+            if (!mEnableCachedAssets)
             {
                 return null;
             }
@@ -1176,7 +1176,7 @@ namespace UnityGameFramework.Runtime
             }
 
             UnityEngine.Object asset = null;
-            if (m_CachedAssets.TryGetValue(assetName, out asset))
+            if (mCachedAssets.TryGetValue(assetName, out asset))
             {
                 return asset;
             }
@@ -1187,30 +1187,30 @@ namespace UnityGameFramework.Runtime
         [StructLayout(LayoutKind.Auto)]
         private struct LoadAssetInfo
         {
-            private readonly string m_AssetName;
-            private readonly Type m_AssetType;
-            private readonly int m_Priority;
-            private readonly DateTime m_StartTime;
-            private readonly float m_DelaySeconds;
-            private readonly LoadAssetCallbacks m_LoadAssetCallbacks;
-            private readonly object m_UserData;
+            private readonly string mAssetName;
+            private readonly Type mAssetType;
+            private readonly int mPriority;
+            private readonly DateTime mStartTime;
+            private readonly float mDelaySeconds;
+            private readonly LoadAssetCallbacks mLoadAssetCallbacks;
+            private readonly object mUserData;
 
             public LoadAssetInfo(string assetName, Type assetType, int priority, DateTime startTime, float delaySeconds, LoadAssetCallbacks loadAssetCallbacks, object userData)
             {
-                m_AssetName = assetName;
-                m_AssetType = assetType;
-                m_Priority = priority;
-                m_StartTime = startTime;
-                m_DelaySeconds = delaySeconds;
-                m_LoadAssetCallbacks = loadAssetCallbacks;
-                m_UserData = userData;
+                mAssetName = assetName;
+                mAssetType = assetType;
+                mPriority = priority;
+                mStartTime = startTime;
+                mDelaySeconds = delaySeconds;
+                mLoadAssetCallbacks = loadAssetCallbacks;
+                mUserData = userData;
             }
 
             public string AssetName
             {
                 get
                 {
-                    return m_AssetName;
+                    return mAssetName;
                 }
             }
 
@@ -1218,7 +1218,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_AssetType;
+                    return mAssetType;
                 }
             }
 
@@ -1226,7 +1226,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_Priority;
+                    return mPriority;
                 }
             }
 
@@ -1234,7 +1234,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_StartTime;
+                    return mStartTime;
                 }
             }
 
@@ -1242,7 +1242,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_DelaySeconds;
+                    return mDelaySeconds;
                 }
             }
 
@@ -1250,7 +1250,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_LoadAssetCallbacks;
+                    return mLoadAssetCallbacks;
                 }
             }
 
@@ -1258,7 +1258,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_UserData;
+                    return mUserData;
                 }
             }
         }
@@ -1266,28 +1266,28 @@ namespace UnityGameFramework.Runtime
         [StructLayout(LayoutKind.Auto)]
         private struct LoadSceneInfo
         {
-            private readonly AsyncOperation m_AsyncOperation;
-            private readonly string m_SceneAssetName;
-            private readonly int m_Priority;
-            private readonly DateTime m_StartTime;
-            private readonly LoadSceneCallbacks m_LoadSceneCallbacks;
-            private readonly object m_UserData;
+            private readonly AsyncOperation mAsyncOperation;
+            private readonly string mSceneAssetName;
+            private readonly int mPriority;
+            private readonly DateTime mStartTime;
+            private readonly LoadSceneCallbacks mLoadSceneCallbacks;
+            private readonly object mUserData;
 
             public LoadSceneInfo(AsyncOperation asyncOperation, string sceneAssetName, int priority, DateTime startTime, LoadSceneCallbacks loadSceneCallbacks, object userData)
             {
-                m_AsyncOperation = asyncOperation;
-                m_SceneAssetName = sceneAssetName;
-                m_Priority = priority;
-                m_StartTime = startTime;
-                m_LoadSceneCallbacks = loadSceneCallbacks;
-                m_UserData = userData;
+                mAsyncOperation = asyncOperation;
+                mSceneAssetName = sceneAssetName;
+                mPriority = priority;
+                mStartTime = startTime;
+                mLoadSceneCallbacks = loadSceneCallbacks;
+                mUserData = userData;
             }
 
             public AsyncOperation AsyncOperation
             {
                 get
                 {
-                    return m_AsyncOperation;
+                    return mAsyncOperation;
                 }
             }
 
@@ -1295,7 +1295,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_SceneAssetName;
+                    return mSceneAssetName;
                 }
             }
 
@@ -1303,7 +1303,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_Priority;
+                    return mPriority;
                 }
             }
 
@@ -1311,7 +1311,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_StartTime;
+                    return mStartTime;
                 }
             }
 
@@ -1319,7 +1319,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_LoadSceneCallbacks;
+                    return mLoadSceneCallbacks;
                 }
             }
 
@@ -1327,7 +1327,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_UserData;
+                    return mUserData;
                 }
             }
         }
@@ -1335,24 +1335,24 @@ namespace UnityGameFramework.Runtime
         [StructLayout(LayoutKind.Auto)]
         private struct UnloadSceneInfo
         {
-            private readonly AsyncOperation m_AsyncOperation;
-            private readonly string m_SceneAssetName;
-            private readonly UnloadSceneCallbacks m_UnloadSceneCallbacks;
-            private readonly object m_UserData;
+            private readonly AsyncOperation mAsyncOperation;
+            private readonly string mSceneAssetName;
+            private readonly UnloadSceneCallbacks mUnloadSceneCallbacks;
+            private readonly object mUserData;
 
             public UnloadSceneInfo(AsyncOperation asyncOperation, string sceneAssetName, UnloadSceneCallbacks unloadSceneCallbacks, object userData)
             {
-                m_AsyncOperation = asyncOperation;
-                m_SceneAssetName = sceneAssetName;
-                m_UnloadSceneCallbacks = unloadSceneCallbacks;
-                m_UserData = userData;
+                mAsyncOperation = asyncOperation;
+                mSceneAssetName = sceneAssetName;
+                mUnloadSceneCallbacks = unloadSceneCallbacks;
+                mUserData = userData;
             }
 
             public AsyncOperation AsyncOperation
             {
                 get
                 {
-                    return m_AsyncOperation;
+                    return mAsyncOperation;
                 }
             }
 
@@ -1360,7 +1360,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_SceneAssetName;
+                    return mSceneAssetName;
                 }
             }
 
@@ -1368,7 +1368,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_UnloadSceneCallbacks;
+                    return mUnloadSceneCallbacks;
                 }
             }
 
@@ -1376,7 +1376,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_UserData;
+                    return mUserData;
                 }
             }
         }

@@ -18,16 +18,16 @@ namespace UnityGameFramework.Runtime
         private sealed class UIGroup
         {
             [SerializeField]
-            private string m_Name = null;
+            private string mName = null;
 
             [SerializeField]
-            private int m_Depth = 0;
+            private int mDepth = 0;
 
             public string Name
             {
                 get
                 {
-                    return m_Name;
+                    return mName;
                 }
             }
 
@@ -35,7 +35,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_Depth;
+                    return mDepth;
                 }
             }
         }

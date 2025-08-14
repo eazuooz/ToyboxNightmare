@@ -23,8 +23,8 @@ namespace UnityGameFramework.Runtime
         private static readonly IntPtr s_InternalReadMethodId = IntPtr.Zero;
         private static readonly jvalue[] s_InternalReadArgs = null;
 
-        private readonly AndroidJavaObject m_FileStream;
-        private readonly IntPtr m_FileStreamRawObject;
+        private readonly AndroidJavaObject mFileStream;
+        private readonly IntPtr mFileStreamRawObject;
 
         static AndroidFileSystemStream()
         {
@@ -81,13 +81,13 @@ namespace UnityGameFramework.Runtime
             }
 
             string fileName = fullPath.Substring(position + SplitFlagLength);
-            m_FileStream = InternalOpen(fileName);
-            if (m_FileStream == null)
+            mFileStream = InternalOpen(fileName);
+            if (mFileStream == null)
             {
                 throw new GameFrameworkException(Utility.Text.Format("Open file '{0}' from Android asset manager failure.", fullPath));
             }
 
-            m_FileStreamRawObject = m_FileStream.GetRawObject();
+            mFileStreamRawObject = mFileStream.GetRawObject();
         }
 
         protected override long Position
@@ -171,7 +171,7 @@ namespace UnityGameFramework.Runtime
         protected override void Close()
         {
             InternalClose();
-            m_FileStream.Dispose();
+            mFileStream.Dispose();
         }
 
         private AndroidJavaObject InternalOpen(string fileName)
@@ -181,17 +181,17 @@ namespace UnityGameFramework.Runtime
 
         private int InternalAvailable()
         {
-            return m_FileStream.Call<int>("available");
+            return mFileStream.Call<int>("available");
         }
 
         private void InternalClose()
         {
-            m_FileStream.Call("close");
+            mFileStream.Call("close");
         }
 
         private int InternalRead()
         {
-            return m_FileStream.Call<int>("read");
+            return mFileStream.Call<int>("read");
         }
 
         private int InternalRead(int length, out byte[] result)
@@ -210,7 +210,7 @@ namespace UnityGameFramework.Runtime
                 s_InternalReadArgs[0] = new jvalue() { l = resultPtr };
                 s_InternalReadArgs[1] = new jvalue() { i = offset };
                 s_InternalReadArgs[2] = new jvalue() { i = bytesLeft };
-                int bytesRead = AndroidJNI.CallIntMethod(m_FileStreamRawObject, s_InternalReadMethodId, s_InternalReadArgs);
+                int bytesRead = AndroidJNI.CallIntMethod(mFileStreamRawObject, s_InternalReadMethodId, s_InternalReadArgs);
                 if (bytesRead <= 0)
                 {
                     break;
@@ -233,12 +233,12 @@ namespace UnityGameFramework.Runtime
 
         private void InternalReset()
         {
-            m_FileStream.Call("reset");
+            mFileStream.Call("reset");
         }
 
         private long InternalSkip(long offset)
         {
-            return m_FileStream.Call<long>("skip", offset);
+            return mFileStream.Call<long>("skip", offset);
         }
     }
 }

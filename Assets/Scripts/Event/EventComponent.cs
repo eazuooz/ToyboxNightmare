@@ -18,13 +18,13 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/Event")]
     public sealed class EventComponent : GameFrameworkComponent
     {
-        private IEventManager m_EventManager = null;
+        private IEventManager mEventManager = null;
 
         public int EventHandlerCount
         {
             get
             {
-                return m_EventManager.EventHandlerCount;
+                return mEventManager.EventHandlerCount;
             }
         }
 
@@ -32,7 +32,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_EventManager.EventCount;
+                return mEventManager.EventCount;
             }
         }
 
@@ -40,8 +40,8 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_EventManager = GameFrameworkEntry.GetModule<IEventManager>();
-            if (m_EventManager == null)
+            mEventManager = GameFrameworkEntry.GetModule<IEventManager>();
+            if (mEventManager == null)
             {
                 Log.Fatal("Event manager is invalid.");
                 return;
@@ -54,37 +54,37 @@ namespace UnityGameFramework.Runtime
 
         public int Count(int id)
         {
-            return m_EventManager.Count(id);
+            return mEventManager.Count(id);
         }
 
         public bool Check(int id, EventHandler<GameEventArgs> handler)
         {
-            return m_EventManager.Check(id, handler);
+            return mEventManager.Check(id, handler);
         }
 
         public void Subscribe(int id, EventHandler<GameEventArgs> handler)
         {
-            m_EventManager.Subscribe(id, handler);
+            mEventManager.Subscribe(id, handler);
         }
 
         public void Unsubscribe(int id, EventHandler<GameEventArgs> handler)
         {
-            m_EventManager.Unsubscribe(id, handler);
+            mEventManager.Unsubscribe(id, handler);
         }
 
         public void SetDefaultHandler(EventHandler<GameEventArgs> handler)
         {
-            m_EventManager.SetDefaultHandler(handler);
+            mEventManager.SetDefaultHandler(handler);
         }
 
         public void Fire(object sender, GameEventArgs e)
         {
-            m_EventManager.Fire(sender, e);
+            mEventManager.Fire(sender, e);
         }
 
         public void FireNow(object sender, GameEventArgs e)
         {
-            m_EventManager.FireNow(sender, e);
+            mEventManager.FireNow(sender, e);
         }
     }
 }

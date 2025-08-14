@@ -19,15 +19,15 @@ namespace UnityGameFramework.Runtime
     {
         private const string SettingFileName = "GameFrameworkSetting.dat";
 
-        private string m_FilePath = null;
-        private DefaultSetting m_Settings = null;
-        private DefaultSettingSerializer m_Serializer = null;
+        private string mFilePath = null;
+        private DefaultSetting mSettings = null;
+        private DefaultSettingSerializer mSerializer = null;
 
         public override int Count
         {
             get
             {
-                return m_Settings != null ? m_Settings.Count : 0;
+                return mSettings != null ? mSettings.Count : 0;
             }
         }
 
@@ -35,7 +35,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_FilePath;
+                return mFilePath;
             }
         }
 
@@ -43,7 +43,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Settings;
+                return mSettings;
             }
         }
 
@@ -51,7 +51,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Serializer;
+                return mSerializer;
             }
         }
 
@@ -59,14 +59,14 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                if (!File.Exists(m_FilePath))
+                if (!File.Exists(mFilePath))
                 {
                     return true;
                 }
 
-                using (FileStream fileStream = new FileStream(m_FilePath, FileMode.Open, FileAccess.Read))
+                using (FileStream fileStream = new FileStream(mFilePath, FileMode.Open, FileAccess.Read))
                 {
-                    m_Serializer.Deserialize(fileStream);
+                    mSerializer.Deserialize(fileStream);
                     return true;
                 }
             }
@@ -81,9 +81,9 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                using (FileStream fileStream = new FileStream(m_FilePath, FileMode.Create, FileAccess.Write))
+                using (FileStream fileStream = new FileStream(mFilePath, FileMode.Create, FileAccess.Write))
                 {
-                    return m_Serializer.Serialize(fileStream, m_Settings);
+                    return mSerializer.Serialize(fileStream, mSettings);
                 }
             }
             catch (Exception exception)
@@ -95,87 +95,87 @@ namespace UnityGameFramework.Runtime
 
         public override string[] GetAllSettingNames()
         {
-            return m_Settings.GetAllSettingNames();
+            return mSettings.GetAllSettingNames();
         }
 
         public override void GetAllSettingNames(List<string> results)
         {
-            m_Settings.GetAllSettingNames(results);
+            mSettings.GetAllSettingNames(results);
         }
 
         public override bool HasSetting(string settingName)
         {
-            return m_Settings.HasSetting(settingName);
+            return mSettings.HasSetting(settingName);
         }
 
         public override bool RemoveSetting(string settingName)
         {
-            return m_Settings.RemoveSetting(settingName);
+            return mSettings.RemoveSetting(settingName);
         }
 
         public override void RemoveAllSettings()
         {
-            m_Settings.RemoveAllSettings();
+            mSettings.RemoveAllSettings();
         }
 
         public override bool GetBool(string settingName)
         {
-            return m_Settings.GetBool(settingName);
+            return mSettings.GetBool(settingName);
         }
 
         public override bool GetBool(string settingName, bool defaultValue)
         {
-            return m_Settings.GetBool(settingName, defaultValue);
+            return mSettings.GetBool(settingName, defaultValue);
         }
 
         public override void SetBool(string settingName, bool value)
         {
-            m_Settings.SetBool(settingName, value);
+            mSettings.SetBool(settingName, value);
         }
 
         public override int GetInt(string settingName)
         {
-            return m_Settings.GetInt(settingName);
+            return mSettings.GetInt(settingName);
         }
 
         public override int GetInt(string settingName, int defaultValue)
         {
-            return m_Settings.GetInt(settingName, defaultValue);
+            return mSettings.GetInt(settingName, defaultValue);
         }
 
         public override void SetInt(string settingName, int value)
         {
-            m_Settings.SetInt(settingName, value);
+            mSettings.SetInt(settingName, value);
         }
 
         public override float GetFloat(string settingName)
         {
-            return m_Settings.GetFloat(settingName);
+            return mSettings.GetFloat(settingName);
         }
 
         public override float GetFloat(string settingName, float defaultValue)
         {
-            return m_Settings.GetFloat(settingName, defaultValue);
+            return mSettings.GetFloat(settingName, defaultValue);
         }
 
         public override void SetFloat(string settingName, float value)
         {
-            m_Settings.SetFloat(settingName, value);
+            mSettings.SetFloat(settingName, value);
         }
 
         public override string GetString(string settingName)
         {
-            return m_Settings.GetString(settingName);
+            return mSettings.GetString(settingName);
         }
 
         public override string GetString(string settingName, string defaultValue)
         {
-            return m_Settings.GetString(settingName, defaultValue);
+            return mSettings.GetString(settingName, defaultValue);
         }
 
         public override void SetString(string settingName, string value)
         {
-            m_Settings.SetString(settingName, value);
+            mSettings.SetString(settingName, value);
         }
 
         public override T GetObject<T>(string settingName)
@@ -222,23 +222,23 @@ namespace UnityGameFramework.Runtime
 
         private void Awake()
         {
-            m_FilePath = Utility.Path.GetRegularPath(Path.Combine(Application.persistentDataPath, SettingFileName));
-            m_Settings = new DefaultSetting();
-            m_Serializer = new DefaultSettingSerializer();
-            m_Serializer.RegisterSerializeCallback(0, SerializeDefaultSettingCallback);
-            m_Serializer.RegisterDeserializeCallback(0, DeserializeDefaultSettingCallback);
+            mFilePath = Utility.Path.GetRegularPath(Path.Combine(Application.persistentDataPath, SettingFileName));
+            mSettings = new DefaultSetting();
+            mSerializer = new DefaultSettingSerializer();
+            mSerializer.RegisterSerializeCallback(0, SerializeDefaultSettingCallback);
+            mSerializer.RegisterDeserializeCallback(0, DeserializeDefaultSettingCallback);
         }
 
         private bool SerializeDefaultSettingCallback(Stream stream, DefaultSetting defaultSetting)
         {
-            m_Settings.Serialize(stream);
+            mSettings.Serialize(stream);
             return true;
         }
 
         private DefaultSetting DeserializeDefaultSettingCallback(Stream stream)
         {
-            m_Settings.Deserialize(stream);
-            return m_Settings;
+            mSettings.Deserialize(stream);
+            return mSettings;
         }
     }
 }

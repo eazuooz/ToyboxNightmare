@@ -14,7 +14,7 @@ namespace UnityGameFramework.Runtime
 {
     public sealed class WebRequestSuccessEventArgs : GameEventArgs
     {
-        private byte[] m_WebResponseBytes = null;
+        private byte[] mWebResponseBytes = null;
 
         public static readonly int EventId = typeof(WebRequestSuccessEventArgs).GetHashCode();
 
@@ -22,7 +22,7 @@ namespace UnityGameFramework.Runtime
         {
             SerialId = 0;
             WebRequestUri = null;
-            m_WebResponseBytes = null;
+            mWebResponseBytes = null;
             UserData = null;
         }
 
@@ -54,7 +54,7 @@ namespace UnityGameFramework.Runtime
 
         public byte[] GetWebResponseBytes()
         {
-            return m_WebResponseBytes;
+            return mWebResponseBytes;
         }
 
         public static WebRequestSuccessEventArgs Create(GameFramework.WebRequest.WebRequestSuccessEventArgs e)
@@ -63,7 +63,7 @@ namespace UnityGameFramework.Runtime
             WebRequestSuccessEventArgs webRequestSuccessEventArgs = ReferencePool.Acquire<WebRequestSuccessEventArgs>();
             webRequestSuccessEventArgs.SerialId = e.SerialId;
             webRequestSuccessEventArgs.WebRequestUri = e.WebRequestUri;
-            webRequestSuccessEventArgs.m_WebResponseBytes = e.GetWebResponseBytes();
+            webRequestSuccessEventArgs.mWebResponseBytes = e.GetWebResponseBytes();
             webRequestSuccessEventArgs.UserData = wwwFormInfo.UserData;
             ReferencePool.Release(wwwFormInfo);
             return webRequestSuccessEventArgs;
@@ -73,7 +73,7 @@ namespace UnityGameFramework.Runtime
         {
             SerialId = 0;
             WebRequestUri = null;
-            m_WebResponseBytes = null;
+            mWebResponseBytes = null;
             UserData = null;
         }
     }

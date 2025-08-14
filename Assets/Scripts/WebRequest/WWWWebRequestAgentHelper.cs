@@ -18,21 +18,21 @@ namespace UnityGameFramework.Runtime
 {
     public class WWWWebRequestAgentHelper : WebRequestAgentHelperBase, IDisposable
     {
-        private WWW m_WWW = null;
-        private bool m_Disposed = false;
+        private WWW mWWW = null;
+        private bool mDisposed = false;
 
-        private EventHandler<WebRequestAgentHelperCompleteEventArgs> m_WebRequestAgentHelperCompleteEventHandler = null;
-        private EventHandler<WebRequestAgentHelperErrorEventArgs> m_WebRequestAgentHelperErrorEventHandler = null;
+        private EventHandler<WebRequestAgentHelperCompleteEventArgs> mWebRequestAgentHelperCompleteEventHandler = null;
+        private EventHandler<WebRequestAgentHelperErrorEventArgs> mWebRequestAgentHelperErrorEventHandler = null;
 
         public override event EventHandler<WebRequestAgentHelperCompleteEventArgs> WebRequestAgentHelperComplete
         {
             add
             {
-                m_WebRequestAgentHelperCompleteEventHandler += value;
+                mWebRequestAgentHelperCompleteEventHandler += value;
             }
             remove
             {
-                m_WebRequestAgentHelperCompleteEventHandler -= value;
+                mWebRequestAgentHelperCompleteEventHandler -= value;
             }
         }
 
@@ -40,17 +40,17 @@ namespace UnityGameFramework.Runtime
         {
             add
             {
-                m_WebRequestAgentHelperErrorEventHandler += value;
+                mWebRequestAgentHelperErrorEventHandler += value;
             }
             remove
             {
-                m_WebRequestAgentHelperErrorEventHandler -= value;
+                mWebRequestAgentHelperErrorEventHandler -= value;
             }
         }
 
         public override void Request(string webRequestUri, object userData)
         {
-            if (m_WebRequestAgentHelperCompleteEventHandler == null || m_WebRequestAgentHelperErrorEventHandler == null)
+            if (mWebRequestAgentHelperCompleteEventHandler == null || mWebRequestAgentHelperErrorEventHandler == null)
             {
                 Log.Fatal("Web request agent helper handler is invalid.");
                 return;
@@ -59,31 +59,31 @@ namespace UnityGameFramework.Runtime
             WWWFormInfo wwwFormInfo = (WWWFormInfo)userData;
             if (wwwFormInfo.WWWForm == null)
             {
-                m_WWW = new WWW(webRequestUri);
+                mWWW = new WWW(webRequestUri);
             }
             else
             {
-                m_WWW = new WWW(webRequestUri, wwwFormInfo.WWWForm);
+                mWWW = new WWW(webRequestUri, wwwFormInfo.WWWForm);
             }
         }
 
         public override void Request(string webRequestUri, byte[] postData, object userData)
         {
-            if (m_WebRequestAgentHelperCompleteEventHandler == null || m_WebRequestAgentHelperErrorEventHandler == null)
+            if (mWebRequestAgentHelperCompleteEventHandler == null || mWebRequestAgentHelperErrorEventHandler == null)
             {
                 Log.Fatal("Web request agent helper handler is invalid.");
                 return;
             }
 
-            m_WWW = new WWW(webRequestUri, postData);
+            mWWW = new WWW(webRequestUri, postData);
         }
 
         public override void Reset()
         {
-            if (m_WWW != null)
+            if (mWWW != null)
             {
-                m_WWW.Dispose();
-                m_WWW = null;
+                mWWW.Dispose();
+                mWWW = null;
             }
         }
 
@@ -95,40 +95,40 @@ namespace UnityGameFramework.Runtime
 
         protected virtual void Dispose(bool disposing)
         {
-            if (m_Disposed)
+            if (mDisposed)
             {
                 return;
             }
 
             if (disposing)
             {
-                if (m_WWW != null)
+                if (mWWW != null)
                 {
-                    m_WWW.Dispose();
-                    m_WWW = null;
+                    mWWW.Dispose();
+                    mWWW = null;
                 }
             }
 
-            m_Disposed = true;
+            mDisposed = true;
         }
 
         private void Update()
         {
-            if (m_WWW == null || !m_WWW.isDone)
+            if (mWWW == null || !mWWW.isDone)
             {
                 return;
             }
 
-            if (!string.IsNullOrEmpty(m_WWW.error))
+            if (!string.IsNullOrEmpty(mWWW.error))
             {
-                WebRequestAgentHelperErrorEventArgs webRequestAgentHelperErrorEventArgs = WebRequestAgentHelperErrorEventArgs.Create(m_WWW.error);
-                m_WebRequestAgentHelperErrorEventHandler(this, webRequestAgentHelperErrorEventArgs);
+                WebRequestAgentHelperErrorEventArgs webRequestAgentHelperErrorEventArgs = WebRequestAgentHelperErrorEventArgs.Create(mWWW.error);
+                mWebRequestAgentHelperErrorEventHandler(this, webRequestAgentHelperErrorEventArgs);
                 ReferencePool.Release(webRequestAgentHelperErrorEventArgs);
             }
             else
             {
-                WebRequestAgentHelperCompleteEventArgs webRequestAgentHelperCompleteEventArgs = WebRequestAgentHelperCompleteEventArgs.Create(m_WWW.bytes);
-                m_WebRequestAgentHelperCompleteEventHandler(this, webRequestAgentHelperCompleteEventArgs);
+                WebRequestAgentHelperCompleteEventArgs webRequestAgentHelperCompleteEventArgs = WebRequestAgentHelperCompleteEventArgs.Create(mWWW.bytes);
+                mWebRequestAgentHelperCompleteEventHandler(this, webRequestAgentHelperCompleteEventArgs);
                 ReferencePool.Release(webRequestAgentHelperCompleteEventArgs);
             }
         }

@@ -13,18 +13,18 @@ namespace UnityGameFramework.Runtime
 {
     public abstract class EntityLogic : MonoBehaviour
     {
-        private bool m_Available = false;
-        private bool m_Visible = false;
-        private Entity m_Entity = null;
-        private Transform m_CachedTransform = null;
-        private int m_OriginalLayer = 0;
-        private Transform m_OriginalTransform = null;
+        private bool mAvailable = false;
+        private bool mVisible = false;
+        private Entity mEntity = null;
+        private Transform mCachedTransform = null;
+        private int mOriginalLayer = 0;
+        private Transform mOriginalTransform = null;
 
         public Entity Entity
         {
             get
             {
-                return m_Entity;
+                return mEntity;
             }
         }
 
@@ -44,7 +44,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Available;
+                return mAvailable;
             }
         }
 
@@ -52,22 +52,22 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Available && m_Visible;
+                return mAvailable && mVisible;
             }
             set
             {
-                if (!m_Available)
+                if (!mAvailable)
                 {
                     Log.Warning("Entity '{0}' is not available.", Name);
                     return;
                 }
 
-                if (m_Visible == value)
+                if (mVisible == value)
                 {
                     return;
                 }
 
-                m_Visible = value;
+                mVisible = value;
                 InternalSetVisible(value);
             }
         }
@@ -76,20 +76,20 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_CachedTransform;
+                return mCachedTransform;
             }
         }
 
         protected internal virtual void OnInit(object userData)
         {
-            if (m_CachedTransform == null)
+            if (mCachedTransform == null)
             {
-                m_CachedTransform = transform;
+                mCachedTransform = transform;
             }
 
-            m_Entity = GetComponent<Entity>();
-            m_OriginalLayer = gameObject.layer;
-            m_OriginalTransform = CachedTransform.parent;
+            mEntity = GetComponent<Entity>();
+            mOriginalLayer = gameObject.layer;
+            mOriginalTransform = CachedTransform.parent;
         }
 
         protected internal virtual void OnRecycle()
@@ -98,15 +98,15 @@ namespace UnityGameFramework.Runtime
 
         protected internal virtual void OnShow(object userData)
         {
-            m_Available = true;
+            mAvailable = true;
             Visible = true;
         }
 
         protected internal virtual void OnHide(bool isShutdown, object userData)
         {
-            gameObject.SetLayerRecursively(m_OriginalLayer);
+            gameObject.SetLayerRecursively(mOriginalLayer);
             Visible = false;
-            m_Available = false;
+            mAvailable = false;
         }
 
         protected internal virtual void OnAttached(EntityLogic childEntity, Transform parentTransform, object userData)
@@ -124,7 +124,7 @@ namespace UnityGameFramework.Runtime
 
         protected internal virtual void OnDetachFrom(EntityLogic parentEntity, object userData)
         {
-            CachedTransform.SetParent(m_OriginalTransform);
+            CachedTransform.SetParent(mOriginalTransform);
         }
 
         protected internal virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)

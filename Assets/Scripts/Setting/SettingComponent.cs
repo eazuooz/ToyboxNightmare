@@ -19,19 +19,19 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/Setting")]
     public sealed class SettingComponent : GameFrameworkComponent
     {
-        private ISettingManager m_SettingManager = null;
+        private ISettingManager mSettingManager = null;
 
         [SerializeField]
-        private string m_SettingHelperTypeName = "UnityGameFramework.Runtime.DefaultSettingHelper";
+        private string mSettingHelperTypeName = "UnityGameFramework.Runtime.DefaultSettingHelper";
 
         [SerializeField]
-        private SettingHelperBase m_CustomSettingHelper = null;
+        private SettingHelperBase mCustomSettingHelper = null;
 
         public int Count
         {
             get
             {
-                return m_SettingManager.Count;
+                return mSettingManager.Count;
             }
         }
 
@@ -39,14 +39,14 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_SettingManager = GameFrameworkEntry.GetModule<ISettingManager>();
-            if (m_SettingManager == null)
+            mSettingManager = GameFrameworkEntry.GetModule<ISettingManager>();
+            if (mSettingManager == null)
             {
                 Log.Fatal("Setting manager is invalid.");
                 return;
             }
 
-            SettingHelperBase settingHelper = Helper.CreateHelper(m_SettingHelperTypeName, m_CustomSettingHelper);
+            SettingHelperBase settingHelper = Helper.CreateHelper(mSettingHelperTypeName, mCustomSettingHelper);
             if (settingHelper == null)
             {
                 Log.Error("Can not create setting helper.");
@@ -58,12 +58,12 @@ namespace UnityGameFramework.Runtime
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_SettingManager.SetSettingHelper(settingHelper);
+            mSettingManager.SetSettingHelper(settingHelper);
         }
 
         private void Start()
         {
-            if (!m_SettingManager.Load())
+            if (!mSettingManager.Load())
             {
                 Log.Error("Load settings failure.");
             }
@@ -71,122 +71,122 @@ namespace UnityGameFramework.Runtime
 
         public void Save()
         {
-            m_SettingManager.Save();
+            mSettingManager.Save();
         }
 
         public string[] GetAllSettingNames()
         {
-            return m_SettingManager.GetAllSettingNames();
+            return mSettingManager.GetAllSettingNames();
         }
 
         public void GetAllSettingNames(List<string> results)
         {
-            m_SettingManager.GetAllSettingNames(results);
+            mSettingManager.GetAllSettingNames(results);
         }
 
         public bool HasSetting(string settingName)
         {
-            return m_SettingManager.HasSetting(settingName);
+            return mSettingManager.HasSetting(settingName);
         }
 
         public void RemoveSetting(string settingName)
         {
-            m_SettingManager.RemoveSetting(settingName);
+            mSettingManager.RemoveSetting(settingName);
         }
 
         public void RemoveAllSettings()
         {
-            m_SettingManager.RemoveAllSettings();
+            mSettingManager.RemoveAllSettings();
         }
 
         public bool GetBool(string settingName)
         {
-            return m_SettingManager.GetBool(settingName);
+            return mSettingManager.GetBool(settingName);
         }
 
         public bool GetBool(string settingName, bool defaultValue)
         {
-            return m_SettingManager.GetBool(settingName, defaultValue);
+            return mSettingManager.GetBool(settingName, defaultValue);
         }
 
         public void SetBool(string settingName, bool value)
         {
-            m_SettingManager.SetBool(settingName, value);
+            mSettingManager.SetBool(settingName, value);
         }
 
         public int GetInt(string settingName)
         {
-            return m_SettingManager.GetInt(settingName);
+            return mSettingManager.GetInt(settingName);
         }
 
         public int GetInt(string settingName, int defaultValue)
         {
-            return m_SettingManager.GetInt(settingName, defaultValue);
+            return mSettingManager.GetInt(settingName, defaultValue);
         }
 
         public void SetInt(string settingName, int value)
         {
-            m_SettingManager.SetInt(settingName, value);
+            mSettingManager.SetInt(settingName, value);
         }
 
         public float GetFloat(string settingName)
         {
-            return m_SettingManager.GetFloat(settingName);
+            return mSettingManager.GetFloat(settingName);
         }
 
         public float GetFloat(string settingName, float defaultValue)
         {
-            return m_SettingManager.GetFloat(settingName, defaultValue);
+            return mSettingManager.GetFloat(settingName, defaultValue);
         }
 
         public void SetFloat(string settingName, float value)
         {
-            m_SettingManager.SetFloat(settingName, value);
+            mSettingManager.SetFloat(settingName, value);
         }
 
         public string GetString(string settingName)
         {
-            return m_SettingManager.GetString(settingName);
+            return mSettingManager.GetString(settingName);
         }
 
         public string GetString(string settingName, string defaultValue)
         {
-            return m_SettingManager.GetString(settingName, defaultValue);
+            return mSettingManager.GetString(settingName, defaultValue);
         }
 
         public void SetString(string settingName, string value)
         {
-            m_SettingManager.SetString(settingName, value);
+            mSettingManager.SetString(settingName, value);
         }
 
         public T GetObject<T>(string settingName)
         {
-            return m_SettingManager.GetObject<T>(settingName);
+            return mSettingManager.GetObject<T>(settingName);
         }
 
         public object GetObject(Type objectType, string settingName)
         {
-            return m_SettingManager.GetObject(objectType, settingName);
+            return mSettingManager.GetObject(objectType, settingName);
         }
 
         public T GetObject<T>(string settingName, T defaultObj)
         {
-            return m_SettingManager.GetObject(settingName, defaultObj);
+            return mSettingManager.GetObject(settingName, defaultObj);
         }
 
         public object GetObject(Type objectType, string settingName, object defaultObj)
         {
-            return m_SettingManager.GetObject(objectType, settingName, defaultObj);
+            return mSettingManager.GetObject(objectType, settingName, defaultObj);
         }
 
         public void SetObject<T>(string settingName, T obj)
         {
-            m_SettingManager.SetObject(settingName, obj);
+            mSettingManager.SetObject(settingName, obj);
         }
 
         public void SetObject(string settingName, object obj)
         {
-            m_SettingManager.SetObject(settingName, obj);
+            mSettingManager.SetObject(settingName, obj);
         }
     }
 }

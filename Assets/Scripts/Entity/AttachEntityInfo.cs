@@ -14,20 +14,20 @@ namespace UnityGameFramework.Runtime
 {
     internal sealed class AttachEntityInfo : IReference
     {
-        private Transform m_ParentTransform;
-        private object m_UserData;
+        private Transform mParentTransform;
+        private object mUserData;
 
         public AttachEntityInfo()
         {
-            m_ParentTransform = null;
-            m_UserData = null;
+            mParentTransform = null;
+            mUserData = null;
         }
 
         public Transform ParentTransform
         {
             get
             {
-                return m_ParentTransform;
+                return mParentTransform;
             }
         }
 
@@ -35,22 +35,22 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_UserData;
+                return mUserData;
             }
         }
 
         public static AttachEntityInfo Create(Transform parentTransform, object userData)
         {
             AttachEntityInfo attachEntityInfo = ReferencePool.Acquire<AttachEntityInfo>();
-            attachEntityInfo.m_ParentTransform = parentTransform;
-            attachEntityInfo.m_UserData = userData;
+            attachEntityInfo.mParentTransform = parentTransform;
+            attachEntityInfo.mUserData = userData;
             return attachEntityInfo;
         }
 
         public void Clear()
         {
-            m_ParentTransform = null;
-            m_UserData = null;
+            mParentTransform = null;
+            mUserData = null;
         }
     }
 }

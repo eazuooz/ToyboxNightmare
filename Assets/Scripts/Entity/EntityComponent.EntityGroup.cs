@@ -18,25 +18,25 @@ namespace UnityGameFramework.Runtime
         private sealed class EntityGroup
         {
             [SerializeField]
-            private string m_Name = null;
+            private string mName = null;
 
             [SerializeField]
-            private float m_InstanceAutoReleaseInterval = 60f;
+            private float mInstanceAutoReleaseInterval = 60f;
 
             [SerializeField]
-            private int m_InstanceCapacity = 16;
+            private int mInstanceCapacity = 16;
 
             [SerializeField]
-            private float m_InstanceExpireTime = 60f;
+            private float mInstanceExpireTime = 60f;
 
             [SerializeField]
-            private int m_InstancePriority = 0;
+            private int mInstancePriority = 0;
 
             public string Name
             {
                 get
                 {
-                    return m_Name;
+                    return mName;
                 }
             }
 
@@ -44,7 +44,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_InstanceAutoReleaseInterval;
+                    return mInstanceAutoReleaseInterval;
                 }
             }
 
@@ -52,7 +52,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_InstanceCapacity;
+                    return mInstanceCapacity;
                 }
             }
 
@@ -60,7 +60,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_InstanceExpireTime;
+                    return mInstanceExpireTime;
                 }
             }
 
@@ -68,7 +68,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_InstancePriority;
+                    return mInstancePriority;
                 }
             }
         }

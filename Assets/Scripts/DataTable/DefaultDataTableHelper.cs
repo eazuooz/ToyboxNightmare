@@ -20,7 +20,7 @@ namespace UnityGameFramework.Runtime
     {
         private static readonly string BytesAssetExtension = ".bytes";
 
-        private ResourceComponent m_ResourceComponent = null;
+        private ResourceComponent mResourceComponent = null;
 
         public override bool ReadData(DataTableBase dataTable, string dataTableAssetName, object dataTableAsset, object userData)
         {
@@ -115,13 +115,13 @@ namespace UnityGameFramework.Runtime
 
         public override void ReleaseDataAsset(DataTableBase dataTable, object dataTableAsset)
         {
-            m_ResourceComponent.UnloadAsset(dataTableAsset);
+            mResourceComponent.UnloadAsset(dataTableAsset);
         }
 
         private void Start()
         {
-            m_ResourceComponent = GameEntry.GetComponent<ResourceComponent>();
-            if (m_ResourceComponent == null)
+            mResourceComponent = GameEntry.GetComponent<ResourceComponent>();
+            if (mResourceComponent == null)
             {
                 Log.Fatal("Resource component is invalid.");
                 return;

@@ -13,11 +13,11 @@ namespace UnityGameFramework.Runtime
     {
         private sealed class FpsCounter
         {
-            private float m_UpdateInterval;
-            private float m_CurrentFps;
-            private int m_Frames;
-            private float m_Accumulator;
-            private float m_TimeLeft;
+            private float mUpdateInterval;
+            private float mCurrentFps;
+            private int mFrames;
+            private float mAccumulator;
+            private float mTimeLeft;
 
             public FpsCounter(float updateInterval)
             {
@@ -27,7 +27,7 @@ namespace UnityGameFramework.Runtime
                     return;
                 }
 
-                m_UpdateInterval = updateInterval;
+                mUpdateInterval = updateInterval;
                 Reset();
             }
 
@@ -35,7 +35,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_UpdateInterval;
+                    return mUpdateInterval;
                 }
                 set
                 {
@@ -45,7 +45,7 @@ namespace UnityGameFramework.Runtime
                         return;
                     }
 
-                    m_UpdateInterval = value;
+                    mUpdateInterval = value;
                     Reset();
                 }
             }
@@ -54,31 +54,31 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_CurrentFps;
+                    return mCurrentFps;
                 }
             }
 
             public void Update(float elapseSeconds, float realElapseSeconds)
             {
-                m_Frames++;
-                m_Accumulator += realElapseSeconds;
-                m_TimeLeft -= realElapseSeconds;
+                mFrames++;
+                mAccumulator += realElapseSeconds;
+                mTimeLeft -= realElapseSeconds;
 
-                if (m_TimeLeft <= 0f)
+                if (mTimeLeft <= 0f)
                 {
-                    m_CurrentFps = m_Accumulator > 0f ? m_Frames / m_Accumulator : 0f;
-                    m_Frames = 0;
-                    m_Accumulator = 0f;
-                    m_TimeLeft += m_UpdateInterval;
+                    mCurrentFps = mAccumulator > 0f ? mFrames / mAccumulator : 0f;
+                    mFrames = 0;
+                    mAccumulator = 0f;
+                    mTimeLeft += mUpdateInterval;
                 }
             }
 
             private void Reset()
             {
-                m_CurrentFps = 0f;
-                m_Frames = 0;
-                m_Accumulator = 0f;
-                m_TimeLeft = 0f;
+                mCurrentFps = 0f;
+                mFrames = 0;
+                mAccumulator = 0f;
+                mTimeLeft = 0f;
             }
         }
     }

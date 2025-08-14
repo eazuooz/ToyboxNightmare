@@ -23,40 +23,40 @@ namespace UnityGameFramework.Runtime
     {
         private const int DefaultPriority = 0;
 
-        private IEntityManager m_EntityManager = null;
-        private EventComponent m_EventComponent = null;
+        private IEntityManager mEntityManager = null;
+        private EventComponent mEventComponent = null;
 
-        private readonly List<IEntity> m_InternalEntityResults = new List<IEntity>();
-
-        [SerializeField]
-        private bool m_EnableShowEntityUpdateEvent = false;
+        private readonly List<IEntity> mInternalEntityResults = new List<IEntity>();
 
         [SerializeField]
-        private bool m_EnableShowEntityDependencyAssetEvent = false;
+        private bool mEnableShowEntityUpdateEvent = false;
 
         [SerializeField]
-        private Transform m_InstanceRoot = null;
+        private bool mEnableShowEntityDependencyAssetEvent = false;
 
         [SerializeField]
-        private string m_EntityHelperTypeName = "UnityGameFramework.Runtime.DefaultEntityHelper";
+        private Transform mInstanceRoot = null;
 
         [SerializeField]
-        private EntityHelperBase m_CustomEntityHelper = null;
+        private string mEntityHelperTypeName = "UnityGameFramework.Runtime.DefaultEntityHelper";
 
         [SerializeField]
-        private string m_EntityGroupHelperTypeName = "UnityGameFramework.Runtime.DefaultEntityGroupHelper";
+        private EntityHelperBase mCustomEntityHelper = null;
 
         [SerializeField]
-        private EntityGroupHelperBase m_CustomEntityGroupHelper = null;
+        private string mEntityGroupHelperTypeName = "UnityGameFramework.Runtime.DefaultEntityGroupHelper";
 
         [SerializeField]
-        private EntityGroup[] m_EntityGroups = null;
+        private EntityGroupHelperBase mCustomEntityGroupHelper = null;
+
+        [SerializeField]
+        private EntityGroup[] mEntityGroups = null;
 
         public int EntityCount
         {
             get
             {
-                return m_EntityManager.EntityCount;
+                return mEntityManager.EntityCount;
             }
         }
 
@@ -64,7 +64,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_EntityManager.EntityGroupCount;
+                return mEntityManager.EntityGroupCount;
             }
         }
 
@@ -72,27 +72,27 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_EntityManager = GameFrameworkEntry.GetModule<IEntityManager>();
-            if (m_EntityManager == null)
+            mEntityManager = GameFrameworkEntry.GetModule<IEntityManager>();
+            if (mEntityManager == null)
             {
                 Log.Fatal("Entity manager is invalid.");
                 return;
             }
 
-            m_EntityManager.ShowEntitySuccess += OnShowEntitySuccess;
-            m_EntityManager.ShowEntityFailure += OnShowEntityFailure;
+            mEntityManager.ShowEntitySuccess += OnShowEntitySuccess;
+            mEntityManager.ShowEntityFailure += OnShowEntityFailure;
 
-            if (m_EnableShowEntityUpdateEvent)
+            if (mEnableShowEntityUpdateEvent)
             {
-                m_EntityManager.ShowEntityUpdate += OnShowEntityUpdate;
+                mEntityManager.ShowEntityUpdate += OnShowEntityUpdate;
             }
 
-            if (m_EnableShowEntityDependencyAssetEvent)
+            if (mEnableShowEntityDependencyAssetEvent)
             {
-                m_EntityManager.ShowEntityDependencyAsset += OnShowEntityDependencyAsset;
+                mEntityManager.ShowEntityDependencyAsset += OnShowEntityDependencyAsset;
             }
 
-            m_EntityManager.HideEntityComplete += OnHideEntityComplete;
+            mEntityManager.HideEntityComplete += OnHideEntityComplete;
         }
 
         private void Start()
@@ -104,8 +104,8 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
@@ -113,16 +113,16 @@ namespace UnityGameFramework.Runtime
 
             if (baseComponent.EditorResourceMode)
             {
-                m_EntityManager.SetResourceManager(baseComponent.EditorResourceHelper);
+                mEntityManager.SetResourceManager(baseComponent.EditorResourceHelper);
             }
             else
             {
-                m_EntityManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
+                mEntityManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
             }
 
-            m_EntityManager.SetObjectPoolManager(GameFrameworkEntry.GetModule<IObjectPoolManager>());
+            mEntityManager.SetObjectPoolManager(GameFrameworkEntry.GetModule<IObjectPoolManager>());
 
-            EntityHelperBase entityHelper = Helper.CreateHelper(m_EntityHelperTypeName, m_CustomEntityHelper);
+            EntityHelperBase entityHelper = Helper.CreateHelper(mEntityHelperTypeName, mCustomEntityHelper);
             if (entityHelper == null)
             {
                 Log.Error("Can not create entity helper.");
@@ -134,20 +134,20 @@ namespace UnityGameFramework.Runtime
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_EntityManager.SetEntityHelper(entityHelper);
+            mEntityManager.SetEntityHelper(entityHelper);
 
-            if (m_InstanceRoot == null)
+            if (mInstanceRoot == null)
             {
-                m_InstanceRoot = new GameObject("Entity Instances").transform;
-                m_InstanceRoot.SetParent(gameObject.transform);
-                m_InstanceRoot.localScale = Vector3.one;
+                mInstanceRoot = new GameObject("Entity Instances").transform;
+                mInstanceRoot.SetParent(gameObject.transform);
+                mInstanceRoot.localScale = Vector3.one;
             }
 
-            for (int i = 0; i < m_EntityGroups.Length; i++)
+            for (int i = 0; i < mEntityGroups.Length; i++)
             {
-                if (!AddEntityGroup(m_EntityGroups[i].Name, m_EntityGroups[i].InstanceAutoReleaseInterval, m_EntityGroups[i].InstanceCapacity, m_EntityGroups[i].InstanceExpireTime, m_EntityGroups[i].InstancePriority))
+                if (!AddEntityGroup(mEntityGroups[i].Name, mEntityGroups[i].InstanceAutoReleaseInterval, mEntityGroups[i].InstanceCapacity, mEntityGroups[i].InstanceExpireTime, mEntityGroups[i].InstancePriority))
                 {
-                    Log.Warning("Add entity group '{0}' failure.", m_EntityGroups[i].Name);
+                    Log.Warning("Add entity group '{0}' failure.", mEntityGroups[i].Name);
                     continue;
                 }
             }
@@ -155,32 +155,32 @@ namespace UnityGameFramework.Runtime
 
         public bool HasEntityGroup(string entityGroupName)
         {
-            return m_EntityManager.HasEntityGroup(entityGroupName);
+            return mEntityManager.HasEntityGroup(entityGroupName);
         }
 
         public IEntityGroup GetEntityGroup(string entityGroupName)
         {
-            return m_EntityManager.GetEntityGroup(entityGroupName);
+            return mEntityManager.GetEntityGroup(entityGroupName);
         }
 
         public IEntityGroup[] GetAllEntityGroups()
         {
-            return m_EntityManager.GetAllEntityGroups();
+            return mEntityManager.GetAllEntityGroups();
         }
 
         public void GetAllEntityGroups(List<IEntityGroup> results)
         {
-            m_EntityManager.GetAllEntityGroups(results);
+            mEntityManager.GetAllEntityGroups(results);
         }
 
         public bool AddEntityGroup(string entityGroupName, float instanceAutoReleaseInterval, int instanceCapacity, float instanceExpireTime, int instancePriority)
         {
-            if (m_EntityManager.HasEntityGroup(entityGroupName))
+            if (mEntityManager.HasEntityGroup(entityGroupName))
             {
                 return false;
             }
 
-            EntityGroupHelperBase entityGroupHelper = Helper.CreateHelper(m_EntityGroupHelperTypeName, m_CustomEntityGroupHelper, EntityGroupCount);
+            EntityGroupHelperBase entityGroupHelper = Helper.CreateHelper(mEntityGroupHelperTypeName, mCustomEntityGroupHelper, EntityGroupCount);
             if (entityGroupHelper == null)
             {
                 Log.Error("Can not create entity group helper.");
@@ -189,35 +189,35 @@ namespace UnityGameFramework.Runtime
 
             entityGroupHelper.name = Utility.Text.Format("Entity Group - {0}", entityGroupName);
             Transform transform = entityGroupHelper.transform;
-            transform.SetParent(m_InstanceRoot);
+            transform.SetParent(mInstanceRoot);
             transform.localScale = Vector3.one;
 
-            return m_EntityManager.AddEntityGroup(entityGroupName, instanceAutoReleaseInterval, instanceCapacity, instanceExpireTime, instancePriority, entityGroupHelper);
+            return mEntityManager.AddEntityGroup(entityGroupName, instanceAutoReleaseInterval, instanceCapacity, instanceExpireTime, instancePriority, entityGroupHelper);
         }
 
         public bool HasEntity(int entityId)
         {
-            return m_EntityManager.HasEntity(entityId);
+            return mEntityManager.HasEntity(entityId);
         }
 
         public bool HasEntity(string entityAssetName)
         {
-            return m_EntityManager.HasEntity(entityAssetName);
+            return mEntityManager.HasEntity(entityAssetName);
         }
 
         public Entity GetEntity(int entityId)
         {
-            return (Entity)m_EntityManager.GetEntity(entityId);
+            return (Entity)mEntityManager.GetEntity(entityId);
         }
 
         public Entity GetEntity(string entityAssetName)
         {
-            return (Entity)m_EntityManager.GetEntity(entityAssetName);
+            return (Entity)mEntityManager.GetEntity(entityAssetName);
         }
 
         public Entity[] GetEntities(string entityAssetName)
         {
-            IEntity[] entities = m_EntityManager.GetEntities(entityAssetName);
+            IEntity[] entities = mEntityManager.GetEntities(entityAssetName);
             Entity[] entityImpls = new Entity[entities.Length];
             for (int i = 0; i < entities.Length; i++)
             {
@@ -236,8 +236,8 @@ namespace UnityGameFramework.Runtime
             }
 
             results.Clear();
-            m_EntityManager.GetEntities(entityAssetName, m_InternalEntityResults);
-            foreach (IEntity entity in m_InternalEntityResults)
+            mEntityManager.GetEntities(entityAssetName, mInternalEntityResults);
+            foreach (IEntity entity in mInternalEntityResults)
             {
                 results.Add((Entity)entity);
             }
@@ -245,7 +245,7 @@ namespace UnityGameFramework.Runtime
 
         public Entity[] GetAllLoadedEntities()
         {
-            IEntity[] entities = m_EntityManager.GetAllLoadedEntities();
+            IEntity[] entities = mEntityManager.GetAllLoadedEntities();
             Entity[] entityImpls = new Entity[entities.Length];
             for (int i = 0; i < entities.Length; i++)
             {
@@ -264,8 +264,8 @@ namespace UnityGameFramework.Runtime
             }
 
             results.Clear();
-            m_EntityManager.GetAllLoadedEntities(m_InternalEntityResults);
-            foreach (IEntity entity in m_InternalEntityResults)
+            mEntityManager.GetAllLoadedEntities(mInternalEntityResults);
+            foreach (IEntity entity in mInternalEntityResults)
             {
                 results.Add((Entity)entity);
             }
@@ -273,22 +273,22 @@ namespace UnityGameFramework.Runtime
 
         public int[] GetAllLoadingEntityIds()
         {
-            return m_EntityManager.GetAllLoadingEntityIds();
+            return mEntityManager.GetAllLoadingEntityIds();
         }
 
         public void GetAllLoadingEntityIds(List<int> results)
         {
-            m_EntityManager.GetAllLoadingEntityIds(results);
+            mEntityManager.GetAllLoadingEntityIds(results);
         }
 
         public bool IsLoadingEntity(int entityId)
         {
-            return m_EntityManager.IsLoadingEntity(entityId);
+            return mEntityManager.IsLoadingEntity(entityId);
         }
 
         public bool IsValidEntity(Entity entity)
         {
-            return m_EntityManager.IsValidEntity(entity);
+            return mEntityManager.IsValidEntity(entity);
         }
 
         public void ShowEntity<T>(int entityId, string entityAssetName, string entityGroupName) where T : EntityLogic
@@ -334,72 +334,72 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_EntityManager.ShowEntity(entityId, entityAssetName, entityGroupName, priority, ShowEntityInfo.Create(entityLogicType, userData));
+            mEntityManager.ShowEntity(entityId, entityAssetName, entityGroupName, priority, ShowEntityInfo.Create(entityLogicType, userData));
         }
 
         public void HideEntity(int entityId)
         {
-            m_EntityManager.HideEntity(entityId);
+            mEntityManager.HideEntity(entityId);
         }
 
         public void HideEntity(int entityId, object userData)
         {
-            m_EntityManager.HideEntity(entityId, userData);
+            mEntityManager.HideEntity(entityId, userData);
         }
 
         public void HideEntity(Entity entity)
         {
-            m_EntityManager.HideEntity(entity);
+            mEntityManager.HideEntity(entity);
         }
 
         public void HideEntity(Entity entity, object userData)
         {
-            m_EntityManager.HideEntity(entity, userData);
+            mEntityManager.HideEntity(entity, userData);
         }
 
         public void HideAllLoadedEntities()
         {
-            m_EntityManager.HideAllLoadedEntities();
+            mEntityManager.HideAllLoadedEntities();
         }
 
         public void HideAllLoadedEntities(object userData)
         {
-            m_EntityManager.HideAllLoadedEntities(userData);
+            mEntityManager.HideAllLoadedEntities(userData);
         }
 
         public void HideAllLoadingEntities()
         {
-            m_EntityManager.HideAllLoadingEntities();
+            mEntityManager.HideAllLoadingEntities();
         }
 
         public Entity GetParentEntity(int childEntityId)
         {
-            return (Entity)m_EntityManager.GetParentEntity(childEntityId);
+            return (Entity)mEntityManager.GetParentEntity(childEntityId);
         }
 
         public Entity GetParentEntity(Entity childEntity)
         {
-            return (Entity)m_EntityManager.GetParentEntity(childEntity);
+            return (Entity)mEntityManager.GetParentEntity(childEntity);
         }
 
         public int GetChildEntityCount(int parentEntityId)
         {
-            return m_EntityManager.GetChildEntityCount(parentEntityId);
+            return mEntityManager.GetChildEntityCount(parentEntityId);
         }
 
         public Entity GetChildEntity(int parentEntityId)
         {
-            return (Entity)m_EntityManager.GetChildEntity(parentEntityId);
+            return (Entity)mEntityManager.GetChildEntity(parentEntityId);
         }
 
         public Entity GetChildEntity(IEntity parentEntity)
         {
-            return (Entity)m_EntityManager.GetChildEntity(parentEntity);
+            return (Entity)mEntityManager.GetChildEntity(parentEntity);
         }
 
         public Entity[] GetChildEntities(int parentEntityId)
         {
-            IEntity[] entities = m_EntityManager.GetChildEntities(parentEntityId);
+            IEntity[] entities = mEntityManager.GetChildEntities(parentEntityId);
             Entity[] entityImpls = new Entity[entities.Length];
             for (int i = 0; i < entities.Length; i++)
             {
@@ -418,8 +418,8 @@ namespace UnityGameFramework.Runtime
             }
 
             results.Clear();
-            m_EntityManager.GetChildEntities(parentEntityId, m_InternalEntityResults);
-            foreach (IEntity entity in m_InternalEntityResults)
+            mEntityManager.GetChildEntities(parentEntityId, mInternalEntityResults);
+            foreach (IEntity entity in mInternalEntityResults)
             {
                 results.Add((Entity)entity);
             }
@@ -427,7 +427,7 @@ namespace UnityGameFramework.Runtime
 
         public Entity[] GetChildEntities(Entity parentEntity)
         {
-            IEntity[] entities = m_EntityManager.GetChildEntities(parentEntity);
+            IEntity[] entities = mEntityManager.GetChildEntities(parentEntity);
             Entity[] entityImpls = new Entity[entities.Length];
             for (int i = 0; i < entities.Length; i++)
             {
@@ -446,8 +446,8 @@ namespace UnityGameFramework.Runtime
             }
 
             results.Clear();
-            m_EntityManager.GetChildEntities(parentEntity, m_InternalEntityResults);
-            foreach (IEntity entity in m_InternalEntityResults)
+            mEntityManager.GetChildEntities(parentEntity, mInternalEntityResults);
+            foreach (IEntity entity in mInternalEntityResults)
             {
                 results.Add((Entity)entity);
             }
@@ -614,47 +614,47 @@ namespace UnityGameFramework.Runtime
                 parentTransform = parentEntity.Logic.CachedTransform;
             }
 
-            m_EntityManager.AttachEntity(childEntity, parentEntity, AttachEntityInfo.Create(parentTransform, userData));
+            mEntityManager.AttachEntity(childEntity, parentEntity, AttachEntityInfo.Create(parentTransform, userData));
         }
 
         public void DetachEntity(int childEntityId)
         {
-            m_EntityManager.DetachEntity(childEntityId);
+            mEntityManager.DetachEntity(childEntityId);
         }
 
         public void DetachEntity(int childEntityId, object userData)
         {
-            m_EntityManager.DetachEntity(childEntityId, userData);
+            mEntityManager.DetachEntity(childEntityId, userData);
         }
 
         public void DetachEntity(Entity childEntity)
         {
-            m_EntityManager.DetachEntity(childEntity);
+            mEntityManager.DetachEntity(childEntity);
         }
 
         public void DetachEntity(Entity childEntity, object userData)
         {
-            m_EntityManager.DetachEntity(childEntity, userData);
+            mEntityManager.DetachEntity(childEntity, userData);
         }
 
         public void DetachChildEntities(int parentEntityId)
         {
-            m_EntityManager.DetachChildEntities(parentEntityId);
+            mEntityManager.DetachChildEntities(parentEntityId);
         }
 
         public void DetachChildEntities(int parentEntityId, object userData)
         {
-            m_EntityManager.DetachChildEntities(parentEntityId, userData);
+            mEntityManager.DetachChildEntities(parentEntityId, userData);
         }
 
         public void DetachChildEntities(Entity parentEntity)
         {
-            m_EntityManager.DetachChildEntities(parentEntity);
+            mEntityManager.DetachChildEntities(parentEntity);
         }
 
         public void DetachChildEntities(Entity parentEntity, object userData)
         {
-            m_EntityManager.DetachChildEntities(parentEntity, userData);
+            mEntityManager.DetachChildEntities(parentEntity, userData);
         }
 
         public void SetEntityInstanceLocked(Entity entity, bool locked)
@@ -695,28 +695,28 @@ namespace UnityGameFramework.Runtime
 
         private void OnShowEntitySuccess(object sender, GameFramework.Entity.ShowEntitySuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, ShowEntitySuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, ShowEntitySuccessEventArgs.Create(e));
         }
 
         private void OnShowEntityFailure(object sender, GameFramework.Entity.ShowEntityFailureEventArgs e)
         {
             Log.Warning("Show entity failure, entity id '{0}', asset name '{1}', entity group name '{2}', error message '{3}'.", e.EntityId, e.EntityAssetName, e.EntityGroupName, e.ErrorMessage);
-            m_EventComponent.Fire(this, ShowEntityFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, ShowEntityFailureEventArgs.Create(e));
         }
 
         private void OnShowEntityUpdate(object sender, GameFramework.Entity.ShowEntityUpdateEventArgs e)
         {
-            m_EventComponent.Fire(this, ShowEntityUpdateEventArgs.Create(e));
+            mEventComponent.Fire(this, ShowEntityUpdateEventArgs.Create(e));
         }
 
         private void OnShowEntityDependencyAsset(object sender, GameFramework.Entity.ShowEntityDependencyAssetEventArgs e)
         {
-            m_EventComponent.Fire(this, ShowEntityDependencyAssetEventArgs.Create(e));
+            mEventComponent.Fire(this, ShowEntityDependencyAssetEventArgs.Create(e));
         }
 
         private void OnHideEntityComplete(object sender, GameFramework.Entity.HideEntityCompleteEventArgs e)
         {
-            m_EventComponent.Fire(this, HideEntityCompleteEventArgs.Create(e));
+            mEventComponent.Fire(this, HideEntityCompleteEventArgs.Create(e));
         }
     }
 }

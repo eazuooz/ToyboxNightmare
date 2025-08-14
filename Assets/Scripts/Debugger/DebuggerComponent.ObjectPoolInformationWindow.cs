@@ -17,12 +17,12 @@ namespace UnityGameFramework.Runtime
     {
         private sealed class ObjectPoolInformationWindow : ScrollableDebuggerWindowBase
         {
-            private ObjectPoolComponent m_ObjectPoolComponent = null;
+            private ObjectPoolComponent mObjectPoolComponent = null;
 
             public override void Initialize(params object[] args)
             {
-                m_ObjectPoolComponent = GameEntry.GetComponent<ObjectPoolComponent>();
-                if (m_ObjectPoolComponent == null)
+                mObjectPoolComponent = GameEntry.GetComponent<ObjectPoolComponent>();
+                if (mObjectPoolComponent == null)
                 {
                     Log.Fatal("Object pool component is invalid.");
                     return;
@@ -34,10 +34,10 @@ namespace UnityGameFramework.Runtime
                 GUILayout.Label("<b>Object Pool Information</b>");
                 GUILayout.BeginVertical("box");
                 {
-                    DrawItem("Object Pool Count", m_ObjectPoolComponent.Count.ToString());
+                    DrawItem("Object Pool Count", mObjectPoolComponent.Count.ToString());
                 }
                 GUILayout.EndVertical();
-                ObjectPoolBase[] objectPools = m_ObjectPoolComponent.GetAllObjectPools(true);
+                ObjectPoolBase[] objectPools = mObjectPoolComponent.GetAllObjectPools(true);
                 for (int i = 0; i < objectPools.Length; i++)
                 {
                     DrawObjectPool(objectPools[i]);

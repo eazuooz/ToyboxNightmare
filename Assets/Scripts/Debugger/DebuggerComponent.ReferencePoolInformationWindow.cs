@@ -18,10 +18,10 @@ namespace UnityGameFramework.Runtime
     {
         private sealed class ReferencePoolInformationWindow : ScrollableDebuggerWindowBase
         {
-            private readonly Dictionary<string, List<ReferencePoolInfo>> m_ReferencePoolInfos = new Dictionary<string, List<ReferencePoolInfo>>(StringComparer.Ordinal);
-            private readonly Comparison<ReferencePoolInfo> m_NormalClassNameComparer = NormalClassNameComparer;
-            private readonly Comparison<ReferencePoolInfo> m_FullClassNameComparer = FullClassNameComparer;
-            private bool m_ShowFullClassName = false;
+            private readonly Dictionary<string, List<ReferencePoolInfo>> mReferencePoolInfos = new Dictionary<string, List<ReferencePoolInfo>>(StringComparer.Ordinal);
+            private readonly Comparison<ReferencePoolInfo> mNormalClassNameComparer = NormalClassNameComparer;
+            private readonly Comparison<ReferencePoolInfo> mFullClassNameComparer = FullClassNameComparer;
+            private bool mShowFullClassName = false;
 
             public override void Initialize(params object[] args)
             {
@@ -37,30 +37,30 @@ namespace UnityGameFramework.Runtime
                 }
                 GUILayout.EndVertical();
 
-                m_ShowFullClassName = GUILayout.Toggle(m_ShowFullClassName, "Show Full Class Name");
-                m_ReferencePoolInfos.Clear();
+                mShowFullClassName = GUILayout.Toggle(mShowFullClassName, "Show Full Class Name");
+                mReferencePoolInfos.Clear();
                 ReferencePoolInfo[] referencePoolInfos = ReferencePool.GetAllReferencePoolInfos();
                 foreach (ReferencePoolInfo referencePoolInfo in referencePoolInfos)
                 {
                     string assemblyName = referencePoolInfo.Type.Assembly.GetName().Name;
                     List<ReferencePoolInfo> results = null;
-                    if (!m_ReferencePoolInfos.TryGetValue(assemblyName, out results))
+                    if (!mReferencePoolInfos.TryGetValue(assemblyName, out results))
                     {
                         results = new List<ReferencePoolInfo>();
-                        m_ReferencePoolInfos.Add(assemblyName, results);
+                        mReferencePoolInfos.Add(assemblyName, results);
                     }
 
                     results.Add(referencePoolInfo);
                 }
 
-                foreach (KeyValuePair<string, List<ReferencePoolInfo>> assemblyReferencePoolInfo in m_ReferencePoolInfos)
+                foreach (KeyValuePair<string, List<ReferencePoolInfo>> assemblyReferencePoolInfo in mReferencePoolInfos)
                 {
                     GUILayout.Label(Utility.Text.Format("<b>Assembly: {0}</b>", assemblyReferencePoolInfo.Key));
                     GUILayout.BeginVertical("box");
                     {
                         GUILayout.BeginHorizontal();
                         {
-                            GUILayout.Label(m_ShowFullClassName ? "<b>Full Class Name</b>" : "<b>Class Name</b>");
+                            GUILayout.Label(mShowFullClassName ? "<b>Full Class Name</b>" : "<b>Class Name</b>");
                             GUILayout.Label("<b>Unused</b>", GUILayout.Width(60f));
                             GUILayout.Label("<b>Using</b>", GUILayout.Width(60f));
                             GUILayout.Label("<b>Acquire</b>", GUILayout.Width(60f));
@@ -72,7 +72,7 @@ namespace UnityGameFramework.Runtime
 
                         if (assemblyReferencePoolInfo.Value.Count > 0)
                         {
-                            assemblyReferencePoolInfo.Value.Sort(m_ShowFullClassName ? m_FullClassNameComparer : m_NormalClassNameComparer);
+                            assemblyReferencePoolInfo.Value.Sort(mShowFullClassName ? mFullClassNameComparer : mNormalClassNameComparer);
                             foreach (ReferencePoolInfo referencePoolInfo in assemblyReferencePoolInfo.Value)
                             {
                                 DrawReferencePoolInfo(referencePoolInfo);
@@ -91,7 +91,7 @@ namespace UnityGameFramework.Runtime
             {
                 GUILayout.BeginHorizontal();
                 {
-                    GUILayout.Label(m_ShowFullClassName ? referencePoolInfo.Type.FullName : referencePoolInfo.Type.Name);
+                    GUILayout.Label(mShowFullClassName ? referencePoolInfo.Type.FullName : referencePoolInfo.Type.Name);
                     GUILayout.Label(referencePoolInfo.UnusedReferenceCount.ToString(), GUILayout.Width(60f));
                     GUILayout.Label(referencePoolInfo.UsingReferenceCount.ToString(), GUILayout.Width(60f));
                     GUILayout.Label(referencePoolInfo.AcquireReferenceCount.ToString(), GUILayout.Width(60f));

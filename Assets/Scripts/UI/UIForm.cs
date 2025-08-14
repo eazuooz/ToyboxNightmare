@@ -15,18 +15,18 @@ namespace UnityGameFramework.Runtime
 {
     public sealed class UIForm : MonoBehaviour, IUIForm
     {
-        private int m_SerialId;
-        private string m_UIFormAssetName;
-        private IUIGroup m_UIGroup;
-        private int m_DepthInUIGroup;
-        private bool m_PauseCoveredUIForm;
-        private UIFormLogic m_UIFormLogic;
+        private int mSerialId;
+        private string mUIFormAssetName;
+        private IUIGroup mUIGroup;
+        private int mDepthInUIGroup;
+        private bool mPauseCoveredUIForm;
+        private UIFormLogic mUIFormLogic;
 
         public int SerialId
         {
             get
             {
-                return m_SerialId;
+                return mSerialId;
             }
         }
 
@@ -34,7 +34,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_UIFormAssetName;
+                return mUIFormAssetName;
             }
         }
 
@@ -50,7 +50,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_UIGroup;
+                return mUIGroup;
             }
         }
 
@@ -58,7 +58,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DepthInUIGroup;
+                return mDepthInUIGroup;
             }
         }
 
@@ -66,7 +66,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_PauseCoveredUIForm;
+                return mPauseCoveredUIForm;
             }
         }
 
@@ -74,25 +74,25 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_UIFormLogic;
+                return mUIFormLogic;
             }
         }
 
         public void OnInit(int serialId, string uiFormAssetName, IUIGroup uiGroup, bool pauseCoveredUIForm, bool isNewInstance, object userData)
         {
-            m_SerialId = serialId;
-            m_UIFormAssetName = uiFormAssetName;
-            m_UIGroup = uiGroup;
-            m_DepthInUIGroup = 0;
-            m_PauseCoveredUIForm = pauseCoveredUIForm;
+            mSerialId = serialId;
+            mUIFormAssetName = uiFormAssetName;
+            mUIGroup = uiGroup;
+            mDepthInUIGroup = 0;
+            mPauseCoveredUIForm = pauseCoveredUIForm;
 
             if (!isNewInstance)
             {
                 return;
             }
 
-            m_UIFormLogic = GetComponent<UIFormLogic>();
-            if (m_UIFormLogic == null)
+            mUIFormLogic = GetComponent<UIFormLogic>();
+            if (mUIFormLogic == null)
             {
                 Log.Error("UI form '{0}' can not get UI form logic.", uiFormAssetName);
                 return;
@@ -100,11 +100,11 @@ namespace UnityGameFramework.Runtime
 
             try
             {
-                m_UIFormLogic.OnInit(userData);
+                mUIFormLogic.OnInit(userData);
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnInit with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnInit with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -112,27 +112,27 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnRecycle();
+                mUIFormLogic.OnRecycle();
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnRecycle with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnRecycle with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
 
-            m_SerialId = 0;
-            m_DepthInUIGroup = 0;
-            m_PauseCoveredUIForm = true;
+            mSerialId = 0;
+            mDepthInUIGroup = 0;
+            mPauseCoveredUIForm = true;
         }
 
         public void OnOpen(object userData)
         {
             try
             {
-                m_UIFormLogic.OnOpen(userData);
+                mUIFormLogic.OnOpen(userData);
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnOpen with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnOpen with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -140,11 +140,11 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnClose(isShutdown, userData);
+                mUIFormLogic.OnClose(isShutdown, userData);
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnClose with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnClose with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -152,11 +152,11 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnPause();
+                mUIFormLogic.OnPause();
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnPause with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnPause with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -164,11 +164,11 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnResume();
+                mUIFormLogic.OnResume();
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnResume with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnResume with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -176,11 +176,11 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnCover();
+                mUIFormLogic.OnCover();
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnCover with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnCover with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -188,11 +188,11 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnReveal();
+                mUIFormLogic.OnReveal();
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnReveal with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnReveal with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -200,11 +200,11 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnRefocus(userData);
+                mUIFormLogic.OnRefocus(userData);
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnRefocus with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnRefocus with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
@@ -212,24 +212,24 @@ namespace UnityGameFramework.Runtime
         {
             try
             {
-                m_UIFormLogic.OnUpdate(elapseSeconds, realElapseSeconds);
+                mUIFormLogic.OnUpdate(elapseSeconds, realElapseSeconds);
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnUpdate with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnUpdate with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
 
         public void OnDepthChanged(int uiGroupDepth, int depthInUIGroup)
         {
-            m_DepthInUIGroup = depthInUIGroup;
+            mDepthInUIGroup = depthInUIGroup;
             try
             {
-                m_UIFormLogic.OnDepthChanged(uiGroupDepth, depthInUIGroup);
+                mUIFormLogic.OnDepthChanged(uiGroupDepth, depthInUIGroup);
             }
             catch (Exception exception)
             {
-                Log.Error("UI form '[{0}]{1}' OnDepthChanged with exception '{2}'.", m_SerialId, m_UIFormAssetName, exception);
+                Log.Error("UI form '[{0}]{1}' OnDepthChanged with exception '{2}'.", mSerialId, mUIFormAssetName, exception);
             }
         }
     }

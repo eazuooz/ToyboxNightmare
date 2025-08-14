@@ -14,7 +14,7 @@ namespace UnityGameFramework.Runtime
 {
     public class DefaultEntityHelper : EntityHelperBase
     {
-        private ResourceComponent m_ResourceComponent = null;
+        private ResourceComponent mResourceComponent = null;
 
         public override object InstantiateEntity(object entityAsset)
         {
@@ -38,14 +38,14 @@ namespace UnityGameFramework.Runtime
 
         public override void ReleaseEntity(object entityAsset, object entityInstance)
         {
-            m_ResourceComponent.UnloadAsset(entityAsset);
+            mResourceComponent.UnloadAsset(entityAsset);
             Destroy((Object)entityInstance);
         }
 
         private void Start()
         {
-            m_ResourceComponent = GameEntry.GetComponent<ResourceComponent>();
-            if (m_ResourceComponent == null)
+            mResourceComponent = GameEntry.GetComponent<ResourceComponent>();
+            if (mResourceComponent == null)
             {
                 Log.Fatal("Resource component is invalid.");
                 return;

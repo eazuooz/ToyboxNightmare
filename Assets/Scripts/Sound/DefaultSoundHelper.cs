@@ -11,17 +11,17 @@ namespace UnityGameFramework.Runtime
 {
     public class DefaultSoundHelper : SoundHelperBase
     {
-        private ResourceComponent m_ResourceComponent = null;
+        private ResourceComponent mResourceComponent = null;
 
         public override void ReleaseSoundAsset(object soundAsset)
         {
-            m_ResourceComponent.UnloadAsset(soundAsset);
+            mResourceComponent.UnloadAsset(soundAsset);
         }
 
         private void Start()
         {
-            m_ResourceComponent = GameEntry.GetComponent<ResourceComponent>();
-            if (m_ResourceComponent == null)
+            mResourceComponent = GameEntry.GetComponent<ResourceComponent>();
+            if (mResourceComponent == null)
             {
                 Log.Fatal("Resource component is invalid.");
                 return;

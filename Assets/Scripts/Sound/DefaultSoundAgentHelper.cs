@@ -18,18 +18,18 @@ namespace UnityGameFramework.Runtime
 {
     public class DefaultSoundAgentHelper : SoundAgentHelperBase
     {
-        private Transform m_CachedTransform = null;
-        private AudioSource m_AudioSource = null;
-        private EntityLogic m_BindingEntityLogic = null;
-        private float m_VolumeWhenPause = 0f;
-        private bool m_ApplicationPauseFlag = false;
-        private EventHandler<ResetSoundAgentEventArgs> m_ResetSoundAgentEventHandler = null;
+        private Transform mCachedTransform = null;
+        private AudioSource mAudioSource = null;
+        private EntityLogic mBindingEntityLogic = null;
+        private float mVolumeWhenPause = 0f;
+        private bool mApplicationPauseFlag = false;
+        private EventHandler<ResetSoundAgentEventArgs> mResetSoundAgentEventHandler = null;
 
         public override bool IsPlaying
         {
             get
             {
-                return m_AudioSource.isPlaying;
+                return mAudioSource.isPlaying;
             }
         }
 
@@ -37,7 +37,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.clip != null ? m_AudioSource.clip.length : 0f;
+                return mAudioSource.clip != null ? mAudioSource.clip.length : 0f;
             }
         }
 
@@ -45,11 +45,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.time;
+                return mAudioSource.time;
             }
             set
             {
-                m_AudioSource.time = value;
+                mAudioSource.time = value;
             }
         }
 
@@ -57,11 +57,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.mute;
+                return mAudioSource.mute;
             }
             set
             {
-                m_AudioSource.mute = value;
+                mAudioSource.mute = value;
             }
         }
 
@@ -69,11 +69,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.loop;
+                return mAudioSource.loop;
             }
             set
             {
-                m_AudioSource.loop = value;
+                mAudioSource.loop = value;
             }
         }
 
@@ -81,11 +81,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return 128 - m_AudioSource.priority;
+                return 128 - mAudioSource.priority;
             }
             set
             {
-                m_AudioSource.priority = 128 - value;
+                mAudioSource.priority = 128 - value;
             }
         }
 
@@ -93,11 +93,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.volume;
+                return mAudioSource.volume;
             }
             set
             {
-                m_AudioSource.volume = value;
+                mAudioSource.volume = value;
             }
         }
 
@@ -105,11 +105,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.pitch;
+                return mAudioSource.pitch;
             }
             set
             {
-                m_AudioSource.pitch = value;
+                mAudioSource.pitch = value;
             }
         }
 
@@ -117,11 +117,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.panStereo;
+                return mAudioSource.panStereo;
             }
             set
             {
-                m_AudioSource.panStereo = value;
+                mAudioSource.panStereo = value;
             }
         }
 
@@ -129,11 +129,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.spatialBlend;
+                return mAudioSource.spatialBlend;
             }
             set
             {
-                m_AudioSource.spatialBlend = value;
+                mAudioSource.spatialBlend = value;
             }
         }
 
@@ -141,12 +141,12 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.maxDistance;
+                return mAudioSource.maxDistance;
             }
 
             set
             {
-                m_AudioSource.maxDistance = value;
+                mAudioSource.maxDistance = value;
             }
         }
 
@@ -154,11 +154,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.dopplerLevel;
+                return mAudioSource.dopplerLevel;
             }
             set
             {
-                m_AudioSource.dopplerLevel = value;
+                mAudioSource.dopplerLevel = value;
             }
         }
 
@@ -166,11 +166,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_AudioSource.outputAudioMixerGroup;
+                return mAudioSource.outputAudioMixerGroup;
             }
             set
             {
-                m_AudioSource.outputAudioMixerGroup = value;
+                mAudioSource.outputAudioMixerGroup = value;
             }
         }
 
@@ -178,11 +178,11 @@ namespace UnityGameFramework.Runtime
         {
             add
             {
-                m_ResetSoundAgentEventHandler += value;
+                mResetSoundAgentEventHandler += value;
             }
             remove
             {
-                m_ResetSoundAgentEventHandler -= value;
+                mResetSoundAgentEventHandler -= value;
             }
         }
 
@@ -190,12 +190,12 @@ namespace UnityGameFramework.Runtime
         {
             StopAllCoroutines();
 
-            m_AudioSource.Play();
+            mAudioSource.Play();
             if (fadeInSeconds > 0f)
             {
-                float volume = m_AudioSource.volume;
-                m_AudioSource.volume = 0f;
-                StartCoroutine(FadeToVolume(m_AudioSource, volume, fadeInSeconds));
+                float volume = mAudioSource.volume;
+                mAudioSource.volume = 0f;
+                StartCoroutine(FadeToVolume(mAudioSource, volume, fadeInSeconds));
             }
         }
 
@@ -209,7 +209,7 @@ namespace UnityGameFramework.Runtime
             }
             else
             {
-                m_AudioSource.Stop();
+                mAudioSource.Stop();
             }
         }
 
@@ -217,14 +217,14 @@ namespace UnityGameFramework.Runtime
         {
             StopAllCoroutines();
 
-            m_VolumeWhenPause = m_AudioSource.volume;
+            mVolumeWhenPause = mAudioSource.volume;
             if (fadeOutSeconds > 0f && gameObject.activeInHierarchy)
             {
                 StartCoroutine(PauseCo(fadeOutSeconds));
             }
             else
             {
-                m_AudioSource.Pause();
+                mAudioSource.Pause();
             }
         }
 
@@ -232,23 +232,23 @@ namespace UnityGameFramework.Runtime
         {
             StopAllCoroutines();
 
-            m_AudioSource.UnPause();
+            mAudioSource.UnPause();
             if (fadeInSeconds > 0f)
             {
-                StartCoroutine(FadeToVolume(m_AudioSource, m_VolumeWhenPause, fadeInSeconds));
+                StartCoroutine(FadeToVolume(mAudioSource, mVolumeWhenPause, fadeInSeconds));
             }
             else
             {
-                m_AudioSource.volume = m_VolumeWhenPause;
+                mAudioSource.volume = mVolumeWhenPause;
             }
         }
 
         public override void Reset()
         {
-            m_CachedTransform.localPosition = Vector3.zero;
-            m_AudioSource.clip = null;
-            m_BindingEntityLogic = null;
-            m_VolumeWhenPause = 0f;
+            mCachedTransform.localPosition = Vector3.zero;
+            mAudioSource.clip = null;
+            mBindingEntityLogic = null;
+            mVolumeWhenPause = 0f;
         }
 
         public override bool SetSoundAsset(object soundAsset)
@@ -259,51 +259,51 @@ namespace UnityGameFramework.Runtime
                 return false;
             }
 
-            m_AudioSource.clip = audioClip;
+            mAudioSource.clip = audioClip;
             return true;
         }
 
         public override void SetBindingEntity(Entity bindingEntity)
         {
-            m_BindingEntityLogic = bindingEntity.Logic;
-            if (m_BindingEntityLogic != null)
+            mBindingEntityLogic = bindingEntity.Logic;
+            if (mBindingEntityLogic != null)
             {
                 UpdateAgentPosition();
                 return;
             }
 
-            if (m_ResetSoundAgentEventHandler != null)
+            if (mResetSoundAgentEventHandler != null)
             {
                 ResetSoundAgentEventArgs resetSoundAgentEventArgs = ResetSoundAgentEventArgs.Create();
-                m_ResetSoundAgentEventHandler(this, resetSoundAgentEventArgs);
+                mResetSoundAgentEventHandler(this, resetSoundAgentEventArgs);
                 ReferencePool.Release(resetSoundAgentEventArgs);
             }
         }
 
         public override void SetWorldPosition(Vector3 worldPosition)
         {
-            m_CachedTransform.position = worldPosition;
+            mCachedTransform.position = worldPosition;
         }
 
         private void Awake()
         {
-            m_CachedTransform = transform;
-            m_AudioSource = gameObject.GetOrAddComponent<AudioSource>();
-            m_AudioSource.playOnAwake = false;
-            m_AudioSource.rolloffMode = AudioRolloffMode.Custom;
+            mCachedTransform = transform;
+            mAudioSource = gameObject.GetOrAddComponent<AudioSource>();
+            mAudioSource.playOnAwake = false;
+            mAudioSource.rolloffMode = AudioRolloffMode.Custom;
         }
 
         private void Update()
         {
-            if (!m_ApplicationPauseFlag && !IsPlaying && m_AudioSource.clip != null && m_ResetSoundAgentEventHandler != null)
+            if (!mApplicationPauseFlag && !IsPlaying && mAudioSource.clip != null && mResetSoundAgentEventHandler != null)
             {
                 ResetSoundAgentEventArgs resetSoundAgentEventArgs = ResetSoundAgentEventArgs.Create();
-                m_ResetSoundAgentEventHandler(this, resetSoundAgentEventArgs);
+                mResetSoundAgentEventHandler(this, resetSoundAgentEventArgs);
                 ReferencePool.Release(resetSoundAgentEventArgs);
                 return;
             }
 
-            if (m_BindingEntityLogic != null)
+            if (mBindingEntityLogic != null)
             {
                 UpdateAgentPosition();
             }
@@ -311,35 +311,35 @@ namespace UnityGameFramework.Runtime
 
         private void OnApplicationPause(bool pause)
         {
-            m_ApplicationPauseFlag = pause;
+            mApplicationPauseFlag = pause;
         }
 
         private void UpdateAgentPosition()
         {
-            if (m_BindingEntityLogic.Available)
+            if (mBindingEntityLogic.Available)
             {
-                m_CachedTransform.position = m_BindingEntityLogic.CachedTransform.position;
+                mCachedTransform.position = mBindingEntityLogic.CachedTransform.position;
                 return;
             }
 
-            if (m_ResetSoundAgentEventHandler != null)
+            if (mResetSoundAgentEventHandler != null)
             {
                 ResetSoundAgentEventArgs resetSoundAgentEventArgs = ResetSoundAgentEventArgs.Create();
-                m_ResetSoundAgentEventHandler(this, resetSoundAgentEventArgs);
+                mResetSoundAgentEventHandler(this, resetSoundAgentEventArgs);
                 ReferencePool.Release(resetSoundAgentEventArgs);
             }
         }
 
         private IEnumerator StopCo(float fadeOutSeconds)
         {
-            yield return FadeToVolume(m_AudioSource, 0f, fadeOutSeconds);
-            m_AudioSource.Stop();
+            yield return FadeToVolume(mAudioSource, 0f, fadeOutSeconds);
+            mAudioSource.Stop();
         }
 
         private IEnumerator PauseCo(float fadeOutSeconds)
         {
-            yield return FadeToVolume(m_AudioSource, 0f, fadeOutSeconds);
-            m_AudioSource.Pause();
+            yield return FadeToVolume(mAudioSource, 0f, fadeOutSeconds);
+            mAudioSource.Pause();
         }
 
         private IEnumerator FadeToVolume(AudioSource audioSource, float volume, float duration)

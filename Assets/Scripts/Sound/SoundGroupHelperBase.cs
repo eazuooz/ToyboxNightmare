@@ -16,17 +16,17 @@ namespace UnityGameFramework.Runtime
     public abstract class SoundGroupHelperBase : MonoBehaviour, ISoundGroupHelper
     {
         [SerializeField]
-        private AudioMixerGroup m_AudioMixerGroup = null;
+        private AudioMixerGroup mAudioMixerGroup = null;
 
         public AudioMixerGroup AudioMixerGroup
         {
             get
             {
-                return m_AudioMixerGroup;
+                return mAudioMixerGroup;
             }
             set
             {
-                m_AudioMixerGroup = value;
+                mAudioMixerGroup = value;
             }
         }
     }

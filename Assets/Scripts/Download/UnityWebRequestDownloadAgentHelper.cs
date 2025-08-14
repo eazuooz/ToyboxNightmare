@@ -22,25 +22,25 @@ namespace UnityGameFramework.Runtime
     public partial class UnityWebRequestDownloadAgentHelper : DownloadAgentHelperBase, IDisposable
     {
         private const int CachedBytesLength = 0x1000;
-        private readonly byte[] m_CachedBytes = new byte[CachedBytesLength];
+        private readonly byte[] mCachedBytes = new byte[CachedBytesLength];
 
-        private UnityWebRequest m_UnityWebRequest = null;
-        private bool m_Disposed = false;
+        private UnityWebRequest mUnityWebRequest = null;
+        private bool mDisposed = false;
 
-        private EventHandler<DownloadAgentHelperUpdateBytesEventArgs> m_DownloadAgentHelperUpdateBytesEventHandler = null;
-        private EventHandler<DownloadAgentHelperUpdateLengthEventArgs> m_DownloadAgentHelperUpdateLengthEventHandler = null;
-        private EventHandler<DownloadAgentHelperCompleteEventArgs> m_DownloadAgentHelperCompleteEventHandler = null;
-        private EventHandler<DownloadAgentHelperErrorEventArgs> m_DownloadAgentHelperErrorEventHandler = null;
+        private EventHandler<DownloadAgentHelperUpdateBytesEventArgs> mDownloadAgentHelperUpdateBytesEventHandler = null;
+        private EventHandler<DownloadAgentHelperUpdateLengthEventArgs> mDownloadAgentHelperUpdateLengthEventHandler = null;
+        private EventHandler<DownloadAgentHelperCompleteEventArgs> mDownloadAgentHelperCompleteEventHandler = null;
+        private EventHandler<DownloadAgentHelperErrorEventArgs> mDownloadAgentHelperErrorEventHandler = null;
 
         public override event EventHandler<DownloadAgentHelperUpdateBytesEventArgs> DownloadAgentHelperUpdateBytes
         {
             add
             {
-                m_DownloadAgentHelperUpdateBytesEventHandler += value;
+                mDownloadAgentHelperUpdateBytesEventHandler += value;
             }
             remove
             {
-                m_DownloadAgentHelperUpdateBytesEventHandler -= value;
+                mDownloadAgentHelperUpdateBytesEventHandler -= value;
             }
         }
 
@@ -48,11 +48,11 @@ namespace UnityGameFramework.Runtime
         {
             add
             {
-                m_DownloadAgentHelperUpdateLengthEventHandler += value;
+                mDownloadAgentHelperUpdateLengthEventHandler += value;
             }
             remove
             {
-                m_DownloadAgentHelperUpdateLengthEventHandler -= value;
+                mDownloadAgentHelperUpdateLengthEventHandler -= value;
             }
         }
 
@@ -60,11 +60,11 @@ namespace UnityGameFramework.Runtime
         {
             add
             {
-                m_DownloadAgentHelperCompleteEventHandler += value;
+                mDownloadAgentHelperCompleteEventHandler += value;
             }
             remove
             {
-                m_DownloadAgentHelperCompleteEventHandler -= value;
+                mDownloadAgentHelperCompleteEventHandler -= value;
             }
         }
 
@@ -72,77 +72,77 @@ namespace UnityGameFramework.Runtime
         {
             add
             {
-                m_DownloadAgentHelperErrorEventHandler += value;
+                mDownloadAgentHelperErrorEventHandler += value;
             }
             remove
             {
-                m_DownloadAgentHelperErrorEventHandler -= value;
+                mDownloadAgentHelperErrorEventHandler -= value;
             }
         }
 
         public override void Download(string downloadUri, object userData)
         {
-            if (m_DownloadAgentHelperUpdateBytesEventHandler == null || m_DownloadAgentHelperUpdateLengthEventHandler == null || m_DownloadAgentHelperCompleteEventHandler == null || m_DownloadAgentHelperErrorEventHandler == null)
+            if (mDownloadAgentHelperUpdateBytesEventHandler == null || mDownloadAgentHelperUpdateLengthEventHandler == null || mDownloadAgentHelperCompleteEventHandler == null || mDownloadAgentHelperErrorEventHandler == null)
             {
                 Log.Fatal("Download agent helper handler is invalid.");
                 return;
             }
 
-            m_UnityWebRequest = new UnityWebRequest(downloadUri);
-            m_UnityWebRequest.downloadHandler = new DownloadHandler(this);
+            mUnityWebRequest = new UnityWebRequest(downloadUri);
+            mUnityWebRequest.downloadHandler = new DownloadHandler(this);
 #if UNITY_2017_2_OR_NEWER
-            m_UnityWebRequest.SendWebRequest();
+            mUnityWebRequest.SendWebRequest();
 #else
-            m_UnityWebRequest.Send();
+            mUnityWebRequest.Send();
 #endif
         }
 
         public override void Download(string downloadUri, long fromPosition, object userData)
         {
-            if (m_DownloadAgentHelperUpdateBytesEventHandler == null || m_DownloadAgentHelperUpdateLengthEventHandler == null || m_DownloadAgentHelperCompleteEventHandler == null || m_DownloadAgentHelperErrorEventHandler == null)
+            if (mDownloadAgentHelperUpdateBytesEventHandler == null || mDownloadAgentHelperUpdateLengthEventHandler == null || mDownloadAgentHelperCompleteEventHandler == null || mDownloadAgentHelperErrorEventHandler == null)
             {
                 Log.Fatal("Download agent helper handler is invalid.");
                 return;
             }
 
-            m_UnityWebRequest = new UnityWebRequest(downloadUri);
-            m_UnityWebRequest.SetRequestHeader("Range", Utility.Text.Format("bytes={0}-", fromPosition));
-            m_UnityWebRequest.downloadHandler = new DownloadHandler(this);
+            mUnityWebRequest = new UnityWebRequest(downloadUri);
+            mUnityWebRequest.SetRequestHeader("Range", Utility.Text.Format("bytes={0}-", fromPosition));
+            mUnityWebRequest.downloadHandler = new DownloadHandler(this);
 #if UNITY_2017_2_OR_NEWER
-            m_UnityWebRequest.SendWebRequest();
+            mUnityWebRequest.SendWebRequest();
 #else
-            m_UnityWebRequest.Send();
+            mUnityWebRequest.Send();
 #endif
         }
 
         public override void Download(string downloadUri, long fromPosition, long toPosition, object userData)
         {
-            if (m_DownloadAgentHelperUpdateBytesEventHandler == null || m_DownloadAgentHelperUpdateLengthEventHandler == null || m_DownloadAgentHelperCompleteEventHandler == null || m_DownloadAgentHelperErrorEventHandler == null)
+            if (mDownloadAgentHelperUpdateBytesEventHandler == null || mDownloadAgentHelperUpdateLengthEventHandler == null || mDownloadAgentHelperCompleteEventHandler == null || mDownloadAgentHelperErrorEventHandler == null)
             {
                 Log.Fatal("Download agent helper handler is invalid.");
                 return;
             }
 
-            m_UnityWebRequest = new UnityWebRequest(downloadUri);
-            m_UnityWebRequest.SetRequestHeader("Range", Utility.Text.Format("bytes={0}-{1}", fromPosition, toPosition));
-            m_UnityWebRequest.downloadHandler = new DownloadHandler(this);
+            mUnityWebRequest = new UnityWebRequest(downloadUri);
+            mUnityWebRequest.SetRequestHeader("Range", Utility.Text.Format("bytes={0}-{1}", fromPosition, toPosition));
+            mUnityWebRequest.downloadHandler = new DownloadHandler(this);
 #if UNITY_2017_2_OR_NEWER
-            m_UnityWebRequest.SendWebRequest();
+            mUnityWebRequest.SendWebRequest();
 #else
-            m_UnityWebRequest.Send();
+            mUnityWebRequest.Send();
 #endif
         }
 
         public override void Reset()
         {
-            if (m_UnityWebRequest != null)
+            if (mUnityWebRequest != null)
             {
-                m_UnityWebRequest.Abort();
-                m_UnityWebRequest.Dispose();
-                m_UnityWebRequest = null;
+                mUnityWebRequest.Abort();
+                mUnityWebRequest.Dispose();
+                mUnityWebRequest = null;
             }
 
-            Array.Clear(m_CachedBytes, 0, CachedBytesLength);
+            Array.Clear(mCachedBytes, 0, CachedBytesLength);
         }
 
         public void Dispose()
@@ -153,53 +153,53 @@ namespace UnityGameFramework.Runtime
 
         protected virtual void Dispose(bool disposing)
         {
-            if (m_Disposed)
+            if (mDisposed)
             {
                 return;
             }
 
             if (disposing)
             {
-                if (m_UnityWebRequest != null)
+                if (mUnityWebRequest != null)
                 {
-                    m_UnityWebRequest.Dispose();
-                    m_UnityWebRequest = null;
+                    mUnityWebRequest.Dispose();
+                    mUnityWebRequest = null;
                 }
             }
 
-            m_Disposed = true;
+            mDisposed = true;
         }
 
         private void Update()
         {
-            if (m_UnityWebRequest == null)
+            if (mUnityWebRequest == null)
             {
                 return;
             }
 
-            if (!m_UnityWebRequest.isDone)
+            if (!mUnityWebRequest.isDone)
             {
                 return;
             }
 
             bool isError = false;
 #if UNITY_2020_2_OR_NEWER
-            isError = m_UnityWebRequest.result != UnityWebRequest.Result.Success;
+            isError = mUnityWebRequest.result != UnityWebRequest.Result.Success;
 #elif UNITY_2017_1_OR_NEWER
-            isError = m_UnityWebRequest.isNetworkError || m_UnityWebRequest.isHttpError;
+            isError = mUnityWebRequest.isNetworkError || mUnityWebRequest.isHttpError;
 #else
-            isError = m_UnityWebRequest.isError;
+            isError = mUnityWebRequest.isError;
 #endif
             if (isError)
             {
-                DownloadAgentHelperErrorEventArgs downloadAgentHelperErrorEventArgs = DownloadAgentHelperErrorEventArgs.Create(m_UnityWebRequest.responseCode == RangeNotSatisfiableErrorCode, m_UnityWebRequest.error);
-                m_DownloadAgentHelperErrorEventHandler(this, downloadAgentHelperErrorEventArgs);
+                DownloadAgentHelperErrorEventArgs downloadAgentHelperErrorEventArgs = DownloadAgentHelperErrorEventArgs.Create(mUnityWebRequest.responseCode == RangeNotSatisfiableErrorCode, mUnityWebRequest.error);
+                mDownloadAgentHelperErrorEventHandler(this, downloadAgentHelperErrorEventArgs);
                 ReferencePool.Release(downloadAgentHelperErrorEventArgs);
             }
             else
             {
-                DownloadAgentHelperCompleteEventArgs downloadAgentHelperCompleteEventArgs = DownloadAgentHelperCompleteEventArgs.Create((long)m_UnityWebRequest.downloadedBytes);
-                m_DownloadAgentHelperCompleteEventHandler(this, downloadAgentHelperCompleteEventArgs);
+                DownloadAgentHelperCompleteEventArgs downloadAgentHelperCompleteEventArgs = DownloadAgentHelperCompleteEventArgs.Create((long)mUnityWebRequest.downloadedBytes);
+                mDownloadAgentHelperCompleteEventHandler(this, downloadAgentHelperCompleteEventArgs);
                 ReferencePool.Release(downloadAgentHelperCompleteEventArgs);
             }
         }

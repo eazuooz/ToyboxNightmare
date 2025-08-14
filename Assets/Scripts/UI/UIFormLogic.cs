@@ -13,17 +13,17 @@ namespace UnityGameFramework.Runtime
 {
     public abstract class UIFormLogic : MonoBehaviour
     {
-        private bool m_Available = false;
-        private bool m_Visible = false;
-        private UIForm m_UIForm = null;
-        private Transform m_CachedTransform = null;
-        private int m_OriginalLayer = 0;
+        private bool mAvailable = false;
+        private bool mVisible = false;
+        private UIForm mUIForm = null;
+        private Transform mCachedTransform = null;
+        private int mOriginalLayer = 0;
 
         public UIForm UIForm
         {
             get
             {
-                return m_UIForm;
+                return mUIForm;
             }
         }
 
@@ -43,7 +43,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Available;
+                return mAvailable;
             }
         }
 
@@ -51,22 +51,22 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Available && m_Visible;
+                return mAvailable && mVisible;
             }
             set
             {
-                if (!m_Available)
+                if (!mAvailable)
                 {
                     Log.Warning("UI form '{0}' is not available.", Name);
                     return;
                 }
 
-                if (m_Visible == value)
+                if (mVisible == value)
                 {
                     return;
                 }
 
-                m_Visible = value;
+                mVisible = value;
                 InternalSetVisible(value);
             }
         }
@@ -75,19 +75,19 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_CachedTransform;
+                return mCachedTransform;
             }
         }
 
         protected internal virtual void OnInit(object userData)
         {
-            if (m_CachedTransform == null)
+            if (mCachedTransform == null)
             {
-                m_CachedTransform = transform;
+                mCachedTransform = transform;
             }
 
-            m_UIForm = GetComponent<UIForm>();
-            m_OriginalLayer = gameObject.layer;
+            mUIForm = GetComponent<UIForm>();
+            mOriginalLayer = gameObject.layer;
         }
 
         protected internal virtual void OnRecycle()
@@ -96,15 +96,15 @@ namespace UnityGameFramework.Runtime
 
         protected internal virtual void OnOpen(object userData)
         {
-            m_Available = true;
+            mAvailable = true;
             Visible = true;
         }
 
         protected internal virtual void OnClose(bool isShutdown, object userData)
         {
-            gameObject.SetLayerRecursively(m_OriginalLayer);
+            gameObject.SetLayerRecursively(mOriginalLayer);
             Visible = false;
-            m_Available = false;
+            mAvailable = false;
         }
 
         protected internal virtual void OnPause()

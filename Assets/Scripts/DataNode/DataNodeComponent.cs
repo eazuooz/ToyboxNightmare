@@ -17,13 +17,13 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/Data Node")]
     public sealed class DataNodeComponent : GameFrameworkComponent
     {
-        private IDataNodeManager m_DataNodeManager = null;
+        private IDataNodeManager mDataNodeManager = null;
 
         public IDataNode Root
         {
             get
             {
-                return m_DataNodeManager.Root;
+                return mDataNodeManager.Root;
             }
         }
 
@@ -31,8 +31,8 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_DataNodeManager = GameFrameworkEntry.GetModule<IDataNodeManager>();
-            if (m_DataNodeManager == null)
+            mDataNodeManager = GameFrameworkEntry.GetModule<IDataNodeManager>();
+            if (mDataNodeManager == null)
             {
                 Log.Fatal("Data node manager is invalid.");
                 return;
@@ -45,77 +45,77 @@ namespace UnityGameFramework.Runtime
 
         public T GetData<T>(string path) where T : Variable
         {
-            return m_DataNodeManager.GetData<T>(path);
+            return mDataNodeManager.GetData<T>(path);
         }
 
         public Variable GetData(string path)
         {
-            return m_DataNodeManager.GetData(path);
+            return mDataNodeManager.GetData(path);
         }
 
         public T GetData<T>(string path, IDataNode node) where T : Variable
         {
-            return m_DataNodeManager.GetData<T>(path, node);
+            return mDataNodeManager.GetData<T>(path, node);
         }
 
         public Variable GetData(string path, IDataNode node)
         {
-            return m_DataNodeManager.GetData(path, node);
+            return mDataNodeManager.GetData(path, node);
         }
 
         public void SetData<T>(string path, T data) where T : Variable
         {
-            m_DataNodeManager.SetData(path, data);
+            mDataNodeManager.SetData(path, data);
         }
 
         public void SetData(string path, Variable data)
         {
-            m_DataNodeManager.SetData(path, data);
+            mDataNodeManager.SetData(path, data);
         }
 
         public void SetData<T>(string path, T data, IDataNode node) where T : Variable
         {
-            m_DataNodeManager.SetData(path, data, node);
+            mDataNodeManager.SetData(path, data, node);
         }
 
         public void SetData(string path, Variable data, IDataNode node)
         {
-            m_DataNodeManager.SetData(path, data, node);
+            mDataNodeManager.SetData(path, data, node);
         }
 
         public IDataNode GetNode(string path)
         {
-            return m_DataNodeManager.GetNode(path);
+            return mDataNodeManager.GetNode(path);
         }
 
         public IDataNode GetNode(string path, IDataNode node)
         {
-            return m_DataNodeManager.GetNode(path, node);
+            return mDataNodeManager.GetNode(path, node);
         }
 
         public IDataNode GetOrAddNode(string path)
         {
-            return m_DataNodeManager.GetOrAddNode(path);
+            return mDataNodeManager.GetOrAddNode(path);
         }
 
         public IDataNode GetOrAddNode(string path, IDataNode node)
         {
-            return m_DataNodeManager.GetOrAddNode(path, node);
+            return mDataNodeManager.GetOrAddNode(path, node);
         }
 
         public void RemoveNode(string path)
         {
-            m_DataNodeManager.RemoveNode(path);
+            mDataNodeManager.RemoveNode(path);
         }
 
         public void RemoveNode(string path, IDataNode node)
         {
-            m_DataNodeManager.RemoveNode(path, node);
+            mDataNodeManager.RemoveNode(path, node);
         }
 
         public void Clear()
         {
-            m_DataNodeManager.Clear();
+            mDataNodeManager.Clear();
         }
     }
 }

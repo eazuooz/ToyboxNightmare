@@ -17,26 +17,26 @@ namespace UnityGameFramework.Runtime
     {
         public sealed class LogNode : IReference
         {
-            private DateTime m_LogTime;
-            private int m_LogFrameCount;
-            private LogType m_LogType;
-            private string m_LogMessage;
-            private string m_StackTrack;
+            private DateTime mLogTime;
+            private int mLogFrameCount;
+            private LogType mLogType;
+            private string mLogMessage;
+            private string mStackTrack;
 
             public LogNode()
             {
-                m_LogTime = default(DateTime);
-                m_LogFrameCount = 0;
-                m_LogType = LogType.Error;
-                m_LogMessage = null;
-                m_StackTrack = null;
+                mLogTime = default(DateTime);
+                mLogFrameCount = 0;
+                mLogType = LogType.Error;
+                mLogMessage = null;
+                mStackTrack = null;
             }
 
             public DateTime LogTime
             {
                 get
                 {
-                    return m_LogTime;
+                    return mLogTime;
                 }
             }
 
@@ -44,7 +44,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_LogFrameCount;
+                    return mLogFrameCount;
                 }
             }
 
@@ -52,7 +52,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_LogType;
+                    return mLogType;
                 }
             }
 
@@ -60,7 +60,7 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_LogMessage;
+                    return mLogMessage;
                 }
             }
 
@@ -68,28 +68,28 @@ namespace UnityGameFramework.Runtime
             {
                 get
                 {
-                    return m_StackTrack;
+                    return mStackTrack;
                 }
             }
 
             public static LogNode Create(LogType logType, string logMessage, string stackTrack)
             {
                 LogNode logNode = ReferencePool.Acquire<LogNode>();
-                logNode.m_LogTime = DateTime.UtcNow;
-                logNode.m_LogFrameCount = Time.frameCount;
-                logNode.m_LogType = logType;
-                logNode.m_LogMessage = logMessage;
-                logNode.m_StackTrack = stackTrack;
+                logNode.mLogTime = DateTime.UtcNow;
+                logNode.mLogFrameCount = Time.frameCount;
+                logNode.mLogType = logType;
+                logNode.mLogMessage = logMessage;
+                logNode.mStackTrack = stackTrack;
                 return logNode;
             }
 
             public void Clear()
             {
-                m_LogTime = default(DateTime);
-                m_LogFrameCount = 0;
-                m_LogType = LogType.Error;
-                m_LogMessage = null;
-                m_StackTrack = null;
+                mLogTime = default(DateTime);
+                mLogFrameCount = 0;
+                mLogType = LogType.Error;
+                mLogMessage = null;
+                mStackTrack = null;
             }
         }
     }

@@ -20,20 +20,20 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/Procedure")]
     public sealed class ProcedureComponent : GameFrameworkComponent
     {
-        private IProcedureManager m_ProcedureManager = null;
-        private ProcedureBase m_EntranceProcedure = null;
+        private IProcedureManager mProcedureManager = null;
+        private ProcedureBase mEntranceProcedure = null;
 
         [SerializeField]
-        private string[] m_AvailableProcedureTypeNames = null;
+        private string[] mAvailableProcedureTypeNames = null;
 
         [SerializeField]
-        private string m_EntranceProcedureTypeName = null;
+        private string mEntranceProcedureTypeName = null;
 
         public ProcedureBase CurrentProcedure
         {
             get
             {
-                return m_ProcedureManager.CurrentProcedure;
+                return mProcedureManager.CurrentProcedure;
             }
         }
 
@@ -41,7 +41,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ProcedureManager.CurrentProcedureTime;
+                return mProcedureManager.CurrentProcedureTime;
             }
         }
 
@@ -49,8 +49,8 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_ProcedureManager = GameFrameworkEntry.GetModule<IProcedureManager>();
-            if (m_ProcedureManager == null)
+            mProcedureManager = GameFrameworkEntry.GetModule<IProcedureManager>();
+            if (mProcedureManager == null)
             {
                 Log.Fatal("Procedure manager is invalid.");
                 return;
@@ -59,60 +59,60 @@ namespace UnityGameFramework.Runtime
 
         private IEnumerator Start()
         {
-            ProcedureBase[] procedures = new ProcedureBase[m_AvailableProcedureTypeNames.Length];
-            for (int i = 0; i < m_AvailableProcedureTypeNames.Length; i++)
+            ProcedureBase[] procedures = new ProcedureBase[mAvailableProcedureTypeNames.Length];
+            for (int i = 0; i < mAvailableProcedureTypeNames.Length; i++)
             {
-                Type procedureType = Utility.Assembly.GetType(m_AvailableProcedureTypeNames[i]);
+                Type procedureType = Utility.Assembly.GetType(mAvailableProcedureTypeNames[i]);
                 if (procedureType == null)
                 {
-                    Log.Error("Can not find procedure type '{0}'.", m_AvailableProcedureTypeNames[i]);
+                    Log.Error("Can not find procedure type '{0}'.", mAvailableProcedureTypeNames[i]);
                     yield break;
                 }
 
                 procedures[i] = (ProcedureBase)Activator.CreateInstance(procedureType);
                 if (procedures[i] == null)
                 {
-                    Log.Error("Can not create procedure instance '{0}'.", m_AvailableProcedureTypeNames[i]);
+                    Log.Error("Can not create procedure instance '{0}'.", mAvailableProcedureTypeNames[i]);
                     yield break;
                 }
 
-                if (m_EntranceProcedureTypeName == m_AvailableProcedureTypeNames[i])
+                if (mEntranceProcedureTypeName == mAvailableProcedureTypeNames[i])
                 {
-                    m_EntranceProcedure = procedures[i];
+                    mEntranceProcedure = procedures[i];
                 }
             }
 
-            if (m_EntranceProcedure == null)
+            if (mEntranceProcedure == null)
             {
                 Log.Error("Entrance procedure is invalid.");
                 yield break;
             }
 
-            m_ProcedureManager.Initialize(GameFrameworkEntry.GetModule<IFsmManager>(), procedures);
+            mProcedureManager.Initialize(GameFrameworkEntry.GetModule<IFsmManager>(), procedures);
 
             yield return new WaitForEndOfFrame();
 
-            m_ProcedureManager.StartProcedure(m_EntranceProcedure.GetType());
+            mProcedureManager.StartProcedure(mEntranceProcedure.GetType());
         }
 
         public bool HasProcedure<T>() where T : ProcedureBase
         {
-            return m_ProcedureManager.HasProcedure<T>();
+            return mProcedureManager.HasProcedure<T>();
         }
 
         public bool HasProcedure(Type procedureType)
         {
-            return m_ProcedureManager.HasProcedure(procedureType);
+            return mProcedureManager.HasProcedure(procedureType);
         }
 
         public ProcedureBase GetProcedure<T>() where T : ProcedureBase
         {
-            return m_ProcedureManager.GetProcedure<T>();
+            return mProcedureManager.GetProcedure<T>();
         }
 
         public ProcedureBase GetProcedure(Type procedureType)
         {
-            return m_ProcedureManager.GetProcedure(procedureType);
+            return mProcedureManager.GetProcedure(procedureType);
         }
     }
 }

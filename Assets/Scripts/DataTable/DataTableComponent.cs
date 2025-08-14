@@ -22,29 +22,29 @@ namespace UnityGameFramework.Runtime
     {
         private const int DefaultPriority = 0;
 
-        private IDataTableManager m_DataTableManager = null;
-        private EventComponent m_EventComponent = null;
+        private IDataTableManager mDataTableManager = null;
+        private EventComponent mEventComponent = null;
 
         [SerializeField]
-        private bool m_EnableLoadDataTableUpdateEvent = false;
+        private bool mEnableLoadDataTableUpdateEvent = false;
 
         [SerializeField]
-        private bool m_EnableLoadDataTableDependencyAssetEvent = false;
+        private bool mEnableLoadDataTableDependencyAssetEvent = false;
 
         [SerializeField]
-        private string m_DataTableHelperTypeName = "UnityGameFramework.Runtime.DefaultDataTableHelper";
+        private string mDataTableHelperTypeName = "UnityGameFramework.Runtime.DefaultDataTableHelper";
 
         [SerializeField]
-        private DataTableHelperBase m_CustomDataTableHelper = null;
+        private DataTableHelperBase mCustomDataTableHelper = null;
 
         [SerializeField]
-        private int m_CachedBytesSize = 0;
+        private int mCachedBytesSize = 0;
 
         public int Count
         {
             get
             {
-                return m_DataTableManager.Count;
+                return mDataTableManager.Count;
             }
         }
 
@@ -52,7 +52,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DataTableManager.CachedBytesSize;
+                return mDataTableManager.CachedBytesSize;
             }
         }
 
@@ -60,8 +60,8 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_DataTableManager = GameFrameworkEntry.GetModule<IDataTableManager>();
-            if (m_DataTableManager == null)
+            mDataTableManager = GameFrameworkEntry.GetModule<IDataTableManager>();
+            if (mDataTableManager == null)
             {
                 Log.Fatal("Data table manager is invalid.");
                 return;
@@ -77,8 +77,8 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
@@ -86,14 +86,14 @@ namespace UnityGameFramework.Runtime
 
             if (baseComponent.EditorResourceMode)
             {
-                m_DataTableManager.SetResourceManager(baseComponent.EditorResourceHelper);
+                mDataTableManager.SetResourceManager(baseComponent.EditorResourceHelper);
             }
             else
             {
-                m_DataTableManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
+                mDataTableManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
             }
 
-            DataTableHelperBase dataTableHelper = Helper.CreateHelper(m_DataTableHelperTypeName, m_CustomDataTableHelper);
+            DataTableHelperBase dataTableHelper = Helper.CreateHelper(mDataTableHelperTypeName, mCustomDataTableHelper);
             if (dataTableHelper == null)
             {
                 Log.Error("Can not create data table helper.");
@@ -105,72 +105,72 @@ namespace UnityGameFramework.Runtime
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_DataTableManager.SetDataProviderHelper(dataTableHelper);
-            m_DataTableManager.SetDataTableHelper(dataTableHelper);
-            if (m_CachedBytesSize > 0)
+            mDataTableManager.SetDataProviderHelper(dataTableHelper);
+            mDataTableManager.SetDataTableHelper(dataTableHelper);
+            if (mCachedBytesSize > 0)
             {
-                EnsureCachedBytesSize(m_CachedBytesSize);
+                EnsureCachedBytesSize(mCachedBytesSize);
             }
         }
 
         public void EnsureCachedBytesSize(int ensureSize)
         {
-            m_DataTableManager.EnsureCachedBytesSize(ensureSize);
+            mDataTableManager.EnsureCachedBytesSize(ensureSize);
         }
 
         public void FreeCachedBytes()
         {
-            m_DataTableManager.FreeCachedBytes();
+            mDataTableManager.FreeCachedBytes();
         }
 
         public bool HasDataTable<T>() where T : IDataRow
         {
-            return m_DataTableManager.HasDataTable<T>();
+            return mDataTableManager.HasDataTable<T>();
         }
 
         public bool HasDataTable(Type dataRowType)
         {
-            return m_DataTableManager.HasDataTable(dataRowType);
+            return mDataTableManager.HasDataTable(dataRowType);
         }
 
         public bool HasDataTable<T>(string name) where T : IDataRow
         {
-            return m_DataTableManager.HasDataTable<T>(name);
+            return mDataTableManager.HasDataTable<T>(name);
         }
 
         public bool HasDataTable(Type dataRowType, string name)
         {
-            return m_DataTableManager.HasDataTable(dataRowType, name);
+            return mDataTableManager.HasDataTable(dataRowType, name);
         }
 
         public IDataTable<T> GetDataTable<T>() where T : IDataRow
         {
-            return m_DataTableManager.GetDataTable<T>();
+            return mDataTableManager.GetDataTable<T>();
         }
 
         public DataTableBase GetDataTable(Type dataRowType)
         {
-            return m_DataTableManager.GetDataTable(dataRowType);
+            return mDataTableManager.GetDataTable(dataRowType);
         }
 
         public IDataTable<T> GetDataTable<T>(string name) where T : IDataRow
         {
-            return m_DataTableManager.GetDataTable<T>(name);
+            return mDataTableManager.GetDataTable<T>(name);
         }
 
         public DataTableBase GetDataTable(Type dataRowType, string name)
         {
-            return m_DataTableManager.GetDataTable(dataRowType, name);
+            return mDataTableManager.GetDataTable(dataRowType, name);
         }
 
         public DataTableBase[] GetAllDataTables()
         {
-            return m_DataTableManager.GetAllDataTables();
+            return mDataTableManager.GetAllDataTables();
         }
 
         public void GetAllDataTables(List<DataTableBase> results)
         {
-            m_DataTableManager.GetAllDataTables(results);
+            mDataTableManager.GetAllDataTables(results);
         }
 
         public IDataTable<T> CreateDataTable<T>() where T : class, IDataRow, new()
@@ -185,17 +185,17 @@ namespace UnityGameFramework.Runtime
 
         public IDataTable<T> CreateDataTable<T>(string name) where T : class, IDataRow, new()
         {
-            IDataTable<T> dataTable = m_DataTableManager.CreateDataTable<T>(name);
+            IDataTable<T> dataTable = mDataTableManager.CreateDataTable<T>(name);
             DataTableBase dataTableBase = (DataTableBase)dataTable;
             dataTableBase.ReadDataSuccess += OnReadDataSuccess;
             dataTableBase.ReadDataFailure += OnReadDataFailure;
 
-            if (m_EnableLoadDataTableUpdateEvent)
+            if (mEnableLoadDataTableUpdateEvent)
             {
                 dataTableBase.ReadDataUpdate += OnReadDataUpdate;
             }
 
-            if (m_EnableLoadDataTableDependencyAssetEvent)
+            if (mEnableLoadDataTableDependencyAssetEvent)
             {
                 dataTableBase.ReadDataDependencyAsset += OnReadDataDependencyAsset;
             }
@@ -205,16 +205,16 @@ namespace UnityGameFramework.Runtime
 
         public DataTableBase CreateDataTable(Type dataRowType, string name)
         {
-            DataTableBase dataTable = m_DataTableManager.CreateDataTable(dataRowType, name);
+            DataTableBase dataTable = mDataTableManager.CreateDataTable(dataRowType, name);
             dataTable.ReadDataSuccess += OnReadDataSuccess;
             dataTable.ReadDataFailure += OnReadDataFailure;
 
-            if (m_EnableLoadDataTableUpdateEvent)
+            if (mEnableLoadDataTableUpdateEvent)
             {
                 dataTable.ReadDataUpdate += OnReadDataUpdate;
             }
 
-            if (m_EnableLoadDataTableDependencyAssetEvent)
+            if (mEnableLoadDataTableDependencyAssetEvent)
             {
                 dataTable.ReadDataDependencyAsset += OnReadDataDependencyAsset;
             }
@@ -224,53 +224,53 @@ namespace UnityGameFramework.Runtime
 
         public bool DestroyDataTable<T>() where T : IDataRow, new()
         {
-            return m_DataTableManager.DestroyDataTable<T>();
+            return mDataTableManager.DestroyDataTable<T>();
         }
 
         public bool DestroyDataTable(Type dataRowType)
         {
-            return m_DataTableManager.DestroyDataTable(dataRowType);
+            return mDataTableManager.DestroyDataTable(dataRowType);
         }
 
         public bool DestroyDataTable<T>(string name) where T : IDataRow
         {
-            return m_DataTableManager.DestroyDataTable<T>(name);
+            return mDataTableManager.DestroyDataTable<T>(name);
         }
 
         public bool DestroyDataTable(Type dataRowType, string name)
         {
-            return m_DataTableManager.DestroyDataTable(dataRowType, name);
+            return mDataTableManager.DestroyDataTable(dataRowType, name);
         }
 
         public bool DestroyDataTable<T>(IDataTable<T> dataTable) where T : IDataRow
         {
-            return m_DataTableManager.DestroyDataTable(dataTable);
+            return mDataTableManager.DestroyDataTable(dataTable);
         }
 
         public bool DestroyDataTable(DataTableBase dataTable)
         {
-            return m_DataTableManager.DestroyDataTable(dataTable);
+            return mDataTableManager.DestroyDataTable(dataTable);
         }
 
         private void OnReadDataSuccess(object sender, ReadDataSuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadDataTableSuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDataTableSuccessEventArgs.Create(e));
         }
 
         private void OnReadDataFailure(object sender, ReadDataFailureEventArgs e)
         {
             Log.Warning("Load data table failure, asset name '{0}', error message '{1}'.", e.DataAssetName, e.ErrorMessage);
-            m_EventComponent.Fire(this, LoadDataTableFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDataTableFailureEventArgs.Create(e));
         }
 
         private void OnReadDataUpdate(object sender, ReadDataUpdateEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadDataTableUpdateEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDataTableUpdateEventArgs.Create(e));
         }
 
         private void OnReadDataDependencyAsset(object sender, ReadDataDependencyAssetEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadDataTableDependencyAssetEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDataTableDependencyAssetEventArgs.Create(e));
         }
     }
 }

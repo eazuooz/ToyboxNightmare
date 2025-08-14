@@ -21,36 +21,36 @@ namespace UnityGameFramework.Runtime
         private const int DefaultPriority = 0;
         private const int OneMegaBytes = 1024 * 1024;
 
-        private IDownloadManager m_DownloadManager = null;
-        private EventComponent m_EventComponent = null;
+        private IDownloadManager mDownloadManager = null;
+        private EventComponent mEventComponent = null;
 
         [SerializeField]
-        private Transform m_InstanceRoot = null;
+        private Transform mInstanceRoot = null;
 
         [SerializeField]
-        private string m_DownloadAgentHelperTypeName = "UnityGameFramework.Runtime.UnityWebRequestDownloadAgentHelper";
+        private string mDownloadAgentHelperTypeName = "UnityGameFramework.Runtime.UnityWebRequestDownloadAgentHelper";
 
         [SerializeField]
-        private DownloadAgentHelperBase m_CustomDownloadAgentHelper = null;
+        private DownloadAgentHelperBase mCustomDownloadAgentHelper = null;
 
         [SerializeField]
-        private int m_DownloadAgentHelperCount = 3;
+        private int mDownloadAgentHelperCount = 3;
 
         [SerializeField]
-        private float m_Timeout = 30f;
+        private float mTimeout = 30f;
 
         [SerializeField]
-        private int m_FlushSize = OneMegaBytes;
+        private int mFlushSize = OneMegaBytes;
 
         public bool Paused
         {
             get
             {
-                return m_DownloadManager.Paused;
+                return mDownloadManager.Paused;
             }
             set
             {
-                m_DownloadManager.Paused = value;
+                mDownloadManager.Paused = value;
             }
         }
 
@@ -58,7 +58,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.TotalAgentCount;
+                return mDownloadManager.TotalAgentCount;
             }
         }
 
@@ -66,7 +66,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.FreeAgentCount;
+                return mDownloadManager.FreeAgentCount;
             }
         }
 
@@ -74,7 +74,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.WorkingAgentCount;
+                return mDownloadManager.WorkingAgentCount;
             }
         }
 
@@ -82,7 +82,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.WaitingTaskCount;
+                return mDownloadManager.WaitingTaskCount;
             }
         }
 
@@ -90,11 +90,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.Timeout;
+                return mDownloadManager.Timeout;
             }
             set
             {
-                m_DownloadManager.Timeout = m_Timeout = value;
+                mDownloadManager.Timeout = mTimeout = value;
             }
         }
 
@@ -102,11 +102,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.FlushSize;
+                return mDownloadManager.FlushSize;
             }
             set
             {
-                m_DownloadManager.FlushSize = m_FlushSize = value;
+                mDownloadManager.FlushSize = mFlushSize = value;
             }
         }
 
@@ -114,7 +114,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_DownloadManager.CurrentSpeed;
+                return mDownloadManager.CurrentSpeed;
             }
         }
 
@@ -122,38 +122,38 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_DownloadManager = GameFrameworkEntry.GetModule<IDownloadManager>();
-            if (m_DownloadManager == null)
+            mDownloadManager = GameFrameworkEntry.GetModule<IDownloadManager>();
+            if (mDownloadManager == null)
             {
                 Log.Fatal("Download manager is invalid.");
                 return;
             }
 
-            m_DownloadManager.DownloadStart += OnDownloadStart;
-            m_DownloadManager.DownloadUpdate += OnDownloadUpdate;
-            m_DownloadManager.DownloadSuccess += OnDownloadSuccess;
-            m_DownloadManager.DownloadFailure += OnDownloadFailure;
-            m_DownloadManager.FlushSize = m_FlushSize;
-            m_DownloadManager.Timeout = m_Timeout;
+            mDownloadManager.DownloadStart += OnDownloadStart;
+            mDownloadManager.DownloadUpdate += OnDownloadUpdate;
+            mDownloadManager.DownloadSuccess += OnDownloadSuccess;
+            mDownloadManager.DownloadFailure += OnDownloadFailure;
+            mDownloadManager.FlushSize = mFlushSize;
+            mDownloadManager.Timeout = mTimeout;
         }
 
         private void Start()
         {
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
             }
 
-            if (m_InstanceRoot == null)
+            if (mInstanceRoot == null)
             {
-                m_InstanceRoot = new GameObject("Download Agent Instances").transform;
-                m_InstanceRoot.SetParent(gameObject.transform);
-                m_InstanceRoot.localScale = Vector3.one;
+                mInstanceRoot = new GameObject("Download Agent Instances").transform;
+                mInstanceRoot.SetParent(gameObject.transform);
+                mInstanceRoot.localScale = Vector3.one;
             }
 
-            for (int i = 0; i < m_DownloadAgentHelperCount; i++)
+            for (int i = 0; i < mDownloadAgentHelperCount; i++)
             {
                 AddDownloadAgentHelper(i);
             }
@@ -161,27 +161,27 @@ namespace UnityGameFramework.Runtime
 
         public TaskInfo GetDownloadInfo(int serialId)
         {
-            return m_DownloadManager.GetDownloadInfo(serialId);
+            return mDownloadManager.GetDownloadInfo(serialId);
         }
 
         public TaskInfo[] GetDownloadInfos(string tag)
         {
-            return m_DownloadManager.GetDownloadInfos(tag);
+            return mDownloadManager.GetDownloadInfos(tag);
         }
 
         public void GetDownloadInfos(string tag, List<TaskInfo> results)
         {
-            m_DownloadManager.GetDownloadInfos(tag, results);
+            mDownloadManager.GetDownloadInfos(tag, results);
         }
 
         public TaskInfo[] GetAllDownloadInfos()
         {
-            return m_DownloadManager.GetAllDownloadInfos();
+            return mDownloadManager.GetAllDownloadInfos();
         }
 
         public void GetAllDownloadInfos(List<TaskInfo> results)
         {
-            m_DownloadManager.GetAllDownloadInfos(results);
+            mDownloadManager.GetAllDownloadInfos(results);
         }
 
         public int AddDownload(string downloadPath, string downloadUri)
@@ -221,27 +221,27 @@ namespace UnityGameFramework.Runtime
 
         public int AddDownload(string downloadPath, string downloadUri, string tag, int priority, object userData)
         {
-            return m_DownloadManager.AddDownload(downloadPath, downloadUri, tag, priority, userData);
+            return mDownloadManager.AddDownload(downloadPath, downloadUri, tag, priority, userData);
         }
 
         public bool RemoveDownload(int serialId)
         {
-            return m_DownloadManager.RemoveDownload(serialId);
+            return mDownloadManager.RemoveDownload(serialId);
         }
 
         public int RemoveDownloads(string tag)
         {
-            return m_DownloadManager.RemoveDownloads(tag);
+            return mDownloadManager.RemoveDownloads(tag);
         }
 
         public int RemoveAllDownloads()
         {
-            return m_DownloadManager.RemoveAllDownloads();
+            return mDownloadManager.RemoveAllDownloads();
         }
 
         private void AddDownloadAgentHelper(int index)
         {
-            DownloadAgentHelperBase downloadAgentHelper = Helper.CreateHelper(m_DownloadAgentHelperTypeName, m_CustomDownloadAgentHelper, index);
+            DownloadAgentHelperBase downloadAgentHelper = Helper.CreateHelper(mDownloadAgentHelperTypeName, mCustomDownloadAgentHelper, index);
             if (downloadAgentHelper == null)
             {
                 Log.Error("Can not create download agent helper.");
@@ -250,31 +250,31 @@ namespace UnityGameFramework.Runtime
 
             downloadAgentHelper.name = Utility.Text.Format("Download Agent Helper - {0}", index);
             Transform transform = downloadAgentHelper.transform;
-            transform.SetParent(m_InstanceRoot);
+            transform.SetParent(mInstanceRoot);
             transform.localScale = Vector3.one;
 
-            m_DownloadManager.AddDownloadAgentHelper(downloadAgentHelper);
+            mDownloadManager.AddDownloadAgentHelper(downloadAgentHelper);
         }
 
         private void OnDownloadStart(object sender, GameFramework.Download.DownloadStartEventArgs e)
         {
-            m_EventComponent.Fire(this, DownloadStartEventArgs.Create(e));
+            mEventComponent.Fire(this, DownloadStartEventArgs.Create(e));
         }
 
         private void OnDownloadUpdate(object sender, GameFramework.Download.DownloadUpdateEventArgs e)
         {
-            m_EventComponent.Fire(this, DownloadUpdateEventArgs.Create(e));
+            mEventComponent.Fire(this, DownloadUpdateEventArgs.Create(e));
         }
 
         private void OnDownloadSuccess(object sender, GameFramework.Download.DownloadSuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, DownloadSuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, DownloadSuccessEventArgs.Create(e));
         }
 
         private void OnDownloadFailure(object sender, GameFramework.Download.DownloadFailureEventArgs e)
         {
             Log.Warning("Download failure, download serial id '{0}', download path '{1}', download uri '{2}', error message '{3}'.", e.SerialId, e.DownloadPath, e.DownloadUri, e.ErrorMessage);
-            m_EventComponent.Fire(this, DownloadFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, DownloadFailureEventArgs.Create(e));
         }
     }
 }

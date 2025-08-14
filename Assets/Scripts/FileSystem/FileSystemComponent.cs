@@ -18,19 +18,19 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/File System")]
     public sealed class FileSystemComponent : GameFrameworkComponent
     {
-        private IFileSystemManager m_FileSystemManager = null;
+        private IFileSystemManager mFileSystemManager = null;
 
         [SerializeField]
-        private string m_FileSystemHelperTypeName = "UnityGameFramework.Runtime.DefaultFileSystemHelper";
+        private string mFileSystemHelperTypeName = "UnityGameFramework.Runtime.DefaultFileSystemHelper";
 
         [SerializeField]
-        private FileSystemHelperBase m_CustomFileSystemHelper = null;
+        private FileSystemHelperBase mCustomFileSystemHelper = null;
 
         public int Count
         {
             get
             {
-                return m_FileSystemManager.Count;
+                return mFileSystemManager.Count;
             }
         }
 
@@ -38,14 +38,14 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_FileSystemManager = GameFrameworkEntry.GetModule<IFileSystemManager>();
-            if (m_FileSystemManager == null)
+            mFileSystemManager = GameFrameworkEntry.GetModule<IFileSystemManager>();
+            if (mFileSystemManager == null)
             {
                 Log.Fatal("File system manager is invalid.");
                 return;
             }
 
-            FileSystemHelperBase fileSystemHelper = Helper.CreateHelper(m_FileSystemHelperTypeName, m_CustomFileSystemHelper);
+            FileSystemHelperBase fileSystemHelper = Helper.CreateHelper(mFileSystemHelperTypeName, mCustomFileSystemHelper);
             if (fileSystemHelper == null)
             {
                 Log.Error("Can not create fileSystem helper.");
@@ -57,7 +57,7 @@ namespace UnityGameFramework.Runtime
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_FileSystemManager.SetFileSystemHelper(fileSystemHelper);
+            mFileSystemManager.SetFileSystemHelper(fileSystemHelper);
         }
 
         private void Start()
@@ -66,37 +66,37 @@ namespace UnityGameFramework.Runtime
 
         public bool HasFileSystem(string fullPath)
         {
-            return m_FileSystemManager.HasFileSystem(fullPath);
+            return mFileSystemManager.HasFileSystem(fullPath);
         }
 
         public IFileSystem GetFileSystem(string fullPath)
         {
-            return m_FileSystemManager.GetFileSystem(fullPath);
+            return mFileSystemManager.GetFileSystem(fullPath);
         }
 
         public IFileSystem CreateFileSystem(string fullPath, FileSystemAccess access, int maxFileCount, int maxBlockCount)
         {
-            return m_FileSystemManager.CreateFileSystem(fullPath, access, maxFileCount, maxBlockCount);
+            return mFileSystemManager.CreateFileSystem(fullPath, access, maxFileCount, maxBlockCount);
         }
 
         public IFileSystem LoadFileSystem(string fullPath, FileSystemAccess access)
         {
-            return m_FileSystemManager.LoadFileSystem(fullPath, access);
+            return mFileSystemManager.LoadFileSystem(fullPath, access);
         }
 
         public void DestroyFileSystem(IFileSystem fileSystem, bool deletePhysicalFile)
         {
-            m_FileSystemManager.DestroyFileSystem(fileSystem, deletePhysicalFile);
+            mFileSystemManager.DestroyFileSystem(fileSystem, deletePhysicalFile);
         }
 
         public IFileSystem[] GetAllFileSystems()
         {
-            return m_FileSystemManager.GetAllFileSystems();
+            return mFileSystemManager.GetAllFileSystems();
         }
 
         public void GetAllFileSystems(List<IFileSystem> results)
         {
-            m_FileSystemManager.GetAllFileSystems(results);
+            mFileSystemManager.GetAllFileSystems(results);
         }
     }
 }

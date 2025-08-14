@@ -19,13 +19,13 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/Object Pool")]
     public sealed class ObjectPoolComponent : GameFrameworkComponent
     {
-        private IObjectPoolManager m_ObjectPoolManager = null;
+        private IObjectPoolManager mObjectPoolManager = null;
 
         public int Count
         {
             get
             {
-                return m_ObjectPoolManager.Count;
+                return mObjectPoolManager.Count;
             }
         }
 
@@ -33,8 +33,8 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_ObjectPoolManager = GameFrameworkEntry.GetModule<IObjectPoolManager>();
-            if (m_ObjectPoolManager == null)
+            mObjectPoolManager = GameFrameworkEntry.GetModule<IObjectPoolManager>();
+            if (mObjectPoolManager == null)
             {
                 Log.Fatal("Object pool manager is invalid.");
                 return;
@@ -47,424 +47,424 @@ namespace UnityGameFramework.Runtime
 
         public bool HasObjectPool<T>() where T : ObjectBase
         {
-            return m_ObjectPoolManager.HasObjectPool<T>();
+            return mObjectPoolManager.HasObjectPool<T>();
         }
 
         public bool HasObjectPool(Type objectType)
         {
-            return m_ObjectPoolManager.HasObjectPool(objectType);
+            return mObjectPoolManager.HasObjectPool(objectType);
         }
 
         public bool HasObjectPool<T>(string name) where T : ObjectBase
         {
-            return m_ObjectPoolManager.HasObjectPool<T>(name);
+            return mObjectPoolManager.HasObjectPool<T>(name);
         }
 
         public bool HasObjectPool(Type objectType, string name)
         {
-            return m_ObjectPoolManager.HasObjectPool(objectType, name);
+            return mObjectPoolManager.HasObjectPool(objectType, name);
         }
 
         public bool HasObjectPool(Predicate<ObjectPoolBase> condition)
         {
-            return m_ObjectPoolManager.HasObjectPool(condition);
+            return mObjectPoolManager.HasObjectPool(condition);
         }
 
         public IObjectPool<T> GetObjectPool<T>() where T : ObjectBase
         {
-            return m_ObjectPoolManager.GetObjectPool<T>();
+            return mObjectPoolManager.GetObjectPool<T>();
         }
 
         public ObjectPoolBase GetObjectPool(Type objectType)
         {
-            return m_ObjectPoolManager.GetObjectPool(objectType);
+            return mObjectPoolManager.GetObjectPool(objectType);
         }
 
         public IObjectPool<T> GetObjectPool<T>(string name) where T : ObjectBase
         {
-            return m_ObjectPoolManager.GetObjectPool<T>(name);
+            return mObjectPoolManager.GetObjectPool<T>(name);
         }
 
         public ObjectPoolBase GetObjectPool(Type objectType, string name)
         {
-            return m_ObjectPoolManager.GetObjectPool(objectType, name);
+            return mObjectPoolManager.GetObjectPool(objectType, name);
         }
 
         public ObjectPoolBase GetObjectPool(Predicate<ObjectPoolBase> condition)
         {
-            return m_ObjectPoolManager.GetObjectPool(condition);
+            return mObjectPoolManager.GetObjectPool(condition);
         }
 
         public ObjectPoolBase[] GetObjectPools(Predicate<ObjectPoolBase> condition)
         {
-            return m_ObjectPoolManager.GetObjectPools(condition);
+            return mObjectPoolManager.GetObjectPools(condition);
         }
 
         public void GetObjectPools(Predicate<ObjectPoolBase> condition, List<ObjectPoolBase> results)
         {
-            m_ObjectPoolManager.GetObjectPools(condition, results);
+            mObjectPoolManager.GetObjectPools(condition, results);
         }
 
         public ObjectPoolBase[] GetAllObjectPools()
         {
-            return m_ObjectPoolManager.GetAllObjectPools();
+            return mObjectPoolManager.GetAllObjectPools();
         }
 
         public void GetAllObjectPools(List<ObjectPoolBase> results)
         {
-            m_ObjectPoolManager.GetAllObjectPools(results);
+            mObjectPoolManager.GetAllObjectPools(results);
         }
 
         public ObjectPoolBase[] GetAllObjectPools(bool sort)
         {
-            return m_ObjectPoolManager.GetAllObjectPools(sort);
+            return mObjectPoolManager.GetAllObjectPools(sort);
         }
 
         public void GetAllObjectPools(bool sort, List<ObjectPoolBase> results)
         {
-            m_ObjectPoolManager.GetAllObjectPools(sort, results);
+            mObjectPoolManager.GetAllObjectPools(sort, results);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>() where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>();
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>();
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(int capacity) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, int capacity)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(expireTime);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, float expireTime)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, expireTime);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, int capacity) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, int capacity)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, expireTime);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, float expireTime)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, expireTime);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(int capacity, float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity, expireTime);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, int capacity, float expireTime)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity, expireTime);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(int capacity, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, int capacity, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity, priority);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(expireTime, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, expireTime, priority);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, int capacity, float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity, expireTime);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, int capacity, float expireTime)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity, expireTime);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity, expireTime);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, int capacity, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, int capacity, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity, priority);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, expireTime, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, expireTime, priority);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(int capacity, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(capacity, expireTime, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, int capacity, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, capacity, expireTime, priority);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, int capacity, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, capacity, expireTime, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, int capacity, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, capacity, expireTime, priority);
         }
 
         public IObjectPool<T> CreateSingleSpawnObjectPool<T>(string name, float autoReleaseInterval, int capacity, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, autoReleaseInterval, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool<T>(name, autoReleaseInterval, capacity, expireTime, priority);
         }
 
         public ObjectPoolBase CreateSingleSpawnObjectPool(Type objectType, string name, float autoReleaseInterval, int capacity, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, autoReleaseInterval, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateSingleSpawnObjectPool(objectType, name, autoReleaseInterval, capacity, expireTime, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>() where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>();
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>();
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(int capacity) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, int capacity)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(expireTime);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, float expireTime)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, expireTime);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, int capacity) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, int capacity)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, expireTime);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, float expireTime)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, expireTime);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(int capacity, float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity, expireTime);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, int capacity, float expireTime)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity, expireTime);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(int capacity, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, int capacity, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(expireTime, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, expireTime, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, int capacity, float expireTime) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity, expireTime);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, int capacity, float expireTime)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity, expireTime);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity, expireTime);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, int capacity, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, int capacity, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, expireTime, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, expireTime, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(int capacity, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(capacity, expireTime, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, int capacity, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, capacity, expireTime, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, int capacity, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, capacity, expireTime, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, int capacity, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, capacity, expireTime, priority);
         }
 
         public IObjectPool<T> CreateMultiSpawnObjectPool<T>(string name, float autoReleaseInterval, int capacity, float expireTime, int priority) where T : ObjectBase
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, autoReleaseInterval, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool<T>(name, autoReleaseInterval, capacity, expireTime, priority);
         }
 
         public ObjectPoolBase CreateMultiSpawnObjectPool(Type objectType, string name, float autoReleaseInterval, int capacity, float expireTime, int priority)
         {
-            return m_ObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, autoReleaseInterval, capacity, expireTime, priority);
+            return mObjectPoolManager.CreateMultiSpawnObjectPool(objectType, name, autoReleaseInterval, capacity, expireTime, priority);
         }
 
         public bool DestroyObjectPool<T>() where T : ObjectBase
         {
-            return m_ObjectPoolManager.DestroyObjectPool<T>();
+            return mObjectPoolManager.DestroyObjectPool<T>();
         }
 
         public bool DestroyObjectPool(Type objectType)
         {
-            return m_ObjectPoolManager.DestroyObjectPool(objectType);
+            return mObjectPoolManager.DestroyObjectPool(objectType);
         }
 
         public bool DestroyObjectPool<T>(string name) where T : ObjectBase
         {
-            return m_ObjectPoolManager.DestroyObjectPool<T>(name);
+            return mObjectPoolManager.DestroyObjectPool<T>(name);
         }
 
         public bool DestroyObjectPool(Type objectType, string name)
         {
-            return m_ObjectPoolManager.DestroyObjectPool(objectType, name);
+            return mObjectPoolManager.DestroyObjectPool(objectType, name);
         }
 
         public bool DestroyObjectPool<T>(IObjectPool<T> objectPool) where T : ObjectBase
         {
-            return m_ObjectPoolManager.DestroyObjectPool(objectPool);
+            return mObjectPoolManager.DestroyObjectPool(objectPool);
         }
 
         public bool DestroyObjectPool(ObjectPoolBase objectPool)
         {
-            return m_ObjectPoolManager.DestroyObjectPool(objectPool);
+            return mObjectPoolManager.DestroyObjectPool(objectPool);
         }
 
         public void Release()
         {
             Log.Info("Object pool release...");
-            m_ObjectPoolManager.Release();
+            mObjectPoolManager.Release();
         }
 
         public void ReleaseAllUnused()
         {
             Log.Info("Object pool release all unused...");
-            m_ObjectPoolManager.ReleaseAllUnused();
+            mObjectPoolManager.ReleaseAllUnused();
         }
     }
 }

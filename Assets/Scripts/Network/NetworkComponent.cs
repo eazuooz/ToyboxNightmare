@@ -18,14 +18,14 @@ namespace UnityGameFramework.Runtime
     [AddComponentMenu("Game Framework/Network")]
     public sealed class NetworkComponent : GameFrameworkComponent
     {
-        private INetworkManager m_NetworkManager = null;
-        private EventComponent m_EventComponent = null;
+        private INetworkManager mNetworkManager = null;
+        private EventComponent mEventComponent = null;
 
         public int NetworkChannelCount
         {
             get
             {
-                return m_NetworkManager.NetworkChannelCount;
+                return mNetworkManager.NetworkChannelCount;
             }
         }
 
@@ -33,24 +33,24 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_NetworkManager = GameFrameworkEntry.GetModule<INetworkManager>();
-            if (m_NetworkManager == null)
+            mNetworkManager = GameFrameworkEntry.GetModule<INetworkManager>();
+            if (mNetworkManager == null)
             {
                 Log.Fatal("Network manager is invalid.");
                 return;
             }
 
-            m_NetworkManager.NetworkConnected += OnNetworkConnected;
-            m_NetworkManager.NetworkClosed += OnNetworkClosed;
-            m_NetworkManager.NetworkMissHeartBeat += OnNetworkMissHeartBeat;
-            m_NetworkManager.NetworkError += OnNetworkError;
-            m_NetworkManager.NetworkCustomError += OnNetworkCustomError;
+            mNetworkManager.NetworkConnected += OnNetworkConnected;
+            mNetworkManager.NetworkClosed += OnNetworkClosed;
+            mNetworkManager.NetworkMissHeartBeat += OnNetworkMissHeartBeat;
+            mNetworkManager.NetworkError += OnNetworkError;
+            mNetworkManager.NetworkCustomError += OnNetworkCustomError;
         }
 
         private void Start()
         {
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
@@ -59,57 +59,57 @@ namespace UnityGameFramework.Runtime
 
         public bool HasNetworkChannel(string name)
         {
-            return m_NetworkManager.HasNetworkChannel(name);
+            return mNetworkManager.HasNetworkChannel(name);
         }
 
         public INetworkChannel GetNetworkChannel(string name)
         {
-            return m_NetworkManager.GetNetworkChannel(name);
+            return mNetworkManager.GetNetworkChannel(name);
         }
 
         public INetworkChannel[] GetAllNetworkChannels()
         {
-            return m_NetworkManager.GetAllNetworkChannels();
+            return mNetworkManager.GetAllNetworkChannels();
         }
 
         public void GetAllNetworkChannels(List<INetworkChannel> results)
         {
-            m_NetworkManager.GetAllNetworkChannels(results);
+            mNetworkManager.GetAllNetworkChannels(results);
         }
 
         public INetworkChannel CreateNetworkChannel(string name, ServiceType serviceType, INetworkChannelHelper networkChannelHelper)
         {
-            return m_NetworkManager.CreateNetworkChannel(name, serviceType, networkChannelHelper);
+            return mNetworkManager.CreateNetworkChannel(name, serviceType, networkChannelHelper);
         }
 
         public bool DestroyNetworkChannel(string name)
         {
-            return m_NetworkManager.DestroyNetworkChannel(name);
+            return mNetworkManager.DestroyNetworkChannel(name);
         }
 
         private void OnNetworkConnected(object sender, GameFramework.Network.NetworkConnectedEventArgs e)
         {
-            m_EventComponent.Fire(this, NetworkConnectedEventArgs.Create(e));
+            mEventComponent.Fire(this, NetworkConnectedEventArgs.Create(e));
         }
 
         private void OnNetworkClosed(object sender, GameFramework.Network.NetworkClosedEventArgs e)
         {
-            m_EventComponent.Fire(this, NetworkClosedEventArgs.Create(e));
+            mEventComponent.Fire(this, NetworkClosedEventArgs.Create(e));
         }
 
         private void OnNetworkMissHeartBeat(object sender, GameFramework.Network.NetworkMissHeartBeatEventArgs e)
         {
-            m_EventComponent.Fire(this, NetworkMissHeartBeatEventArgs.Create(e));
+            mEventComponent.Fire(this, NetworkMissHeartBeatEventArgs.Create(e));
         }
 
         private void OnNetworkError(object sender, GameFramework.Network.NetworkErrorEventArgs e)
         {
-            m_EventComponent.Fire(this, NetworkErrorEventArgs.Create(e));
+            mEventComponent.Fire(this, NetworkErrorEventArgs.Create(e));
         }
 
         private void OnNetworkCustomError(object sender, GameFramework.Network.NetworkCustomErrorEventArgs e)
         {
-            m_EventComponent.Fire(this, NetworkCustomErrorEventArgs.Create(e));
+            mEventComponent.Fire(this, NetworkCustomErrorEventArgs.Create(e));
         }
     }
 }

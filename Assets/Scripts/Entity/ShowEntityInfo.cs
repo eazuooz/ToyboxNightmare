@@ -14,20 +14,20 @@ namespace UnityGameFramework.Runtime
 {
     internal sealed class ShowEntityInfo : IReference
     {
-        private Type m_EntityLogicType;
-        private object m_UserData;
+        private Type mEntityLogicType;
+        private object mUserData;
 
         public ShowEntityInfo()
         {
-            m_EntityLogicType = null;
-            m_UserData = null;
+            mEntityLogicType = null;
+            mUserData = null;
         }
 
         public Type EntityLogicType
         {
             get
             {
-                return m_EntityLogicType;
+                return mEntityLogicType;
             }
         }
 
@@ -35,22 +35,22 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_UserData;
+                return mUserData;
             }
         }
 
         public static ShowEntityInfo Create(Type entityLogicType, object userData)
         {
             ShowEntityInfo showEntityInfo = ReferencePool.Acquire<ShowEntityInfo>();
-            showEntityInfo.m_EntityLogicType = entityLogicType;
-            showEntityInfo.m_UserData = userData;
+            showEntityInfo.mEntityLogicType = entityLogicType;
+            showEntityInfo.mUserData = userData;
             return showEntityInfo;
         }
 
         public void Clear()
         {
-            m_EntityLogicType = null;
-            m_UserData = null;
+            mEntityLogicType = null;
+            mUserData = null;
         }
     }
 }

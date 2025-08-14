@@ -14,17 +14,17 @@ namespace UnityGameFramework.Runtime
     public sealed class UIIntKey : MonoBehaviour
     {
         [SerializeField]
-        private int m_Key = 0;
+        private int mKey = 0;
 
         public int Key
         {
             get
             {
-                return m_Key;
+                return mKey;
             }
             set
             {
-                m_Key = value;
+                mKey = value;
             }
         }
     }

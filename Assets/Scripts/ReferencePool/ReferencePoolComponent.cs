@@ -17,7 +17,7 @@ namespace UnityGameFramework.Runtime
     public sealed class ReferencePoolComponent : GameFrameworkComponent
     {
         [SerializeField]
-        private ReferenceStrictCheckType m_EnableStrictCheck = ReferenceStrictCheckType.AlwaysEnable;
+        private ReferenceStrictCheckType mEnableStrictCheck = ReferenceStrictCheckType.AlwaysEnable;
 
         public bool EnableStrictCheck
         {
@@ -42,7 +42,7 @@ namespace UnityGameFramework.Runtime
 
         private void Start()
         {
-            switch (m_EnableStrictCheck)
+            switch (mEnableStrictCheck)
             {
                 case ReferenceStrictCheckType.AlwaysEnable:
                     EnableStrictCheck = true;

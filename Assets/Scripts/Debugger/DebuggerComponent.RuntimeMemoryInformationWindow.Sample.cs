@@ -15,24 +15,24 @@ namespace UnityGameFramework.Runtime
         {
             private sealed class Sample
             {
-                private readonly string m_Name;
-                private readonly string m_Type;
-                private readonly long m_Size;
-                private bool m_Highlight;
+                private readonly string mName;
+                private readonly string mType;
+                private readonly long mSize;
+                private bool mHighlight;
 
                 public Sample(string name, string type, long size)
                 {
-                    m_Name = name;
-                    m_Type = type;
-                    m_Size = size;
-                    m_Highlight = false;
+                    mName = name;
+                    mType = type;
+                    mSize = size;
+                    mHighlight = false;
                 }
 
                 public string Name
                 {
                     get
                     {
-                        return m_Name;
+                        return mName;
                     }
                 }
 
@@ -40,7 +40,7 @@ namespace UnityGameFramework.Runtime
                 {
                     get
                     {
-                        return m_Type;
+                        return mType;
                     }
                 }
 
@@ -48,7 +48,7 @@ namespace UnityGameFramework.Runtime
                 {
                     get
                     {
-                        return m_Size;
+                        return mSize;
                     }
                 }
 
@@ -56,11 +56,11 @@ namespace UnityGameFramework.Runtime
                 {
                     get
                     {
-                        return m_Highlight;
+                        return mHighlight;
                     }
                     set
                     {
-                        m_Highlight = value;
+                        mHighlight = value;
                     }
                 }
             }

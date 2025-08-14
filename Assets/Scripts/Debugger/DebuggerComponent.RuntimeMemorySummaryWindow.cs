@@ -21,11 +21,11 @@ namespace UnityGameFramework.Runtime
     {
         private sealed partial class RuntimeMemorySummaryWindow : ScrollableDebuggerWindowBase
         {
-            private readonly List<Record> m_Records = new List<Record>();
-            private readonly Comparison<Record> m_RecordComparer = RecordComparer;
-            private DateTime m_SampleTime = DateTime.MinValue;
-            private int m_SampleCount = 0;
-            private long m_SampleSize = 0L;
+            private readonly List<Record> mRecords = new List<Record>();
+            private readonly Comparison<Record> mRecordComparer = RecordComparer;
+            private DateTime mSampleTime = DateTime.MinValue;
+            private int mSampleCount = 0;
+            private long mSampleSize = 0L;
 
             protected override void OnDrawScrollableWindow()
             {
@@ -37,13 +37,13 @@ namespace UnityGameFramework.Runtime
                         TakeSample();
                     }
 
-                    if (m_SampleTime <= DateTime.MinValue)
+                    if (mSampleTime <= DateTime.MinValue)
                     {
                         GUILayout.Label("<b>Please take sample first.</b>");
                     }
                     else
                     {
-                        GUILayout.Label(Utility.Text.Format("<b>{0} Objects ({1}) obtained at {2:yyyy-MM-dd HH:mm:ss}.</b>", m_SampleCount, GetByteLengthString(m_SampleSize), m_SampleTime.ToLocalTime()));
+                        GUILayout.Label(Utility.Text.Format("<b>{0} Objects ({1}) obtained at {2:yyyy-MM-dd HH:mm:ss}.</b>", mSampleCount, GetByteLengthString(mSampleSize), mSampleTime.ToLocalTime()));
 
                         GUILayout.BeginHorizontal();
                         {
@@ -53,13 +53,13 @@ namespace UnityGameFramework.Runtime
                         }
                         GUILayout.EndHorizontal();
 
-                        for (int i = 0; i < m_Records.Count; i++)
+                        for (int i = 0; i < mRecords.Count; i++)
                         {
                             GUILayout.BeginHorizontal();
                             {
-                                GUILayout.Label(m_Records[i].Name);
-                                GUILayout.Label(m_Records[i].Count.ToString(), GUILayout.Width(120f));
-                                GUILayout.Label(GetByteLengthString(m_Records[i].Size), GUILayout.Width(120f));
+                                GUILayout.Label(mRecords[i].Name);
+                                GUILayout.Label(mRecords[i].Count.ToString(), GUILayout.Width(120f));
+                                GUILayout.Label(GetByteLengthString(mRecords[i].Size), GUILayout.Width(120f));
                             }
                             GUILayout.EndHorizontal();
                         }
@@ -70,10 +70,10 @@ namespace UnityGameFramework.Runtime
 
             private void TakeSample()
             {
-                m_Records.Clear();
-                m_SampleTime = DateTime.UtcNow;
-                m_SampleCount = 0;
-                m_SampleSize = 0L;
+                mRecords.Clear();
+                mSampleTime = DateTime.UtcNow;
+                mSampleCount = 0;
+                mSampleSize = 0L;
 
                 UnityEngine.Object[] samples = Resources.FindObjectsOfTypeAll<UnityEngine.Object>();
                 for (int i = 0; i < samples.Length; i++)
@@ -85,11 +85,11 @@ namespace UnityGameFramework.Runtime
                     sampleSize = Profiler.GetRuntimeMemorySize(samples[i]);
 #endif
                     string name = samples[i].GetType().Name;
-                    m_SampleCount++;
-                    m_SampleSize += sampleSize;
+                    mSampleCount++;
+                    mSampleSize += sampleSize;
 
                     Record record = null;
-                    foreach (Record r in m_Records)
+                    foreach (Record r in mRecords)
                     {
                         if (r.Name == name)
                         {
@@ -101,14 +101,14 @@ namespace UnityGameFramework.Runtime
                     if (record == null)
                     {
                         record = new Record(name);
-                        m_Records.Add(record);
+                        mRecords.Add(record);
                     }
 
                     record.Count++;
                     record.Size += sampleSize;
                 }
 
-                m_Records.Sort(m_RecordComparer);
+                mRecords.Sort(mRecordComparer);
             }
 
             private static int RecordComparer(Record a, Record b)

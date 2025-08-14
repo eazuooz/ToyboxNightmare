@@ -14,7 +14,7 @@ namespace UnityGameFramework.Runtime
 {
     public class DefaultUIFormHelper : UIFormHelperBase
     {
-        private ResourceComponent m_ResourceComponent = null;
+        private ResourceComponent mResourceComponent = null;
 
         public override object InstantiateUIForm(object uiFormAsset)
         {
@@ -39,14 +39,14 @@ namespace UnityGameFramework.Runtime
 
         public override void ReleaseUIForm(object uiFormAsset, object uiFormInstance)
         {
-            m_ResourceComponent.UnloadAsset(uiFormAsset);
+            mResourceComponent.UnloadAsset(uiFormAsset);
             Destroy((Object)uiFormInstance);
         }
 
         private void Start()
         {
-            m_ResourceComponent = GameEntry.GetComponent<ResourceComponent>();
-            if (m_ResourceComponent == null)
+            mResourceComponent = GameEntry.GetComponent<ResourceComponent>();
+            if (mResourceComponent == null)
             {
                 Log.Fatal("Resource component is invalid.");
                 return;

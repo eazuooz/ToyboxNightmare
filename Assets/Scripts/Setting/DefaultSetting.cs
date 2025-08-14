@@ -17,7 +17,7 @@ namespace UnityGameFramework.Runtime
 {
     public sealed class DefaultSetting
     {
-        private readonly SortedDictionary<string, string> m_Settings = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        private readonly SortedDictionary<string, string> mSettings = new SortedDictionary<string, string>(StringComparer.Ordinal);
 
         public DefaultSetting()
         {
@@ -27,15 +27,15 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_Settings.Count;
+                return mSettings.Count;
             }
         }
 
         public string[] GetAllSettingNames()
         {
             int index = 0;
-            string[] allSettingNames = new string[m_Settings.Count];
-            foreach (KeyValuePair<string, string> setting in m_Settings)
+            string[] allSettingNames = new string[mSettings.Count];
+            foreach (KeyValuePair<string, string> setting in mSettings)
             {
                 allSettingNames[index++] = setting.Key;
             }
@@ -51,7 +51,7 @@ namespace UnityGameFramework.Runtime
             }
 
             results.Clear();
-            foreach (KeyValuePair<string, string> setting in m_Settings)
+            foreach (KeyValuePair<string, string> setting in mSettings)
             {
                 results.Add(setting.Key);
             }
@@ -59,23 +59,23 @@ namespace UnityGameFramework.Runtime
 
         public bool HasSetting(string settingName)
         {
-            return m_Settings.ContainsKey(settingName);
+            return mSettings.ContainsKey(settingName);
         }
 
         public bool RemoveSetting(string settingName)
         {
-            return m_Settings.Remove(settingName);
+            return mSettings.Remove(settingName);
         }
 
         public void RemoveAllSettings()
         {
-            m_Settings.Clear();
+            mSettings.Clear();
         }
 
         public bool GetBool(string settingName)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 Log.Warning("Setting '{0}' is not exist.", settingName);
                 return false;
@@ -87,7 +87,7 @@ namespace UnityGameFramework.Runtime
         public bool GetBool(string settingName, bool defaultValue)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 return defaultValue;
             }
@@ -97,13 +97,13 @@ namespace UnityGameFramework.Runtime
 
         public void SetBool(string settingName, bool value)
         {
-            m_Settings[settingName] = value ? "1" : "0";
+            mSettings[settingName] = value ? "1" : "0";
         }
 
         public int GetInt(string settingName)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 Log.Warning("Setting '{0}' is not exist.", settingName);
                 return 0;
@@ -115,7 +115,7 @@ namespace UnityGameFramework.Runtime
         public int GetInt(string settingName, int defaultValue)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 return defaultValue;
             }
@@ -125,13 +125,13 @@ namespace UnityGameFramework.Runtime
 
         public void SetInt(string settingName, int value)
         {
-            m_Settings[settingName] = value.ToString();
+            mSettings[settingName] = value.ToString();
         }
 
         public float GetFloat(string settingName)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 Log.Warning("Setting '{0}' is not exist.", settingName);
                 return 0f;
@@ -143,7 +143,7 @@ namespace UnityGameFramework.Runtime
         public float GetFloat(string settingName, float defaultValue)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 return defaultValue;
             }
@@ -153,13 +153,13 @@ namespace UnityGameFramework.Runtime
 
         public void SetFloat(string settingName, float value)
         {
-            m_Settings[settingName] = value.ToString();
+            mSettings[settingName] = value.ToString();
         }
 
         public string GetString(string settingName)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 Log.Warning("Setting '{0}' is not exist.", settingName);
                 return null;
@@ -171,7 +171,7 @@ namespace UnityGameFramework.Runtime
         public string GetString(string settingName, string defaultValue)
         {
             string value = null;
-            if (!m_Settings.TryGetValue(settingName, out value))
+            if (!mSettings.TryGetValue(settingName, out value))
             {
                 return defaultValue;
             }
@@ -181,15 +181,15 @@ namespace UnityGameFramework.Runtime
 
         public void SetString(string settingName, string value)
         {
-            m_Settings[settingName] = value;
+            mSettings[settingName] = value;
         }
 
         public void Serialize(Stream stream)
         {
             using (BinaryWriter binaryWriter = new BinaryWriter(stream, Encoding.UTF8))
             {
-                binaryWriter.Write7BitEncodedInt32(m_Settings.Count);
-                foreach (KeyValuePair<string, string> setting in m_Settings)
+                binaryWriter.Write7BitEncodedInt32(mSettings.Count);
+                foreach (KeyValuePair<string, string> setting in mSettings)
                 {
                     binaryWriter.Write(setting.Key);
                     binaryWriter.Write(setting.Value);
@@ -199,13 +199,13 @@ namespace UnityGameFramework.Runtime
 
         public void Deserialize(Stream stream)
         {
-            m_Settings.Clear();
+            mSettings.Clear();
             using (BinaryReader binaryReader = new BinaryReader(stream, Encoding.UTF8))
             {
                 int settingCount = binaryReader.Read7BitEncodedInt32();
                 for (int i = 0; i < settingCount; i++)
                 {
-                    m_Settings.Add(binaryReader.ReadString(), binaryReader.ReadString());
+                    mSettings.Add(binaryReader.ReadString(), binaryReader.ReadString());
                 }
             }
         }

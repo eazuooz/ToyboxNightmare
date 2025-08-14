@@ -20,33 +20,33 @@ namespace UnityGameFramework.Runtime
     {
         private const int DefaultPriority = 0;
 
-        private ILocalizationManager m_LocalizationManager = null;
-        private EventComponent m_EventComponent = null;
+        private ILocalizationManager mLocalizationManager = null;
+        private EventComponent mEventComponent = null;
 
         [SerializeField]
-        private bool m_EnableLoadDictionaryUpdateEvent = false;
+        private bool mEnableLoadDictionaryUpdateEvent = false;
 
         [SerializeField]
-        private bool m_EnableLoadDictionaryDependencyAssetEvent = false;
+        private bool mEnableLoadDictionaryDependencyAssetEvent = false;
 
         [SerializeField]
-        private string m_LocalizationHelperTypeName = "UnityGameFramework.Runtime.DefaultLocalizationHelper";
+        private string mLocalizationHelperTypeName = "UnityGameFramework.Runtime.DefaultLocalizationHelper";
 
         [SerializeField]
-        private LocalizationHelperBase m_CustomLocalizationHelper = null;
+        private LocalizationHelperBase mCustomLocalizationHelper = null;
 
         [SerializeField]
-        private int m_CachedBytesSize = 0;
+        private int mCachedBytesSize = 0;
 
         public Language Language
         {
             get
             {
-                return m_LocalizationManager.Language;
+                return mLocalizationManager.Language;
             }
             set
             {
-                m_LocalizationManager.Language = value;
+                mLocalizationManager.Language = value;
             }
         }
 
@@ -54,7 +54,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_LocalizationManager.SystemLanguage;
+                return mLocalizationManager.SystemLanguage;
             }
         }
 
@@ -62,7 +62,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_LocalizationManager.DictionaryCount;
+                return mLocalizationManager.DictionaryCount;
             }
         }
 
@@ -70,7 +70,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_LocalizationManager.CachedBytesSize;
+                return mLocalizationManager.CachedBytesSize;
             }
         }
 
@@ -78,24 +78,24 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_LocalizationManager = GameFrameworkEntry.GetModule<ILocalizationManager>();
-            if (m_LocalizationManager == null)
+            mLocalizationManager = GameFrameworkEntry.GetModule<ILocalizationManager>();
+            if (mLocalizationManager == null)
             {
                 Log.Fatal("Localization manager is invalid.");
                 return;
             }
 
-            m_LocalizationManager.ReadDataSuccess += OnReadDataSuccess;
-            m_LocalizationManager.ReadDataFailure += OnReadDataFailure;
+            mLocalizationManager.ReadDataSuccess += OnReadDataSuccess;
+            mLocalizationManager.ReadDataFailure += OnReadDataFailure;
 
-            if (m_EnableLoadDictionaryUpdateEvent)
+            if (mEnableLoadDictionaryUpdateEvent)
             {
-                m_LocalizationManager.ReadDataUpdate += OnReadDataUpdate;
+                mLocalizationManager.ReadDataUpdate += OnReadDataUpdate;
             }
 
-            if (m_EnableLoadDictionaryDependencyAssetEvent)
+            if (mEnableLoadDictionaryDependencyAssetEvent)
             {
-                m_LocalizationManager.ReadDataDependencyAsset += OnReadDataDependencyAsset;
+                mLocalizationManager.ReadDataDependencyAsset += OnReadDataDependencyAsset;
             }
         }
 
@@ -108,8 +108,8 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
@@ -117,14 +117,14 @@ namespace UnityGameFramework.Runtime
 
             if (baseComponent.EditorResourceMode)
             {
-                m_LocalizationManager.SetResourceManager(baseComponent.EditorResourceHelper);
+                mLocalizationManager.SetResourceManager(baseComponent.EditorResourceHelper);
             }
             else
             {
-                m_LocalizationManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
+                mLocalizationManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
             }
 
-            LocalizationHelperBase localizationHelper = Helper.CreateHelper(m_LocalizationHelperTypeName, m_CustomLocalizationHelper);
+            LocalizationHelperBase localizationHelper = Helper.CreateHelper(mLocalizationHelperTypeName, mCustomLocalizationHelper);
             if (localizationHelper == null)
             {
                 Log.Error("Can not create localization helper.");
@@ -136,199 +136,199 @@ namespace UnityGameFramework.Runtime
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_LocalizationManager.SetDataProviderHelper(localizationHelper);
-            m_LocalizationManager.SetLocalizationHelper(localizationHelper);
-            m_LocalizationManager.Language = baseComponent.EditorResourceMode && baseComponent.EditorLanguage != Language.Unspecified ? baseComponent.EditorLanguage : m_LocalizationManager.SystemLanguage;
-            if (m_CachedBytesSize > 0)
+            mLocalizationManager.SetDataProviderHelper(localizationHelper);
+            mLocalizationManager.SetLocalizationHelper(localizationHelper);
+            mLocalizationManager.Language = baseComponent.EditorResourceMode && baseComponent.EditorLanguage != Language.Unspecified ? baseComponent.EditorLanguage : mLocalizationManager.SystemLanguage;
+            if (mCachedBytesSize > 0)
             {
-                EnsureCachedBytesSize(m_CachedBytesSize);
+                EnsureCachedBytesSize(mCachedBytesSize);
             }
         }
 
         public void EnsureCachedBytesSize(int ensureSize)
         {
-            m_LocalizationManager.EnsureCachedBytesSize(ensureSize);
+            mLocalizationManager.EnsureCachedBytesSize(ensureSize);
         }
 
         public void FreeCachedBytes()
         {
-            m_LocalizationManager.FreeCachedBytes();
+            mLocalizationManager.FreeCachedBytes();
         }
 
         public void ReadData(string dictionaryAssetName)
         {
-            m_LocalizationManager.ReadData(dictionaryAssetName);
+            mLocalizationManager.ReadData(dictionaryAssetName);
         }
 
         public void ReadData(string dictionaryAssetName, int priority)
         {
-            m_LocalizationManager.ReadData(dictionaryAssetName, priority);
+            mLocalizationManager.ReadData(dictionaryAssetName, priority);
         }
 
         public void ReadData(string dictionaryAssetName, object userData)
         {
-            m_LocalizationManager.ReadData(dictionaryAssetName, userData);
+            mLocalizationManager.ReadData(dictionaryAssetName, userData);
         }
 
         public void ReadData(string dictionaryAssetName, int priority, object userData)
         {
-            m_LocalizationManager.ReadData(dictionaryAssetName, priority, userData);
+            mLocalizationManager.ReadData(dictionaryAssetName, priority, userData);
         }
 
         public bool ParseData(string dictionaryString)
         {
-            return m_LocalizationManager.ParseData(dictionaryString);
+            return mLocalizationManager.ParseData(dictionaryString);
         }
 
         public bool ParseData(string dictionaryString, object userData)
         {
-            return m_LocalizationManager.ParseData(dictionaryString, userData);
+            return mLocalizationManager.ParseData(dictionaryString, userData);
         }
 
         public bool ParseData(byte[] dictionaryBytes)
         {
-            return m_LocalizationManager.ParseData(dictionaryBytes);
+            return mLocalizationManager.ParseData(dictionaryBytes);
         }
 
         public bool ParseData(byte[] dictionaryBytes, object userData)
         {
-            return m_LocalizationManager.ParseData(dictionaryBytes, userData);
+            return mLocalizationManager.ParseData(dictionaryBytes, userData);
         }
 
         public bool ParseData(byte[] dictionaryBytes, int startIndex, int length)
         {
-            return m_LocalizationManager.ParseData(dictionaryBytes, startIndex, length);
+            return mLocalizationManager.ParseData(dictionaryBytes, startIndex, length);
         }
 
         public bool ParseData(byte[] dictionaryBytes, int startIndex, int length, object userData)
         {
-            return m_LocalizationManager.ParseData(dictionaryBytes, startIndex, length, userData);
+            return mLocalizationManager.ParseData(dictionaryBytes, startIndex, length, userData);
         }
 
         public string GetString(string key)
         {
-            return m_LocalizationManager.GetString(key);
+            return mLocalizationManager.GetString(key);
         }
 
         public string GetString<T>(string key, T arg)
         {
-            return m_LocalizationManager.GetString(key, arg);
+            return mLocalizationManager.GetString(key, arg);
         }
 
         public string GetString<T1, T2>(string key, T1 arg1, T2 arg2)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2);
+            return mLocalizationManager.GetString(key, arg1, arg2);
         }
 
         public string GetString<T1, T2, T3>(string key, T1 arg1, T2 arg2, T3 arg3)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3);
         }
 
         public string GetString<T1, T2, T3, T4>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4);
         }
 
         public string GetString<T1, T2, T3, T4, T5>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
         }
 
         public string GetString<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(string key, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
         {
-            return m_LocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
+            return mLocalizationManager.GetString(key, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
         }
 
         public bool HasRawString(string key)
         {
-            return m_LocalizationManager.HasRawString(key);
+            return mLocalizationManager.HasRawString(key);
         }
 
         public string GetRawString(string key)
         {
-            return m_LocalizationManager.GetRawString(key);
+            return mLocalizationManager.GetRawString(key);
         }
 
         public bool RemoveRawString(string key)
         {
-            return m_LocalizationManager.RemoveRawString(key);
+            return mLocalizationManager.RemoveRawString(key);
         }
 
         public void RemoveAllRawStrings()
         {
-            m_LocalizationManager.RemoveAllRawStrings();
+            mLocalizationManager.RemoveAllRawStrings();
         }
 
         private void OnReadDataSuccess(object sender, ReadDataSuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadDictionarySuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDictionarySuccessEventArgs.Create(e));
         }
 
         private void OnReadDataFailure(object sender, ReadDataFailureEventArgs e)
         {
             Log.Warning("Load dictionary failure, asset name '{0}', error message '{1}'.", e.DataAssetName, e.ErrorMessage);
-            m_EventComponent.Fire(this, LoadDictionaryFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDictionaryFailureEventArgs.Create(e));
         }
 
         private void OnReadDataUpdate(object sender, ReadDataUpdateEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadDictionaryUpdateEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDictionaryUpdateEventArgs.Create(e));
         }
 
         private void OnReadDataDependencyAsset(object sender, ReadDataDependencyAssetEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadDictionaryDependencyAssetEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadDictionaryDependencyAssetEventArgs.Create(e));
         }
     }
 }

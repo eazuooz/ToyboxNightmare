@@ -20,29 +20,29 @@ namespace UnityGameFramework.Runtime
     {
         private const int DefaultPriority = 0;
 
-        private IConfigManager m_ConfigManager = null;
-        private EventComponent m_EventComponent = null;
+        private IConfigManager mConfigManager = null;
+        private EventComponent mEventComponent = null;
 
         [SerializeField]
-        private bool m_EnableLoadConfigUpdateEvent = false;
+        private bool mEnableLoadConfigUpdateEvent = false;
 
         [SerializeField]
-        private bool m_EnableLoadConfigDependencyAssetEvent = false;
+        private bool mEnableLoadConfigDependencyAssetEvent = false;
 
         [SerializeField]
-        private string m_ConfigHelperTypeName = "UnityGameFramework.Runtime.DefaultConfigHelper";
+        private string mConfigHelperTypeName = "UnityGameFramework.Runtime.DefaultConfigHelper";
 
         [SerializeField]
-        private ConfigHelperBase m_CustomConfigHelper = null;
+        private ConfigHelperBase mCustomConfigHelper = null;
 
         [SerializeField]
-        private int m_CachedBytesSize = 0;
+        private int mCachedBytesSize = 0;
 
         public int Count
         {
             get
             {
-                return m_ConfigManager.Count;
+                return mConfigManager.Count;
             }
         }
 
@@ -50,7 +50,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ConfigManager.CachedBytesSize;
+                return mConfigManager.CachedBytesSize;
             }
         }
 
@@ -58,24 +58,24 @@ namespace UnityGameFramework.Runtime
         {
             base.Awake();
 
-            m_ConfigManager = GameFrameworkEntry.GetModule<IConfigManager>();
-            if (m_ConfigManager == null)
+            mConfigManager = GameFrameworkEntry.GetModule<IConfigManager>();
+            if (mConfigManager == null)
             {
                 Log.Fatal("Config manager is invalid.");
                 return;
             }
 
-            m_ConfigManager.ReadDataSuccess += OnReadDataSuccess;
-            m_ConfigManager.ReadDataFailure += OnReadDataFailure;
+            mConfigManager.ReadDataSuccess += OnReadDataSuccess;
+            mConfigManager.ReadDataFailure += OnReadDataFailure;
 
-            if (m_EnableLoadConfigUpdateEvent)
+            if (mEnableLoadConfigUpdateEvent)
             {
-                m_ConfigManager.ReadDataUpdate += OnReadDataUpdate;
+                mConfigManager.ReadDataUpdate += OnReadDataUpdate;
             }
 
-            if (m_EnableLoadConfigDependencyAssetEvent)
+            if (mEnableLoadConfigDependencyAssetEvent)
             {
-                m_ConfigManager.ReadDataDependencyAsset += OnReadDataDependencyAsset;
+                mConfigManager.ReadDataDependencyAsset += OnReadDataDependencyAsset;
             }
         }
 
@@ -88,8 +88,8 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
@@ -97,14 +97,14 @@ namespace UnityGameFramework.Runtime
 
             if (baseComponent.EditorResourceMode)
             {
-                m_ConfigManager.SetResourceManager(baseComponent.EditorResourceHelper);
+                mConfigManager.SetResourceManager(baseComponent.EditorResourceHelper);
             }
             else
             {
-                m_ConfigManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
+                mConfigManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
             }
 
-            ConfigHelperBase configHelper = Helper.CreateHelper(m_ConfigHelperTypeName, m_CustomConfigHelper);
+            ConfigHelperBase configHelper = Helper.CreateHelper(mConfigHelperTypeName, mCustomConfigHelper);
             if (configHelper == null)
             {
                 Log.Error("Can not create config helper.");
@@ -116,153 +116,153 @@ namespace UnityGameFramework.Runtime
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_ConfigManager.SetDataProviderHelper(configHelper);
-            m_ConfigManager.SetConfigHelper(configHelper);
-            if (m_CachedBytesSize > 0)
+            mConfigManager.SetDataProviderHelper(configHelper);
+            mConfigManager.SetConfigHelper(configHelper);
+            if (mCachedBytesSize > 0)
             {
-                EnsureCachedBytesSize(m_CachedBytesSize);
+                EnsureCachedBytesSize(mCachedBytesSize);
             }
         }
 
         public void EnsureCachedBytesSize(int ensureSize)
         {
-            m_ConfigManager.EnsureCachedBytesSize(ensureSize);
+            mConfigManager.EnsureCachedBytesSize(ensureSize);
         }
 
         public void FreeCachedBytes()
         {
-            m_ConfigManager.FreeCachedBytes();
+            mConfigManager.FreeCachedBytes();
         }
 
         public void ReadData(string configAssetName)
         {
-            m_ConfigManager.ReadData(configAssetName);
+            mConfigManager.ReadData(configAssetName);
         }
 
         public void ReadData(string configAssetName, int priority)
         {
-            m_ConfigManager.ReadData(configAssetName, priority);
+            mConfigManager.ReadData(configAssetName, priority);
         }
 
         public void ReadData(string configAssetName, object userData)
         {
-            m_ConfigManager.ReadData(configAssetName, userData);
+            mConfigManager.ReadData(configAssetName, userData);
         }
 
         public void ReadData(string configAssetName, int priority, object userData)
         {
-            m_ConfigManager.ReadData(configAssetName, priority, userData);
+            mConfigManager.ReadData(configAssetName, priority, userData);
         }
 
         public bool ParseData(string configString)
         {
-            return m_ConfigManager.ParseData(configString);
+            return mConfigManager.ParseData(configString);
         }
 
         public bool ParseData(string configString, object userData)
         {
-            return m_ConfigManager.ParseData(configString, userData);
+            return mConfigManager.ParseData(configString, userData);
         }
 
         public bool ParseData(byte[] configBytes)
         {
-            return m_ConfigManager.ParseData(configBytes);
+            return mConfigManager.ParseData(configBytes);
         }
 
         public bool ParseData(byte[] configBytes, object userData)
         {
-            return m_ConfigManager.ParseData(configBytes, userData);
+            return mConfigManager.ParseData(configBytes, userData);
         }
 
         public bool ParseData(byte[] configBytes, int startIndex, int length)
         {
-            return m_ConfigManager.ParseData(configBytes, startIndex, length);
+            return mConfigManager.ParseData(configBytes, startIndex, length);
         }
 
         public bool ParseData(byte[] configBytes, int startIndex, int length, object userData)
         {
-            return m_ConfigManager.ParseData(configBytes, startIndex, length, userData);
+            return mConfigManager.ParseData(configBytes, startIndex, length, userData);
         }
 
         public bool HasConfig(string configName)
         {
-            return m_ConfigManager.HasConfig(configName);
+            return mConfigManager.HasConfig(configName);
         }
 
         public bool GetBool(string configName)
         {
-            return m_ConfigManager.GetBool(configName);
+            return mConfigManager.GetBool(configName);
         }
 
         public bool GetBool(string configName, bool defaultValue)
         {
-            return m_ConfigManager.GetBool(configName, defaultValue);
+            return mConfigManager.GetBool(configName, defaultValue);
         }
 
         public int GetInt(string configName)
         {
-            return m_ConfigManager.GetInt(configName);
+            return mConfigManager.GetInt(configName);
         }
 
         public int GetInt(string configName, int defaultValue)
         {
-            return m_ConfigManager.GetInt(configName, defaultValue);
+            return mConfigManager.GetInt(configName, defaultValue);
         }
 
         public float GetFloat(string configName)
         {
-            return m_ConfigManager.GetFloat(configName);
+            return mConfigManager.GetFloat(configName);
         }
 
         public float GetFloat(string configName, float defaultValue)
         {
-            return m_ConfigManager.GetFloat(configName, defaultValue);
+            return mConfigManager.GetFloat(configName, defaultValue);
         }
 
         public string GetString(string configName)
         {
-            return m_ConfigManager.GetString(configName);
+            return mConfigManager.GetString(configName);
         }
 
         public string GetString(string configName, string defaultValue)
         {
-            return m_ConfigManager.GetString(configName, defaultValue);
+            return mConfigManager.GetString(configName, defaultValue);
         }
 
         public bool AddConfig(string configName, bool boolValue, int intValue, float floatValue, string stringValue)
         {
-            return m_ConfigManager.AddConfig(configName, boolValue, intValue, floatValue, stringValue);
+            return mConfigManager.AddConfig(configName, boolValue, intValue, floatValue, stringValue);
         }
 
         public bool RemoveConfig(string configName)
         {
-            return m_ConfigManager.RemoveConfig(configName);
+            return mConfigManager.RemoveConfig(configName);
         }
 
         public void RemoveAllConfigs()
         {
-            m_ConfigManager.RemoveAllConfigs();
+            mConfigManager.RemoveAllConfigs();
         }
 
         private void OnReadDataSuccess(object sender, ReadDataSuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadConfigSuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadConfigSuccessEventArgs.Create(e));
         }
 
         private void OnReadDataFailure(object sender, ReadDataFailureEventArgs e)
         {
             Log.Warning("Load config failure, asset name '{0}', error message '{1}'.", e.DataAssetName, e.ErrorMessage);
-            m_EventComponent.Fire(this, LoadConfigFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadConfigFailureEventArgs.Create(e));
         }
 
         private void OnReadDataUpdate(object sender, ReadDataUpdateEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadConfigUpdateEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadConfigUpdateEventArgs.Create(e));
         }
 
         private void OnReadDataDependencyAsset(object sender, ReadDataDependencyAssetEventArgs e)
         {
-            m_EventComponent.Fire(this, LoadConfigDependencyAssetEventArgs.Create(e));
+            mEventComponent.Fire(this, LoadConfigDependencyAssetEventArgs.Create(e));
         }
     }
 }

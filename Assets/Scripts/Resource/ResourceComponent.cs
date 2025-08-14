@@ -25,84 +25,84 @@ namespace UnityGameFramework.Runtime
         private const int DefaultPriority = 0;
         private const int OneMegaBytes = 1024 * 1024;
 
-        private IResourceManager m_ResourceManager = null;
-        private EventComponent m_EventComponent = null;
-        private bool m_EditorResourceMode = false;
-        private bool m_ForceUnloadUnusedAssets = false;
-        private bool m_PreorderUnloadUnusedAssets = false;
-        private bool m_PerformGCCollect = false;
-        private AsyncOperation m_AsyncOperation = null;
-        private float m_LastUnloadUnusedAssetsOperationElapseSeconds = 0f;
-        private ResourceHelperBase m_ResourceHelper = null;
+        private IResourceManager mResourceManager = null;
+        private EventComponent mEventComponent = null;
+        private bool mEditorResourceMode = false;
+        private bool mForceUnloadUnusedAssets = false;
+        private bool mPreorderUnloadUnusedAssets = false;
+        private bool mPerformGCCollect = false;
+        private AsyncOperation mAsyncOperation = null;
+        private float mLastUnloadUnusedAssetsOperationElapseSeconds = 0f;
+        private ResourceHelperBase mResourceHelper = null;
 
         [SerializeField]
-        private ResourceMode m_ResourceMode = ResourceMode.Package;
+        private ResourceMode mResourceMode = ResourceMode.Package;
 
         [SerializeField]
-        private ReadWritePathType m_ReadWritePathType = ReadWritePathType.Unspecified;
+        private ReadWritePathType mReadWritePathType = ReadWritePathType.Unspecified;
 
         [SerializeField]
-        private float m_MinUnloadUnusedAssetsInterval = 60f;
+        private float mMinUnloadUnusedAssetsInterval = 60f;
 
         [SerializeField]
-        private float m_MaxUnloadUnusedAssetsInterval = 300f;
+        private float mMaxUnloadUnusedAssetsInterval = 300f;
 
         [SerializeField]
-        private float m_AssetAutoReleaseInterval = 60f;
+        private float mAssetAutoReleaseInterval = 60f;
 
         [SerializeField]
-        private int m_AssetCapacity = 64;
+        private int mAssetCapacity = 64;
 
         [SerializeField]
-        private float m_AssetExpireTime = 60f;
+        private float mAssetExpireTime = 60f;
 
         [SerializeField]
-        private int m_AssetPriority = 0;
+        private int mAssetPriority = 0;
 
         [SerializeField]
-        private float m_ResourceAutoReleaseInterval = 60f;
+        private float mResourceAutoReleaseInterval = 60f;
 
         [SerializeField]
-        private int m_ResourceCapacity = 16;
+        private int mResourceCapacity = 16;
 
         [SerializeField]
-        private float m_ResourceExpireTime = 60f;
+        private float mResourceExpireTime = 60f;
 
         [SerializeField]
-        private int m_ResourcePriority = 0;
+        private int mResourcePriority = 0;
 
         [SerializeField]
-        private string m_UpdatePrefixUri = null;
+        private string mUpdatePrefixUri = null;
 
         [SerializeField]
-        private int m_GenerateReadWriteVersionListLength = OneMegaBytes;
+        private int mGenerateReadWriteVersionListLength = OneMegaBytes;
 
         [SerializeField]
-        private int m_UpdateRetryCount = 3;
+        private int mUpdateRetryCount = 3;
 
         [SerializeField]
-        private Transform m_InstanceRoot = null;
+        private Transform mInstanceRoot = null;
 
         [SerializeField]
-        private string m_ResourceHelperTypeName = "UnityGameFramework.Runtime.DefaultResourceHelper";
+        private string mResourceHelperTypeName = "UnityGameFramework.Runtime.DefaultResourceHelper";
 
         [SerializeField]
-        private ResourceHelperBase m_CustomResourceHelper = null;
+        private ResourceHelperBase mCustomResourceHelper = null;
 
         [SerializeField]
-        private string m_LoadResourceAgentHelperTypeName = "UnityGameFramework.Runtime.DefaultLoadResourceAgentHelper";
+        private string mLoadResourceAgentHelperTypeName = "UnityGameFramework.Runtime.DefaultLoadResourceAgentHelper";
 
         [SerializeField]
-        private LoadResourceAgentHelperBase m_CustomLoadResourceAgentHelper = null;
+        private LoadResourceAgentHelperBase mCustomLoadResourceAgentHelper = null;
 
         [SerializeField]
-        private int m_LoadResourceAgentHelperCount = 3;
+        private int mLoadResourceAgentHelperCount = 3;
 
         public string ReadOnlyPath
         {
             get
             {
-                return m_ResourceManager.ReadOnlyPath;
+                return mResourceManager.ReadOnlyPath;
             }
         }
 
@@ -110,7 +110,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ReadWritePath;
+                return mResourceManager.ReadWritePath;
             }
         }
 
@@ -118,7 +118,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourceMode;
+                return mResourceManager.ResourceMode;
             }
         }
 
@@ -126,7 +126,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ReadWritePathType;
+                return mReadWritePathType;
             }
         }
 
@@ -134,7 +134,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.CurrentVariant;
+                return mResourceManager.CurrentVariant;
             }
         }
 
@@ -142,7 +142,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.PackageVersionListSerializer;
+                return mResourceManager.PackageVersionListSerializer;
             }
         }
 
@@ -150,7 +150,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdatableVersionListSerializer;
+                return mResourceManager.UpdatableVersionListSerializer;
             }
         }
 
@@ -158,7 +158,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ReadOnlyVersionListSerializer;
+                return mResourceManager.ReadOnlyVersionListSerializer;
             }
         }
 
@@ -166,7 +166,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ReadWriteVersionListSerializer;
+                return mResourceManager.ReadWriteVersionListSerializer;
             }
         }
 
@@ -174,7 +174,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourcePackVersionListSerializer;
+                return mResourceManager.ResourcePackVersionListSerializer;
             }
         }
 
@@ -182,7 +182,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_LastUnloadUnusedAssetsOperationElapseSeconds;
+                return mLastUnloadUnusedAssetsOperationElapseSeconds;
             }
         }
 
@@ -190,11 +190,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_MinUnloadUnusedAssetsInterval;
+                return mMinUnloadUnusedAssetsInterval;
             }
             set
             {
-                m_MinUnloadUnusedAssetsInterval = value;
+                mMinUnloadUnusedAssetsInterval = value;
             }
         }
 
@@ -202,11 +202,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_MaxUnloadUnusedAssetsInterval;
+                return mMaxUnloadUnusedAssetsInterval;
             }
             set
             {
-                m_MaxUnloadUnusedAssetsInterval = value;
+                mMaxUnloadUnusedAssetsInterval = value;
             }
         }
 
@@ -214,7 +214,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ApplicableGameVersion;
+                return mResourceManager.ApplicableGameVersion;
             }
         }
 
@@ -222,7 +222,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.InternalResourceVersion;
+                return mResourceManager.InternalResourceVersion;
             }
         }
 
@@ -230,7 +230,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.AssetCount;
+                return mResourceManager.AssetCount;
             }
         }
 
@@ -238,7 +238,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourceCount;
+                return mResourceManager.ResourceCount;
             }
         }
 
@@ -246,7 +246,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourceGroupCount;
+                return mResourceManager.ResourceGroupCount;
             }
         }
 
@@ -254,11 +254,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdatePrefixUri;
+                return mResourceManager.UpdatePrefixUri;
             }
             set
             {
-                m_ResourceManager.UpdatePrefixUri = m_UpdatePrefixUri = value;
+                mResourceManager.UpdatePrefixUri = mUpdatePrefixUri = value;
             }
         }
 
@@ -266,11 +266,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.GenerateReadWriteVersionListLength;
+                return mResourceManager.GenerateReadWriteVersionListLength;
             }
             set
             {
-                m_ResourceManager.GenerateReadWriteVersionListLength = m_GenerateReadWriteVersionListLength = value;
+                mResourceManager.GenerateReadWriteVersionListLength = mGenerateReadWriteVersionListLength = value;
             }
         }
 
@@ -278,7 +278,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ApplyingResourcePackPath;
+                return mResourceManager.ApplyingResourcePackPath;
             }
         }
 
@@ -286,7 +286,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ApplyWaitingCount;
+                return mResourceManager.ApplyWaitingCount;
             }
         }
 
@@ -294,11 +294,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdateRetryCount;
+                return mResourceManager.UpdateRetryCount;
             }
             set
             {
-                m_ResourceManager.UpdateRetryCount = m_UpdateRetryCount = value;
+                mResourceManager.UpdateRetryCount = mUpdateRetryCount = value;
             }
         }
 
@@ -306,7 +306,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdatingResourceGroup;
+                return mResourceManager.UpdatingResourceGroup;
             }
         }
 
@@ -314,7 +314,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdateWaitingCount;
+                return mResourceManager.UpdateWaitingCount;
             }
         }
 
@@ -322,7 +322,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdateWaitingWhilePlayingCount;
+                return mResourceManager.UpdateWaitingWhilePlayingCount;
             }
         }
 
@@ -330,7 +330,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.UpdateCandidateCount;
+                return mResourceManager.UpdateCandidateCount;
             }
         }
 
@@ -338,7 +338,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.LoadTotalAgentCount;
+                return mResourceManager.LoadTotalAgentCount;
             }
         }
 
@@ -346,7 +346,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.LoadFreeAgentCount;
+                return mResourceManager.LoadFreeAgentCount;
             }
         }
 
@@ -354,7 +354,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.LoadWorkingAgentCount;
+                return mResourceManager.LoadWorkingAgentCount;
             }
         }
 
@@ -362,7 +362,7 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.LoadWaitingTaskCount;
+                return mResourceManager.LoadWaitingTaskCount;
             }
         }
 
@@ -370,11 +370,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.AssetAutoReleaseInterval;
+                return mResourceManager.AssetAutoReleaseInterval;
             }
             set
             {
-                m_ResourceManager.AssetAutoReleaseInterval = m_AssetAutoReleaseInterval = value;
+                mResourceManager.AssetAutoReleaseInterval = mAssetAutoReleaseInterval = value;
             }
         }
 
@@ -382,11 +382,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.AssetCapacity;
+                return mResourceManager.AssetCapacity;
             }
             set
             {
-                m_ResourceManager.AssetCapacity = m_AssetCapacity = value;
+                mResourceManager.AssetCapacity = mAssetCapacity = value;
             }
         }
 
@@ -394,11 +394,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.AssetExpireTime;
+                return mResourceManager.AssetExpireTime;
             }
             set
             {
-                m_ResourceManager.AssetExpireTime = m_AssetExpireTime = value;
+                mResourceManager.AssetExpireTime = mAssetExpireTime = value;
             }
         }
 
@@ -406,11 +406,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.AssetPriority;
+                return mResourceManager.AssetPriority;
             }
             set
             {
-                m_ResourceManager.AssetPriority = m_AssetPriority = value;
+                mResourceManager.AssetPriority = mAssetPriority = value;
             }
         }
 
@@ -418,11 +418,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourceAutoReleaseInterval;
+                return mResourceManager.ResourceAutoReleaseInterval;
             }
             set
             {
-                m_ResourceManager.ResourceAutoReleaseInterval = m_ResourceAutoReleaseInterval = value;
+                mResourceManager.ResourceAutoReleaseInterval = mResourceAutoReleaseInterval = value;
             }
         }
 
@@ -430,11 +430,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourceCapacity;
+                return mResourceManager.ResourceCapacity;
             }
             set
             {
-                m_ResourceManager.ResourceCapacity = m_ResourceCapacity = value;
+                mResourceManager.ResourceCapacity = mResourceCapacity = value;
             }
         }
 
@@ -442,11 +442,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourceExpireTime;
+                return mResourceManager.ResourceExpireTime;
             }
             set
             {
-                m_ResourceManager.ResourceExpireTime = m_ResourceExpireTime = value;
+                mResourceManager.ResourceExpireTime = mResourceExpireTime = value;
             }
         }
 
@@ -454,11 +454,11 @@ namespace UnityGameFramework.Runtime
         {
             get
             {
-                return m_ResourceManager.ResourcePriority;
+                return mResourceManager.ResourcePriority;
             }
             set
             {
-                m_ResourceManager.ResourcePriority = m_ResourcePriority = value;
+                mResourceManager.ResourcePriority = mResourcePriority = value;
             }
         }
 
@@ -476,94 +476,94 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_EventComponent = GameEntry.GetComponent<EventComponent>();
-            if (m_EventComponent == null)
+            mEventComponent = GameEntry.GetComponent<EventComponent>();
+            if (mEventComponent == null)
             {
                 Log.Fatal("Event component is invalid.");
                 return;
             }
 
-            m_EditorResourceMode = baseComponent.EditorResourceMode;
-            m_ResourceManager = m_EditorResourceMode ? baseComponent.EditorResourceHelper : GameFrameworkEntry.GetModule<IResourceManager>();
-            if (m_ResourceManager == null)
+            mEditorResourceMode = baseComponent.EditorResourceMode;
+            mResourceManager = mEditorResourceMode ? baseComponent.EditorResourceHelper : GameFrameworkEntry.GetModule<IResourceManager>();
+            if (mResourceManager == null)
             {
                 Log.Fatal("Resource manager is invalid.");
                 return;
             }
 
-            m_ResourceManager.ResourceVerifyStart += OnResourceVerifyStart;
-            m_ResourceManager.ResourceVerifySuccess += OnResourceVerifySuccess;
-            m_ResourceManager.ResourceVerifyFailure += OnResourceVerifyFailure;
-            m_ResourceManager.ResourceApplyStart += OnResourceApplyStart;
-            m_ResourceManager.ResourceApplySuccess += OnResourceApplySuccess;
-            m_ResourceManager.ResourceApplyFailure += OnResourceApplyFailure;
-            m_ResourceManager.ResourceUpdateStart += OnResourceUpdateStart;
-            m_ResourceManager.ResourceUpdateChanged += OnResourceUpdateChanged;
-            m_ResourceManager.ResourceUpdateSuccess += OnResourceUpdateSuccess;
-            m_ResourceManager.ResourceUpdateFailure += OnResourceUpdateFailure;
-            m_ResourceManager.ResourceUpdateAllComplete += OnResourceUpdateAllComplete;
+            mResourceManager.ResourceVerifyStart += OnResourceVerifyStart;
+            mResourceManager.ResourceVerifySuccess += OnResourceVerifySuccess;
+            mResourceManager.ResourceVerifyFailure += OnResourceVerifyFailure;
+            mResourceManager.ResourceApplyStart += OnResourceApplyStart;
+            mResourceManager.ResourceApplySuccess += OnResourceApplySuccess;
+            mResourceManager.ResourceApplyFailure += OnResourceApplyFailure;
+            mResourceManager.ResourceUpdateStart += OnResourceUpdateStart;
+            mResourceManager.ResourceUpdateChanged += OnResourceUpdateChanged;
+            mResourceManager.ResourceUpdateSuccess += OnResourceUpdateSuccess;
+            mResourceManager.ResourceUpdateFailure += OnResourceUpdateFailure;
+            mResourceManager.ResourceUpdateAllComplete += OnResourceUpdateAllComplete;
 
-            m_ResourceManager.SetReadOnlyPath(Application.streamingAssetsPath);
-            if (m_ReadWritePathType == ReadWritePathType.TemporaryCache)
+            mResourceManager.SetReadOnlyPath(Application.streamingAssetsPath);
+            if (mReadWritePathType == ReadWritePathType.TemporaryCache)
             {
-                m_ResourceManager.SetReadWritePath(Application.temporaryCachePath);
+                mResourceManager.SetReadWritePath(Application.temporaryCachePath);
             }
             else
             {
-                if (m_ReadWritePathType == ReadWritePathType.Unspecified)
+                if (mReadWritePathType == ReadWritePathType.Unspecified)
                 {
-                    m_ReadWritePathType = ReadWritePathType.PersistentData;
+                    mReadWritePathType = ReadWritePathType.PersistentData;
                 }
 
-                m_ResourceManager.SetReadWritePath(Application.persistentDataPath);
+                mResourceManager.SetReadWritePath(Application.persistentDataPath);
             }
 
-            if (m_EditorResourceMode)
+            if (mEditorResourceMode)
             {
                 return;
             }
 
-            SetResourceMode(m_ResourceMode);
-            m_ResourceManager.SetObjectPoolManager(GameFrameworkEntry.GetModule<IObjectPoolManager>());
-            m_ResourceManager.SetFileSystemManager(GameFrameworkEntry.GetModule<IFileSystemManager>());
-            m_ResourceManager.SetDownloadManager(GameFrameworkEntry.GetModule<IDownloadManager>());
-            m_ResourceManager.AssetAutoReleaseInterval = m_AssetAutoReleaseInterval;
-            m_ResourceManager.AssetCapacity = m_AssetCapacity;
-            m_ResourceManager.AssetExpireTime = m_AssetExpireTime;
-            m_ResourceManager.AssetPriority = m_AssetPriority;
-            m_ResourceManager.ResourceAutoReleaseInterval = m_ResourceAutoReleaseInterval;
-            m_ResourceManager.ResourceCapacity = m_ResourceCapacity;
-            m_ResourceManager.ResourceExpireTime = m_ResourceExpireTime;
-            m_ResourceManager.ResourcePriority = m_ResourcePriority;
-            if (m_ResourceMode == ResourceMode.Updatable || m_ResourceMode == ResourceMode.UpdatableWhilePlaying)
+            SetResourceMode(mResourceMode);
+            mResourceManager.SetObjectPoolManager(GameFrameworkEntry.GetModule<IObjectPoolManager>());
+            mResourceManager.SetFileSystemManager(GameFrameworkEntry.GetModule<IFileSystemManager>());
+            mResourceManager.SetDownloadManager(GameFrameworkEntry.GetModule<IDownloadManager>());
+            mResourceManager.AssetAutoReleaseInterval = mAssetAutoReleaseInterval;
+            mResourceManager.AssetCapacity = mAssetCapacity;
+            mResourceManager.AssetExpireTime = mAssetExpireTime;
+            mResourceManager.AssetPriority = mAssetPriority;
+            mResourceManager.ResourceAutoReleaseInterval = mResourceAutoReleaseInterval;
+            mResourceManager.ResourceCapacity = mResourceCapacity;
+            mResourceManager.ResourceExpireTime = mResourceExpireTime;
+            mResourceManager.ResourcePriority = mResourcePriority;
+            if (mResourceMode == ResourceMode.Updatable || mResourceMode == ResourceMode.UpdatableWhilePlaying)
             {
-                m_ResourceManager.UpdatePrefixUri = m_UpdatePrefixUri;
-                m_ResourceManager.GenerateReadWriteVersionListLength = m_GenerateReadWriteVersionListLength;
-                m_ResourceManager.UpdateRetryCount = m_UpdateRetryCount;
+                mResourceManager.UpdatePrefixUri = mUpdatePrefixUri;
+                mResourceManager.GenerateReadWriteVersionListLength = mGenerateReadWriteVersionListLength;
+                mResourceManager.UpdateRetryCount = mUpdateRetryCount;
             }
 
-            m_ResourceHelper = Helper.CreateHelper(m_ResourceHelperTypeName, m_CustomResourceHelper);
-            if (m_ResourceHelper == null)
+            mResourceHelper = Helper.CreateHelper(mResourceHelperTypeName, mCustomResourceHelper);
+            if (mResourceHelper == null)
             {
                 Log.Error("Can not create resource helper.");
                 return;
             }
 
-            m_ResourceHelper.name = "Resource Helper";
-            Transform transform = m_ResourceHelper.transform;
+            mResourceHelper.name = "Resource Helper";
+            Transform transform = mResourceHelper.transform;
             transform.SetParent(this.transform);
             transform.localScale = Vector3.one;
 
-            m_ResourceManager.SetResourceHelper(m_ResourceHelper);
+            mResourceManager.SetResourceHelper(mResourceHelper);
 
-            if (m_InstanceRoot == null)
+            if (mInstanceRoot == null)
             {
-                m_InstanceRoot = new GameObject("Load Resource Agent Instances").transform;
-                m_InstanceRoot.SetParent(gameObject.transform);
-                m_InstanceRoot.localScale = Vector3.one;
+                mInstanceRoot = new GameObject("Load Resource Agent Instances").transform;
+                mInstanceRoot.SetParent(gameObject.transform);
+                mInstanceRoot.localScale = Vector3.one;
             }
 
-            for (int i = 0; i < m_LoadResourceAgentHelperCount; i++)
+            for (int i = 0; i < mLoadResourceAgentHelperCount; i++)
             {
                 AddLoadResourceAgentHelper(i);
             }
@@ -571,23 +571,23 @@ namespace UnityGameFramework.Runtime
 
         private void Update()
         {
-            m_LastUnloadUnusedAssetsOperationElapseSeconds += Time.unscaledDeltaTime;
-            if (m_AsyncOperation == null && (m_ForceUnloadUnusedAssets || m_LastUnloadUnusedAssetsOperationElapseSeconds >= m_MaxUnloadUnusedAssetsInterval || m_PreorderUnloadUnusedAssets && m_LastUnloadUnusedAssetsOperationElapseSeconds >= m_MinUnloadUnusedAssetsInterval))
+            mLastUnloadUnusedAssetsOperationElapseSeconds += Time.unscaledDeltaTime;
+            if (mAsyncOperation == null && (mForceUnloadUnusedAssets || mLastUnloadUnusedAssetsOperationElapseSeconds >= mMaxUnloadUnusedAssetsInterval || mPreorderUnloadUnusedAssets && mLastUnloadUnusedAssetsOperationElapseSeconds >= mMinUnloadUnusedAssetsInterval))
             {
                 Log.Info("Unload unused assets...");
-                m_ForceUnloadUnusedAssets = false;
-                m_PreorderUnloadUnusedAssets = false;
-                m_LastUnloadUnusedAssetsOperationElapseSeconds = 0f;
-                m_AsyncOperation = Resources.UnloadUnusedAssets();
+                mForceUnloadUnusedAssets = false;
+                mPreorderUnloadUnusedAssets = false;
+                mLastUnloadUnusedAssetsOperationElapseSeconds = 0f;
+                mAsyncOperation = Resources.UnloadUnusedAssets();
             }
 
-            if (m_AsyncOperation != null && m_AsyncOperation.isDone)
+            if (mAsyncOperation != null && mAsyncOperation.isDone)
             {
-                m_AsyncOperation = null;
-                if (m_PerformGCCollect)
+                mAsyncOperation = null;
+                if (mPerformGCCollect)
                 {
                     Log.Info("GC.Collect...");
-                    m_PerformGCCollect = false;
+                    mPerformGCCollect = false;
                     GC.Collect();
                 }
             }
@@ -595,143 +595,143 @@ namespace UnityGameFramework.Runtime
 
         public void SetResourceMode(ResourceMode resourceMode)
         {
-            m_ResourceManager.SetResourceMode(resourceMode);
+            mResourceManager.SetResourceMode(resourceMode);
             switch (resourceMode)
             {
                 case ResourceMode.Package:
-                    m_ResourceManager.PackageVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.PackageVersionListDeserializeCallback_V0);
-                    m_ResourceManager.PackageVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.PackageVersionListDeserializeCallback_V1);
-                    m_ResourceManager.PackageVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.PackageVersionListDeserializeCallback_V2);
+                    mResourceManager.PackageVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.PackageVersionListDeserializeCallback_V0);
+                    mResourceManager.PackageVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.PackageVersionListDeserializeCallback_V1);
+                    mResourceManager.PackageVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.PackageVersionListDeserializeCallback_V2);
                     break;
 
                 case ResourceMode.Updatable:
                 case ResourceMode.UpdatableWhilePlaying:
-                    m_ResourceManager.UpdatableVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.UpdatableVersionListDeserializeCallback_V0);
-                    m_ResourceManager.UpdatableVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.UpdatableVersionListDeserializeCallback_V1);
-                    m_ResourceManager.UpdatableVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.UpdatableVersionListDeserializeCallback_V2);
+                    mResourceManager.UpdatableVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.UpdatableVersionListDeserializeCallback_V0);
+                    mResourceManager.UpdatableVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.UpdatableVersionListDeserializeCallback_V1);
+                    mResourceManager.UpdatableVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.UpdatableVersionListDeserializeCallback_V2);
 
-                    m_ResourceManager.UpdatableVersionListSerializer.RegisterTryGetValueCallback(0, BuiltinVersionListSerializer.UpdatableVersionListTryGetValueCallback_V0);
-                    m_ResourceManager.UpdatableVersionListSerializer.RegisterTryGetValueCallback(1, BuiltinVersionListSerializer.UpdatableVersionListTryGetValueCallback_V1_V2);
-                    m_ResourceManager.UpdatableVersionListSerializer.RegisterTryGetValueCallback(2, BuiltinVersionListSerializer.UpdatableVersionListTryGetValueCallback_V1_V2);
+                    mResourceManager.UpdatableVersionListSerializer.RegisterTryGetValueCallback(0, BuiltinVersionListSerializer.UpdatableVersionListTryGetValueCallback_V0);
+                    mResourceManager.UpdatableVersionListSerializer.RegisterTryGetValueCallback(1, BuiltinVersionListSerializer.UpdatableVersionListTryGetValueCallback_V1_V2);
+                    mResourceManager.UpdatableVersionListSerializer.RegisterTryGetValueCallback(2, BuiltinVersionListSerializer.UpdatableVersionListTryGetValueCallback_V1_V2);
 
-                    m_ResourceManager.ReadOnlyVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V0);
-                    m_ResourceManager.ReadOnlyVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V1);
-                    m_ResourceManager.ReadOnlyVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V2);
+                    mResourceManager.ReadOnlyVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V0);
+                    mResourceManager.ReadOnlyVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V1);
+                    mResourceManager.ReadOnlyVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V2);
 
-                    m_ResourceManager.ReadWriteVersionListSerializer.RegisterSerializeCallback(0, BuiltinVersionListSerializer.LocalVersionListSerializeCallback_V0);
-                    m_ResourceManager.ReadWriteVersionListSerializer.RegisterSerializeCallback(1, BuiltinVersionListSerializer.LocalVersionListSerializeCallback_V1);
-                    m_ResourceManager.ReadWriteVersionListSerializer.RegisterSerializeCallback(2, BuiltinVersionListSerializer.LocalVersionListSerializeCallback_V2);
+                    mResourceManager.ReadWriteVersionListSerializer.RegisterSerializeCallback(0, BuiltinVersionListSerializer.LocalVersionListSerializeCallback_V0);
+                    mResourceManager.ReadWriteVersionListSerializer.RegisterSerializeCallback(1, BuiltinVersionListSerializer.LocalVersionListSerializeCallback_V1);
+                    mResourceManager.ReadWriteVersionListSerializer.RegisterSerializeCallback(2, BuiltinVersionListSerializer.LocalVersionListSerializeCallback_V2);
 
-                    m_ResourceManager.ReadWriteVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V0);
-                    m_ResourceManager.ReadWriteVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V1);
-                    m_ResourceManager.ReadWriteVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V2);
+                    mResourceManager.ReadWriteVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V0);
+                    mResourceManager.ReadWriteVersionListSerializer.RegisterDeserializeCallback(1, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V1);
+                    mResourceManager.ReadWriteVersionListSerializer.RegisterDeserializeCallback(2, BuiltinVersionListSerializer.LocalVersionListDeserializeCallback_V2);
 
-                    m_ResourceManager.ResourcePackVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.ResourcePackVersionListDeserializeCallback_V0);
+                    mResourceManager.ResourcePackVersionListSerializer.RegisterDeserializeCallback(0, BuiltinVersionListSerializer.ResourcePackVersionListDeserializeCallback_V0);
                     break;
             }
         }
 
         public void SetCurrentVariant(string currentVariant)
         {
-            m_ResourceManager.SetCurrentVariant(!string.IsNullOrEmpty(currentVariant) ? currentVariant : null);
+            mResourceManager.SetCurrentVariant(!string.IsNullOrEmpty(currentVariant) ? currentVariant : null);
         }
 
         public void SetDecryptResourceCallback(DecryptResourceCallback decryptResourceCallback)
         {
-            m_ResourceManager.SetDecryptResourceCallback(decryptResourceCallback);
+            mResourceManager.SetDecryptResourceCallback(decryptResourceCallback);
         }
 
         public void UnloadUnusedAssets(bool performGCCollect)
         {
-            m_PreorderUnloadUnusedAssets = true;
+            mPreorderUnloadUnusedAssets = true;
             if (performGCCollect)
             {
-                m_PerformGCCollect = performGCCollect;
+                mPerformGCCollect = performGCCollect;
             }
         }
 
         public void ForceUnloadUnusedAssets(bool performGCCollect)
         {
-            m_ForceUnloadUnusedAssets = true;
+            mForceUnloadUnusedAssets = true;
             if (performGCCollect)
             {
-                m_PerformGCCollect = performGCCollect;
+                mPerformGCCollect = performGCCollect;
             }
         }
 
         public void InitResources(InitResourcesCompleteCallback initResourcesCompleteCallback)
         {
-            m_ResourceManager.InitResources(initResourcesCompleteCallback);
+            mResourceManager.InitResources(initResourcesCompleteCallback);
         }
 
         public CheckVersionListResult CheckVersionList(int latestInternalResourceVersion)
         {
-            return m_ResourceManager.CheckVersionList(latestInternalResourceVersion);
+            return mResourceManager.CheckVersionList(latestInternalResourceVersion);
         }
 
         public void UpdateVersionList(int versionListLength, int versionListHashCode, int versionListCompressedLength, int versionListCompressedHashCode, UpdateVersionListCallbacks updateVersionListCallbacks)
         {
-            m_ResourceManager.UpdateVersionList(versionListLength, versionListHashCode, versionListCompressedLength, versionListCompressedHashCode, updateVersionListCallbacks);
+            mResourceManager.UpdateVersionList(versionListLength, versionListHashCode, versionListCompressedLength, versionListCompressedHashCode, updateVersionListCallbacks);
         }
 
         public void VerifyResources(VerifyResourcesCompleteCallback verifyResourcesCompleteCallback)
         {
-            m_ResourceManager.VerifyResources(0, verifyResourcesCompleteCallback);
+            mResourceManager.VerifyResources(0, verifyResourcesCompleteCallback);
         }
 
         public void VerifyResources(int verifyResourceLengthPerFrame, VerifyResourcesCompleteCallback verifyResourcesCompleteCallback)
         {
-            m_ResourceManager.VerifyResources(verifyResourceLengthPerFrame, verifyResourcesCompleteCallback);
+            mResourceManager.VerifyResources(verifyResourceLengthPerFrame, verifyResourcesCompleteCallback);
         }
 
         public void CheckResources(CheckResourcesCompleteCallback checkResourcesCompleteCallback)
         {
-            m_ResourceManager.CheckResources(false, checkResourcesCompleteCallback);
+            mResourceManager.CheckResources(false, checkResourcesCompleteCallback);
         }
 
         public void CheckResources(bool ignoreOtherVariant, CheckResourcesCompleteCallback checkResourcesCompleteCallback)
         {
-            m_ResourceManager.CheckResources(ignoreOtherVariant, checkResourcesCompleteCallback);
+            mResourceManager.CheckResources(ignoreOtherVariant, checkResourcesCompleteCallback);
         }
 
         public void ApplyResources(string resourcePackPath, ApplyResourcesCompleteCallback applyResourcesCompleteCallback)
         {
-            m_ResourceManager.ApplyResources(resourcePackPath, applyResourcesCompleteCallback);
+            mResourceManager.ApplyResources(resourcePackPath, applyResourcesCompleteCallback);
         }
 
         public void UpdateResources(UpdateResourcesCompleteCallback updateResourcesCompleteCallback)
         {
-            m_ResourceManager.UpdateResources(updateResourcesCompleteCallback);
+            mResourceManager.UpdateResources(updateResourcesCompleteCallback);
         }
 
         public void UpdateResources(string resourceGroupName, UpdateResourcesCompleteCallback updateResourcesCompleteCallback)
         {
-            m_ResourceManager.UpdateResources(resourceGroupName, updateResourcesCompleteCallback);
+            mResourceManager.UpdateResources(resourceGroupName, updateResourcesCompleteCallback);
         }
 
         public void StopUpdateResources()
         {
-            m_ResourceManager.StopUpdateResources();
+            mResourceManager.StopUpdateResources();
         }
 
         public bool VerifyResourcePack(string resourcePackPath)
         {
-            return m_ResourceManager.VerifyResourcePack(resourcePackPath);
+            return mResourceManager.VerifyResourcePack(resourcePackPath);
         }
 
         public TaskInfo[] GetAllLoadAssetInfos()
         {
-            return m_ResourceManager.GetAllLoadAssetInfos();
+            return mResourceManager.GetAllLoadAssetInfos();
         }
 
         public void GetAllLoadAssetInfos(List<TaskInfo> results)
         {
-            m_ResourceManager.GetAllLoadAssetInfos(results);
+            mResourceManager.GetAllLoadAssetInfos(results);
         }
 
         public HasAssetResult HasAsset(string assetName)
         {
-            return m_ResourceManager.HasAsset(assetName);
+            return mResourceManager.HasAsset(assetName);
         }
 
         public void LoadAsset(string assetName, LoadAssetCallbacks loadAssetCallbacks)
@@ -783,27 +783,27 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_ResourceManager.LoadAsset(assetName, assetType, priority, loadAssetCallbacks, userData);
+            mResourceManager.LoadAsset(assetName, assetType, priority, loadAssetCallbacks, userData);
         }
 
         public void UnloadAsset(object asset)
         {
-            m_ResourceManager.UnloadAsset(asset);
+            mResourceManager.UnloadAsset(asset);
         }
 
         public string GetBinaryPath(string binaryAssetName)
         {
-            return m_ResourceManager.GetBinaryPath(binaryAssetName);
+            return mResourceManager.GetBinaryPath(binaryAssetName);
         }
 
         public bool GetBinaryPath(string binaryAssetName, out bool storageInReadOnly, out bool storageInFileSystem, out string relativePath, out string fileName)
         {
-            return m_ResourceManager.GetBinaryPath(binaryAssetName, out storageInReadOnly, out storageInFileSystem, out relativePath, out fileName);
+            return mResourceManager.GetBinaryPath(binaryAssetName, out storageInReadOnly, out storageInFileSystem, out relativePath, out fileName);
         }
 
         public int GetBinaryLength(string binaryAssetName)
         {
-            return m_ResourceManager.GetBinaryLength(binaryAssetName);
+            return mResourceManager.GetBinaryLength(binaryAssetName);
         }
 
         public void LoadBinary(string binaryAssetName, LoadBinaryCallbacks loadBinaryCallbacks)
@@ -825,7 +825,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            m_ResourceManager.LoadBinary(binaryAssetName, loadBinaryCallbacks, userData);
+            mResourceManager.LoadBinary(binaryAssetName, loadBinaryCallbacks, userData);
         }
 
         public byte[] LoadBinaryFromFileSystem(string binaryAssetName)
@@ -842,7 +842,7 @@ namespace UnityGameFramework.Runtime
                 return null;
             }
 
-            return m_ResourceManager.LoadBinaryFromFileSystem(binaryAssetName);
+            return mResourceManager.LoadBinaryFromFileSystem(binaryAssetName);
         }
 
         public int LoadBinaryFromFileSystem(string binaryAssetName, byte[] buffer)
@@ -887,7 +887,7 @@ namespace UnityGameFramework.Runtime
                 return 0;
             }
 
-            return m_ResourceManager.LoadBinaryFromFileSystem(binaryAssetName, buffer, startIndex, length);
+            return mResourceManager.LoadBinaryFromFileSystem(binaryAssetName, buffer, startIndex, length);
         }
 
         public byte[] LoadBinarySegmentFromFileSystem(string binaryAssetName, int length)
@@ -909,7 +909,7 @@ namespace UnityGameFramework.Runtime
                 return null;
             }
 
-            return m_ResourceManager.LoadBinarySegmentFromFileSystem(binaryAssetName, offset, length);
+            return mResourceManager.LoadBinarySegmentFromFileSystem(binaryAssetName, offset, length);
         }
 
         public int LoadBinarySegmentFromFileSystem(string binaryAssetName, byte[] buffer)
@@ -969,47 +969,47 @@ namespace UnityGameFramework.Runtime
                 return 0;
             }
 
-            return m_ResourceManager.LoadBinarySegmentFromFileSystem(binaryAssetName, offset, buffer, startIndex, length);
+            return mResourceManager.LoadBinarySegmentFromFileSystem(binaryAssetName, offset, buffer, startIndex, length);
         }
 
         public bool HasResourceGroup(string resourceGroupName)
         {
-            return m_ResourceManager.HasResourceGroup(resourceGroupName);
+            return mResourceManager.HasResourceGroup(resourceGroupName);
         }
 
         public IResourceGroup GetResourceGroup()
         {
-            return m_ResourceManager.GetResourceGroup();
+            return mResourceManager.GetResourceGroup();
         }
 
         public IResourceGroup GetResourceGroup(string resourceGroupName)
         {
-            return m_ResourceManager.GetResourceGroup(resourceGroupName);
+            return mResourceManager.GetResourceGroup(resourceGroupName);
         }
 
         public IResourceGroup[] GetAllResourceGroups()
         {
-            return m_ResourceManager.GetAllResourceGroups();
+            return mResourceManager.GetAllResourceGroups();
         }
 
         public void GetAllResourceGroups(List<IResourceGroup> results)
         {
-            m_ResourceManager.GetAllResourceGroups(results);
+            mResourceManager.GetAllResourceGroups(results);
         }
 
         public IResourceGroupCollection GetResourceGroupCollection(params string[] resourceGroupNames)
         {
-            return m_ResourceManager.GetResourceGroupCollection(resourceGroupNames);
+            return mResourceManager.GetResourceGroupCollection(resourceGroupNames);
         }
 
         public IResourceGroupCollection GetResourceGroupCollection(List<string> resourceGroupNames)
         {
-            return m_ResourceManager.GetResourceGroupCollection(resourceGroupNames);
+            return mResourceManager.GetResourceGroupCollection(resourceGroupNames);
         }
 
         private void AddLoadResourceAgentHelper(int index)
         {
-            LoadResourceAgentHelperBase loadResourceAgentHelper = Helper.CreateHelper(m_LoadResourceAgentHelperTypeName, m_CustomLoadResourceAgentHelper, index);
+            LoadResourceAgentHelperBase loadResourceAgentHelper = Helper.CreateHelper(mLoadResourceAgentHelperTypeName, mCustomLoadResourceAgentHelper, index);
             if (loadResourceAgentHelper == null)
             {
                 Log.Error("Can not create load resource agent helper.");
@@ -1018,65 +1018,65 @@ namespace UnityGameFramework.Runtime
 
             loadResourceAgentHelper.name = Utility.Text.Format("Load Resource Agent Helper - {0}", index);
             Transform transform = loadResourceAgentHelper.transform;
-            transform.SetParent(m_InstanceRoot);
+            transform.SetParent(mInstanceRoot);
             transform.localScale = Vector3.one;
 
-            m_ResourceManager.AddLoadResourceAgentHelper(loadResourceAgentHelper);
+            mResourceManager.AddLoadResourceAgentHelper(loadResourceAgentHelper);
         }
 
         private void OnResourceVerifyStart(object sender, GameFramework.Resource.ResourceVerifyStartEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceVerifyStartEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceVerifyStartEventArgs.Create(e));
         }
 
         private void OnResourceVerifySuccess(object sender, GameFramework.Resource.ResourceVerifySuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceVerifySuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceVerifySuccessEventArgs.Create(e));
         }
 
         private void OnResourceVerifyFailure(object sender, GameFramework.Resource.ResourceVerifyFailureEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceVerifyFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceVerifyFailureEventArgs.Create(e));
         }
 
         private void OnResourceApplyStart(object sender, GameFramework.Resource.ResourceApplyStartEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceApplyStartEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceApplyStartEventArgs.Create(e));
         }
 
         private void OnResourceApplySuccess(object sender, GameFramework.Resource.ResourceApplySuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceApplySuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceApplySuccessEventArgs.Create(e));
         }
 
         private void OnResourceApplyFailure(object sender, GameFramework.Resource.ResourceApplyFailureEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceApplyFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceApplyFailureEventArgs.Create(e));
         }
 
         private void OnResourceUpdateStart(object sender, GameFramework.Resource.ResourceUpdateStartEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceUpdateStartEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceUpdateStartEventArgs.Create(e));
         }
 
         private void OnResourceUpdateChanged(object sender, GameFramework.Resource.ResourceUpdateChangedEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceUpdateChangedEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceUpdateChangedEventArgs.Create(e));
         }
 
         private void OnResourceUpdateSuccess(object sender, GameFramework.Resource.ResourceUpdateSuccessEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceUpdateSuccessEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceUpdateSuccessEventArgs.Create(e));
         }
 
         private void OnResourceUpdateFailure(object sender, GameFramework.Resource.ResourceUpdateFailureEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceUpdateFailureEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceUpdateFailureEventArgs.Create(e));
         }
 
         private void OnResourceUpdateAllComplete(object sender, GameFramework.Resource.ResourceUpdateAllCompleteEventArgs e)
         {
-            m_EventComponent.Fire(this, ResourceUpdateAllCompleteEventArgs.Create(e));
+            mEventComponent.Fire(this, ResourceUpdateAllCompleteEventArgs.Create(e));
         }
     }
 }

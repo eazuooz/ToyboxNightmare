@@ -17,12 +17,12 @@ namespace UnityGameFramework.Runtime
     {
         private sealed class NetworkInformationWindow : ScrollableDebuggerWindowBase
         {
-            private NetworkComponent m_NetworkComponent = null;
+            private NetworkComponent mNetworkComponent = null;
 
             public override void Initialize(params object[] args)
             {
-                m_NetworkComponent = GameEntry.GetComponent<NetworkComponent>();
-                if (m_NetworkComponent == null)
+                mNetworkComponent = GameEntry.GetComponent<NetworkComponent>();
+                if (mNetworkComponent == null)
                 {
                     Log.Fatal("Network component is invalid.");
                     return;
@@ -34,10 +34,10 @@ namespace UnityGameFramework.Runtime
                 GUILayout.Label("<b>Network Information</b>");
                 GUILayout.BeginVertical("box");
                 {
-                    DrawItem("Network Channel Count", m_NetworkComponent.NetworkChannelCount.ToString());
+                    DrawItem("Network Channel Count", mNetworkComponent.NetworkChannelCount.ToString());
                 }
                 GUILayout.EndVertical();
-                INetworkChannel[] networkChannels = m_NetworkComponent.GetAllNetworkChannels();
+                INetworkChannel[] networkChannels = mNetworkComponent.GetAllNetworkChannels();
                 for (int i = 0; i < networkChannels.Length; i++)
                 {
                     DrawNetworkChannel(networkChannels[i]);

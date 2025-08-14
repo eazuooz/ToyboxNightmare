@@ -22,7 +22,7 @@ namespace UnityGameFramework.Runtime
         private static readonly string BytesAssetExtension = ".bytes";
         private const int ColumnCount = 4;
 
-        private ResourceComponent m_ResourceComponent = null;
+        private ResourceComponent mResourceComponent = null;
 
         public override Language SystemLanguage
         {
@@ -179,13 +179,13 @@ namespace UnityGameFramework.Runtime
 
         public override void ReleaseDataAsset(ILocalizationManager localizationManager, object dictionaryAsset)
         {
-            m_ResourceComponent.UnloadAsset(dictionaryAsset);
+            mResourceComponent.UnloadAsset(dictionaryAsset);
         }
 
         private void Start()
         {
-            m_ResourceComponent = GameEntry.GetComponent<ResourceComponent>();
-            if (m_ResourceComponent == null)
+            mResourceComponent = GameEntry.GetComponent<ResourceComponent>();
+            if (mResourceComponent == null)
             {
                 Log.Fatal("Resource component is invalid.");
                 return;
