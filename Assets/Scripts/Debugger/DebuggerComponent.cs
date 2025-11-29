@@ -24,7 +24,7 @@ namespace UnityGameFramework.Runtime
 
         internal static readonly float DefaultWindowScale = 1f;
 
-        private static readonly TextEditor s_TextEditor = new TextEditor();
+        private static TextEditor s_TextEditor;
         private IDebuggerManager mDebuggerManager = null;
         private Rect mDragRect = new Rect(0f, 0f, float.MaxValue, 25f);
         private Rect mIconRect = DefaultIconRect;
@@ -151,6 +151,11 @@ namespace UnityGameFramework.Runtime
             }
 
             mFpsCounter = new FpsCounter(0.5f);
+
+            if (s_TextEditor == null)
+            {
+                s_TextEditor = new TextEditor();
+            }
         }
 
         private void Start()
