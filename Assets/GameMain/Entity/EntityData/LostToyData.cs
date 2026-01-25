@@ -9,26 +9,6 @@ namespace ToyBoxNightmare
 {
     public class LostToyData : TargetableObjectData
     {
-        //[SerializeField]
-        //private List<WeaponData> mWeaponDatas = new List<WeaponData>();
-
-        //[SerializeField]
-        //private List<ArmorData> mArmorDatas = new List<ArmorData>();
-
-        [SerializeField]
-        private int mMaxHP = 0;
-
-        [SerializeField]
-        private int mDefense = 0;
-
-        [SerializeField]
-        private float mMoveSpeed = 0.0f;
-
-        [SerializeField]
-        private int mDeadEffectId = 0;
-
-        [SerializeField]
-        private int mDeadSoundId = 0;
 
         public LostToyData(int entityId, int typeId/*, CampType camp*/)
             : base(entityId, typeId/*, camp*/)
@@ -192,5 +172,27 @@ namespace ToyBoxNightmare
         //        HP = mMaxHP;
         //    }
         //}
+
+        //[SerializeField]
+        //private List<WeaponData> mWeaponDatas = new List<WeaponData>();
+
+        //[SerializeField]
+        //private List<ArmorData> mArmorDatas = new List<ArmorData>();
+
+        [SerializeField]
+        private int mMaxHP = 0;
+
+        [SerializeField]
+        private int mDefense = 0;
+
+        [SerializeField]
+        private float mMoveSpeed = 0.0f;
+
+        [SerializeField]
+        private int mDeadEffectId = 0;
+
+        [SerializeField]
+        private int mDeadSoundId = 0;
+
     }
 }
