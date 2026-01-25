@@ -10,8 +10,8 @@ public class AddressablesController : MonoBehaviour
 
     private void Start()
     {
-        _parent = GameObject.Find("Example Assets").transform;
-        Instantiate();
+        //_parent = GameObject.Find("Example Assets").transform;
+        //Instantiate();
     }
 
     private async void Instantiate()
