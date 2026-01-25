@@ -37,9 +37,9 @@ namespace ToyBoxNightmare
         protected virtual void OnShowEntitySuccess(object sender, GameEventArgs e)
         {
             ShowEntitySuccessEventArgs ne = (ShowEntitySuccessEventArgs)e;
-            if (ne.EntityLogicType == typeof(Player))
+            if (ne.EntityLogicType == typeof(LostToy))
             {
-                mPlayer = (Player)ne.Entity.Logic;
+                mPlayer = (LostToy)ne.Entity.Logic;
             }
         }
 
@@ -58,6 +58,6 @@ namespace ToyBoxNightmare
             protected set;
         }
 
-        private Player mPlayer = null;
+        private LostToy mPlayer = null;
     }
 }

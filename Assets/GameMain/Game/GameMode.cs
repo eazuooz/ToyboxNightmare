@@ -10,6 +10,9 @@ namespace ToyBoxNightmare
 {
     public enum GameMode : byte
     {
+        /// <summary>
+        /// Represents the survival mode or state within the application or game context.
+        /// </summary>
         Survival,
     }
 }
