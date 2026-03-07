@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------
+//------------------------------------------------------------
 // Game Framework - MIT License
 // Copyright © 2013–2021 Jiang Yin (EllanJiang)
 // Modified © 2025 얌얌코딩
@@ -139,14 +139,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            if (baseComponent.EditorResourceMode)
-            {
-                mSoundManager.SetResourceManager(baseComponent.EditorResourceHelper);
-            }
-            else
-            {
-                mSoundManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
-            }
+            mSoundManager.SetResourceManager(GameEntry.GetComponent<ResourceComponent>().ResourceManager);
 
             SoundHelperBase soundHelper = Helper.CreateHelper(mSoundHelperTypeName, mCustomSoundHelper);
             if (soundHelper == null)
@@ -488,7 +481,7 @@ namespace UnityGameFramework.Runtime
 
         private void RefreshAudioListener()
         {
-            mAudioListener.enabled = FindObjectsOfType<AudioListener>().Length <= 1;
+            mAudioListener.enabled = FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length <= 1;
         }
     }
 }

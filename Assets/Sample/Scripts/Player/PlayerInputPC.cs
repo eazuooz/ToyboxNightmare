@@ -17,7 +17,7 @@ public class PlayerInputPC : MonoBehaviour
 		playerMovement = GetComponent<PlayerMovement> ();
 		playerAttack = GetComponent<PlayerAttack> ();
 		//Find an instance of the PauseMenu script in the scene
-		pauseMenu = FindObjectOfType<PauseMenu>();
+		pauseMenu = FindFirstObjectByType<PauseMenu>();
 	}
 
 	//If this is a mobile platform, lines 25 through 28 will be enabled and this script will remove itself from the player

@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------
+//------------------------------------------------------------
 // Game Framework - MIT License
 // Copyright © 2013–2021 Jiang Yin (EllanJiang)
 // Modified © 2025 얌얌코딩
@@ -115,14 +115,7 @@ namespace UnityGameFramework.Runtime
                 return;
             }
 
-            if (baseComponent.EditorResourceMode)
-            {
-                mLocalizationManager.SetResourceManager(baseComponent.EditorResourceHelper);
-            }
-            else
-            {
-                mLocalizationManager.SetResourceManager(GameFrameworkEntry.GetModule<IResourceManager>());
-            }
+            mLocalizationManager.SetResourceManager(GameEntry.GetComponent<ResourceComponent>().ResourceManager);
 
             LocalizationHelperBase localizationHelper = Helper.CreateHelper(mLocalizationHelperTypeName, mCustomLocalizationHelper);
             if (localizationHelper == null)

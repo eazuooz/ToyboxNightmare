@@ -26,7 +26,7 @@ namespace ToyBoxNightmare
 
             //Name = Utility.Text.Format("LostToy ({0})", Id);
 
-            //// ¹«±â/¹æ¾î±¸¸¦ ¿£Æ¼Æ¼·Î »ý¼ºÇØ¼­ "ºÎÂø"½ÃÅ°´Â ¹æ½Ä
+            //// ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½î±¸ï¿½ï¿½ ï¿½ï¿½Æ¼Æ¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¼ï¿½ "ï¿½ï¿½ï¿½ï¿½"ï¿½ï¿½Å°ï¿½ï¿½ ï¿½ï¿½ï¿½
             //List<WeaponData> weaponDatas = mLostToyData.GetAllWeaponDatas();
             //for (int i = 0; i < weaponDatas.Count; i++)
             //{
@@ -39,7 +39,7 @@ namespace ToyBoxNightmare
             //    GameEntry.Entity.ShowArmor(armorDatas[i]);
             //}
 
-            //// À§Ä¡/È¸Àü ÃÊ±âÈ­(µ¥ÀÌÅÍ°¡ TargetableObjectData¿¡ ÀÌ¹Ì ÀÖÀ» ¼öµµ ÀÖÀ½)
+            //// ï¿½ï¿½Ä¡/È¸ï¿½ï¿½ ï¿½Ê±ï¿½È­(ï¿½ï¿½ï¿½ï¿½ï¿½Í°ï¿½ TargetableObjectDataï¿½ï¿½ ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
             //CachedTransform.position = mLostToyData.Position;
             //CachedTransform.rotation = mLostToyData.Rotation;
         }
@@ -82,7 +82,7 @@ namespace ToyBoxNightmare
         //{
         //    base.OnDead(attacker);
 
-        //    // »ç¸Á È¿°ú/»ç¿îµå
+        //    // ï¿½ï¿½ï¿½ È¿ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½
         //    GameEntry.Entity.ShowEffect(new EffectData(GameEntry.Entity.GenerateSerialId(), mLostToyData.DeadEffectId)
         //    {
         //        Position = CachedTransform.localPosition,
@@ -99,22 +99,20 @@ namespace ToyBoxNightmare
         //protected internal override void OnInit(object userData)
         //{
         //    base.OnInit(userData);
-        //    // ÃÊ±âÈ­ ÄÚµå ÀÛ¼º
+        //    // ï¿½Ê±ï¿½È­ ï¿½Úµï¿½ ï¿½Û¼ï¿½
         //}
 
         //protected internal override void OnShow(object userData)
         //{
         //    base.OnShow(userData);
-        //    Debug.Log("ÇÃ·¹ÀÌ¾î µîÀå");
+        //    Debug.Log("ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½");
         //}
 
         //protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         //{
         //    base.OnUpdate(elapseSeconds, realElapseSeconds);
-        //    // ¸Å ÇÁ·¹ÀÓ ÀÌµ¿ ¶Ç´Â ÀÔ·Â Ã³¸®
+        //    // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ìµï¿½ ï¿½Ç´ï¿½ ï¿½Ô·ï¿½ Ã³ï¿½ï¿½
         //}
 
-        [SerializeField]
-        private LostToyData mLostToyData = null;
     }
 }

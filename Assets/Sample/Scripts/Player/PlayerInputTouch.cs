@@ -19,8 +19,8 @@ public class PlayerInputTouch : MonoBehaviour
 		playerMovement = GetComponent<PlayerMovement>();
 		playerAttack = GetComponent<PlayerAttack>();
 		//Find an instance of the PauseMenu and Touchpad scripts in the scene
-		pauseMenu = FindObjectOfType<PauseMenu>();
-		touchPad = FindObjectOfType<Touchpad>();
+		pauseMenu = FindFirstObjectByType<PauseMenu>();
+		touchPad = FindFirstObjectByType<Touchpad>();
 	}
 
 	//If this is not a mobile platform, lines 28 through 31 will be enabled and this script will remove itself from the player
