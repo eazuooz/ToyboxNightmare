@@ -1,21 +1,13 @@
-﻿//------------------------------------------------------------
-// Game Framework - MIT License
-// Copyright © 2013–2021 Jiang Yin (EllanJiang)
-// Modified © 2025 얌얌코딩
-// Homepage: https://www.yamyamcoding.com/
-// Feedback: mailto:eazuooz@gmail.com
-//------------------------------------------------------------
-
-using UnityEngine;
 using GameFramework.Procedure;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
-
 
 namespace ToyBoxNightmare
 {
     public class ProcedureMain : ProcedureBase
     {
+        private SurvivalGame mGame = null;
+
         protected override void OnInit(ProcedureOwner procedureOwner)
         {
             base.OnInit(procedureOwner);
@@ -24,15 +16,25 @@ namespace ToyBoxNightmare
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
             base.OnEnter(procedureOwner);
+
+            Log.Info("ProcedureMain: Enter");
+
+            mGame = new SurvivalGame();
+            mGame.Initialize();
         }
 
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+
+            mGame?.Update(elapseSeconds, realElapseSeconds);
         }
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
         {
+            mGame?.Shutdown();
+            mGame = null;
+
             base.OnLeave(procedureOwner, isShutdown);
         }
 
@@ -40,12 +42,7 @@ namespace ToyBoxNightmare
         {
             base.OnDestroy(procedureOwner);
         }
-        public override bool UseNativeDialog
-        {
-            get
-            {
-                return false;
-            }
-        }
+
+        public override bool UseNativeDialog => false;
     }
 }

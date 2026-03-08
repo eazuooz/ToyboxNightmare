@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityGameFramework.Runtime;
+using GameFramework.Event;
 
 namespace ToyBoxNightmare
 {
@@ -28,21 +29,20 @@ namespace ToyBoxNightmare
 
             if (fromRatio > toRatio)
             {
-                // HPBar ÀÖÀ¸¸é ¿¬°á
-                // GameEntry.HPBar.ShowHPBar(this.Entity, fromRatio, toRatio);
+                // HPBar ì—…ë°ì´íŠ¸ - ë‚˜ì¤‘ì— êµ¬í˜„
             }
 
-            //if (mTargetableObjectData.HitPoints <= 0)
-            //{
-            //    OnDead(attacker);
-            //}
+            if (mTargetableObjectData.HitPoints <= 0)
+            {
+                OnDead(attacker);
+            }
         }
 
         protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
 
-            // ·¹ÀÌ¾î ¼¼ÆÃÀÌ ÇÊ¿äÇÏ¸é EntityÀÇ °ÔÀÓ¿ÀºêÁ§Æ®¿¡ Àû¿ë
+            // ï¿½ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½Ï¸ï¿½ Entityï¿½ï¿½ ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             // Entity is UnityGameFramework.Runtime.Entity
             // Entity.gameObject.layer = ...
         }
@@ -59,10 +59,10 @@ namespace ToyBoxNightmare
             }
         }
 
-        //protected virtual void OnDead(Entity attacker)
-        //{
-        //    GameEntry.Entity.HideEntity(Entity);
-        //}
+        protected virtual void OnDead(Entity attacker)
+        {
+            GameEntry.GetComponent<EntityComponent>().HideEntity(Entity);
+        }
 
         private void OnTriggerEnter(Collider other)
         {
@@ -72,13 +72,13 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            // Ãæµ¹ Áßº¹ ¹æÁö ·ÎÁ÷À» À¯ÁöÇÏ°í ½ÍÀ¸¸é ¡°Entity.Id¡±·Î ºñ±³
+            // ï¿½æµ¹ ï¿½ßºï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Entity.Idï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
             if (otherEntity.Logic is TargetableObject && otherEntity.Id >= Entity.Id)
             {
                 return;
             }
 
-            // Ãæµ¹ ¶ó¿ìÆÃ(ÇÁ·ÎÁ§Æ®¿¡ ¸Â°Ô)
+            // ï¿½æµ¹ ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Â°ï¿½)
             // AIUtility.PerformCollision(this, otherEntity);
         }
 
