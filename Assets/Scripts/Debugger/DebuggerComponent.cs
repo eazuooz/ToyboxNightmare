@@ -232,7 +232,8 @@ namespace UnityGameFramework.Runtime
             GUI.skin = mSkin;
             GUI.matrix = Matrix4x4.Scale(new Vector3(mWindowScale, mWindowScale, 1f));
 
-            if (mShowFullWindow)
+            bool showFullWindow = mShowFullWindow;
+            if (showFullWindow)
             {
                 mWindowRect = GUILayout.Window(0, mWindowRect, DrawWindow, "<b>GAME FRAMEWORK DEBUGGER</b>");
             }

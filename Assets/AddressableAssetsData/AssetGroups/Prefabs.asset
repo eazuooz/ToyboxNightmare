@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: Prefabs
   m_GUID: 25ee535a9b27ca448be584bd3f479a0b
   m_SerializeEntries:
+  - m_GUID: cd6a592e762e4774bbd242e095fc7098
+    m_Address: Player
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefabs
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 08e54000e23d1461a96002c851a10746
     m_Address: Clown
     m_ReadOnly: 0

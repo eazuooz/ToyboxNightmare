@@ -4,7 +4,8 @@
       "Bash(rm:*)",
       "Bash(python3:*)",
       "Bash(ls:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

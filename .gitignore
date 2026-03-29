@@ -77,8 +77,4 @@ crashlytics-build.properties
 
 # Except GameFramework under all files
 /[Aa]ssets/[Gg]ame[Ff]ramework/
-
-
-
-
 /External/GameFramework
