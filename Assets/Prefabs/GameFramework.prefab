@@ -1066,7 +1066,22 @@ MonoBehaviour:
   mCustomEntityGroupHelper: {fileID: 0}
   mEntityGroups:
   - mName: Player
-    mInstanceAutoReleaseInterval: 0
-    mInstanceCapacity: 0
-    mInstanceExpireTime: 0
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 4
+    mInstanceExpireTime: 60
+    mInstancePriority: 0
+  - mName: Enemy
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 64
+    mInstanceExpireTime: 60
+    mInstancePriority: 0
+  - mName: ExpGem
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 100
+    mInstanceExpireTime: 60
+    mInstancePriority: 0
+  - mName: Projectile
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 64
+    mInstanceExpireTime: 60
     mInstancePriority: 0

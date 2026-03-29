@@ -14,12 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: Default Local Group
   m_GUID: ff216df9d1e9d724681c67a6aecae4bb
-  m_SerializeEntries:
-  - m_GUID: 149d6dcc67e8d1240bbc0dd6ddf0c1bd
-    m_Address: Assets/Art/Prefabs/Environment/Environment.prefab
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
+  m_SerializeEntries: []
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 8a881bbf8abeb2c4eb397cdf894d98c1, type: 2}
   m_SchemaSet:

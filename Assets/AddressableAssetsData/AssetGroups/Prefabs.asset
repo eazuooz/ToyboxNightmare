@@ -15,20 +15,20 @@ MonoBehaviour:
   m_GroupName: Prefabs
   m_GUID: 25ee535a9b27ca448be584bd3f479a0b
   m_SerializeEntries:
-  - m_GUID: cd6a592e762e4774bbd242e095fc7098
-    m_Address: Player
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Prefabs
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 08e54000e23d1461a96002c851a10746
     m_Address: Clown
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 151bc9e971bfe584db0a59e7d806f267
-    m_Address: Girl
+  - m_GUID: 149d6dcc67e8d1240bbc0dd6ddf0c1bd
+    m_Address: Environment
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 163092cc62f83644f86ae0a396c134e0
+    m_Address: Boy
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
@@ -45,14 +45,14 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3a6182fe56bc9c54993c539ddec7be04
-    m_Address: Boy
+  - m_GUID: 66a5b91494d6fee428652fa1e1e92808
+    m_Address: Sheep
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 66a5b91494d6fee428652fa1e1e92808
-    m_Address: Sheep
+  - m_GUID: 92ded722f3c255941bf29330e44bd9a8
+    m_Address: Girl
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs

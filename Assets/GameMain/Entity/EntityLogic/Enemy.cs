@@ -11,6 +11,14 @@ namespace ToyBoxNightmare
         private const float AttackInterval = 1f;   // 초당 1회 공격
         private const float AttackRange = 1.5f;    // 공격 사거리
 
+        private float mSpeedMultiplier = 1f;
+
+        /// <summary>이동 속도 배율을 설정한다. FrostWeapon 이 사용한다.</summary>
+        public void SetSpeedMultiplier(float multiplier)
+        {
+            mSpeedMultiplier = Mathf.Clamp(multiplier, 0f, 1f);
+        }
+
         protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
@@ -25,6 +33,7 @@ namespace ToyBoxNightmare
             CachedTransform.position = mEnemyData.Position;
             CachedTransform.rotation = mEnemyData.Rotation;
             mAttackTimer = 0f;
+            mSpeedMultiplier = 1f;
         }
 
         protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
@@ -42,7 +51,7 @@ namespace ToyBoxNightmare
             if (distance > AttackRange)
             {
                 // 플레이어 추적
-                CachedTransform.position += toPlayer.normalized * mEnemyData.MoveSpeed * elapseSeconds;
+                CachedTransform.position += toPlayer.normalized * mEnemyData.MoveSpeed * mSpeedMultiplier * elapseSeconds;
                 CachedTransform.forward = toPlayer.normalized;
             }
             else
@@ -52,14 +61,14 @@ namespace ToyBoxNightmare
                 if (mAttackTimer >= AttackInterval)
                 {
                     mAttackTimer = 0f;
-                    player.TakeDamage(Entity, mEnemyData.AttackDamage);
+                    //player.TakeDamage(Entity, mEnemyData.AttackDamage);
                 }
             }
         }
 
         protected override void OnDead(Entity attacker)
         {
-            SurvivalGame.Instance?.SpawnExpGem(CachedTransform.position, mEnemyData.ExpReward);
+            //SurvivalGame.Instance?.SpawnExpGem(CachedTransform.position, mEnemyData.ExpReward);
             base.OnDead(attacker);  // HideEntity 호출
         }
     }

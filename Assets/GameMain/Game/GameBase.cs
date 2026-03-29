@@ -16,31 +16,18 @@ namespace ToyBoxNightmare
     {
         public virtual void Initialize()
         {
-            //GameEntry.Event.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
-            //GameEntry.Event.Subscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
-
             GameOver = false;
         }
         public virtual void Shutdown()
         {
-            //GameEntry.Event.Unsubscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
-            //GameEntry.Event.Unsubscribe(ShowEntityFailureEventArgs.EventId, OnShowEntityFailure);
+    
         }
         public virtual void Update(float elapseSeconds, float realElapseSeconds)
         {
-            //if (mPlayer != null && mPlayer.IsDead)
-            //{
-            //    GameOver = true;
-            //    return;
-            //}
+
         }
         protected virtual void OnShowEntitySuccess(object sender, GameEventArgs e)
         {
-            ShowEntitySuccessEventArgs ne = (ShowEntitySuccessEventArgs)e;
-            if (ne.EntityLogicType == typeof(LostToy))
-            {
-                mPlayer = (LostToy)ne.Entity.Logic;
-            }
         }
 
         protected virtual void OnShowEntityFailure(object sender, GameEventArgs e)
@@ -58,6 +45,5 @@ namespace ToyBoxNightmare
             protected set;
         }
 
-        private LostToy mPlayer = null;
     }
 }

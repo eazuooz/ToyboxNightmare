@@ -39,14 +39,14 @@ namespace ToyBoxNightmare
                 "플레이어 주변에 범위 공격 무기 장착",
                 () =>
                 {
-                    if (!player.GetComponent<AreaWeapon>())
-                        player.AttachWeapon<AreaWeapon>();
+                    //if (!player.GetComponent<AreaWeapon>())
+                        //player.AttachWeapon<AreaWeapon>();
                 }));
 
             mPool.Add(new UpgradeDefinition(
                 "생명력 회복",
                 "HP +30 회복",
-                () => player.HealHitPoints(30)));
+                () => { /*player.HealHitPoints(30);*/ }));
         }
 
         /// <summary>

@@ -41,7 +41,7 @@ namespace ToyBoxNightmare
             if (dist <= CollectRadius)
             {
                 // 수집
-                SurvivalGame.Instance?.LevelSystem.AddExp(mData.ExpAmount);
+                //SurvivalGame.Instance?.LevelSystem.AddExp(mData.ExpAmount);
                 GameEntry.GetComponent<EntityComponent>().HideEntity(Entity);
                 return;
             }
