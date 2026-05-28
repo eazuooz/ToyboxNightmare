@@ -5,7 +5,17 @@
       "Bash(python3:*)",
       "Bash(ls:*)",
       "Bash(sed:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(find /d/Github/ToyboxNightmare -name SurvivalGame.cs -o -name *Procedure*.cs)",
+      "Bash(grep -v \"//.*\")",
+      "Bash(find *)",
+      "Bash(cat)",
+      "Bash(bash /tmp/check_usage.sh)",
+      "Bash(grep -v \"class AreaWeapon\\\\|//\")",
+      "Bash(bash /tmp/final_check.sh)",
+      "Bash(rm \"D:/Github/ToyboxNightmare/Assets/GameMain/Game/System/LevelSystem.cs\" \"D:/Github/ToyboxNightmare/Assets/GameMain/Game/System/LevelSystem.cs.meta\" \"D:/Github/ToyboxNightmare/Assets/GameMain/Game/System/UpgradeSystem.cs\" \"D:/Github/ToyboxNightmare/Assets/GameMain/Game/System/UpgradeSystem.cs.meta\")",
+      "Bash(rmdir \"D:/Github/ToyboxNightmare/Assets/GameMain/Game/System\")",
+      "Bash(rm \"D:/Github/ToyboxNightmare/Assets/GameMain/Game/System.meta\")"
     ]
   }
 }
