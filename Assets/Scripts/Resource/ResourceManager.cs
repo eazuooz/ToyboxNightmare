@@ -26,7 +26,15 @@ namespace UnityGameFramework.Runtime
     public sealed class ResourceManager : IResourceManager
     {
         // 로드된 에셋 핸들 추적 (UnloadAsset 시 Release하기 위해)
-        private readonly Dictionary<object, AsyncOperationHandle> mAssetHandles = new Dictionary<object, AsyncOperationHandle>();
+        //
+        // 주소(assetName) 하나당 핸들 목록을 들고 취득 1회 : 해제 1회로 맞춘다.
+        // Addressables 는 같은 주소를 N번 로드하면 내부 참조 카운트를 N으로 올리고
+        // 매번 동등한 핸들을 돌려주므로, 로드 결과 오브젝트를 키로 삼으면
+        // 2회차 이후 핸들이 추적되지 않아 그만큼 영구 누수된다.
+        // (같은 주소 중복 로드는 캐릭터 선택 → 플레이어 스폰에서 실제로 발생한다.)
+        private readonly Dictionary<string, List<AsyncOperationHandle>> mAssetHandles = new Dictionary<string, List<AsyncOperationHandle>>();
+        // 로드 결과 오브젝트 → 주소 역참조. UnloadAsset 이 에셋만 받기 때문에 필요하다.
+        private readonly Dictionary<object, string> mAssetNames = new Dictionary<object, string>();
         // 로드된 씬 핸들 추적
         private readonly Dictionary<string, AsyncOperationHandle<SceneInstance>> mSceneHandles = new Dictionary<string, AsyncOperationHandle<SceneInstance>>();
 
@@ -164,13 +172,22 @@ namespace UnityGameFramework.Runtime
             {
                 if (op.Status == AsyncOperationStatus.Succeeded && op.Result != null)
                 {
-                    if (!mAssetHandles.ContainsKey(op.Result))
-                        mAssetHandles[op.Result] = op;
+                    if (!mAssetHandles.TryGetValue(assetName, out List<AsyncOperationHandle> handles))
+                    {
+                        handles = new List<AsyncOperationHandle>();
+                        mAssetHandles.Add(assetName, handles);
+                    }
+
+                    handles.Add(op);
+                    mAssetNames[op.Result] = assetName;
 
                     loadAssetCallbacks?.LoadAssetSuccessCallback?.Invoke(assetName, op.Result, Time.time - startTime, userData);
                 }
                 else
                 {
+                    // 실패한 오퍼레이션도 반납해야 한다. 없으면 잘못된 주소를 반복 요청할 때마다 샌다.
+                    Addressables.Release(op);
+
                     string errorMsg = op.OperationException != null ? op.OperationException.Message : $"Addressables failed to load '{assetName}'.";
                     loadAssetCallbacks?.LoadAssetFailureCallback?.Invoke(assetName, LoadResourceStatus.NotExist, errorMsg, userData);
                 }
@@ -182,10 +199,25 @@ namespace UnityGameFramework.Runtime
             if (asset == null)
                 return;
 
-            if (mAssetHandles.TryGetValue(asset, out AsyncOperationHandle handle))
+            if (!mAssetNames.TryGetValue(asset, out string assetName))
+                return;
+
+            if (!mAssetHandles.TryGetValue(assetName, out List<AsyncOperationHandle> handles) || handles.Count == 0)
             {
-                Addressables.Release(handle);
-                mAssetHandles.Remove(asset);
+                mAssetHandles.Remove(assetName);
+                mAssetNames.Remove(asset);
+                return;
+            }
+
+            // 로드 1회당 정확히 1개씩 반납한다. 남은 참조가 있으면 에셋은 살아 있다.
+            int last = handles.Count - 1;
+            Addressables.Release(handles[last]);
+            handles.RemoveAt(last);
+
+            if (handles.Count == 0)
+            {
+                mAssetHandles.Remove(assetName);
+                mAssetNames.Remove(asset);
             }
         }
 
