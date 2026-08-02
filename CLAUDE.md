@@ -79,17 +79,20 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 
 프레임워크 동작을 바꾸고 싶으면 코드를 고치지 말고 **Helper 교체**를 쓴다(`EntityHelperBase`, `UIFormHelperBase`, `SoundHelperBase`, `ILogHelper`, `ITextHelper` 등 → 인스펙터에 타입명 지정). `Helper.CreateHelper`(`Assets/Scripts/Utility/Helper.cs:47`)는 순정이라 안심하고 써도 된다.
 
-## 알려진 미해결 위험 (아직 아무것도 고치지 않았다)
+## 알려진 위험
 
-전체 10건과 근거는 `ARCHITECTURE.md` §5.1. 코드를 건드리기 전에 반드시 읽을 것.
+전체 10건과 근거는 `ARCHITECTURE.md` §5.1. 작업 순서와 분담은 `WORKPLAN.md`. 코드를 건드리기 전에 반드시 읽을 것.
 
-1. **Addressables 핸들 누수** — `ResourceManager.cs:167` 딕셔너리 키가 로드 결과 오브젝트라 중복 로드가 추적되지 않는다. 캐릭터 선택 플로우에서 **100% 발생 중**. 실패 경로(`:172-176`)에도 `Release`가 없다.
-2. **Girl/Boy 프리팹에 `Player`/`PlayerSelectLogic`이 baked** — 클릭 1회에 이벤트 2번 Fire. `EventPoolMode.AllowNoHandler` 덕에 안 터지고 있을 뿐이다.
-3. **모든 로그가 컴파일 제거** — 위 "실행 전 필수 설정" 1번.
-4. **`HideEntity` 이중 호출 예외** — `Projectile.cs:37/52`, `ExpGem.cs:45`에 가드가 없다. 적/투사체를 되살리는 첫날에 터진다.
-5. **`ProcedureComponent`가 프리팹에 2개** — 루트 쪽은 네임스페이스 빠진 `ProcedureMain`(`GameFramework.prefab:782-784`)이고 등록 순서가 비결정적이다.
-6. **빌드 씬이 빈 `SampleScene` 하나뿐** — 지금 빌드하면 프레임워크가 기동하지 않는다. `Restart`는 복구 불가 종료다.
-7. **`Camera.main`이 null** — `MainScene.unity:296` 카메라가 `Untagged`라 마우스 조준이 죽어 있다. "회전만 안 됨"으로 보인다.
+**해결됨**
+- ✅ **Addressables 핸들 누수** (배치 C) — `ResourceManager`가 `assetName` 키 + 핸들 목록으로 취득/해제 1:1. 실패 경로도 Release.
+- ✅ **`HideEntity` 이중 호출** (배치 B) — `EntityLogicBase`의 `mHidden` 가드 + `SafeHide()`. 단 `SurvivalGame.cs:94,100`은 아직 직접 호출한다(배치 D 예정).
+
+**미해결**
+1. **Girl/Boy 프리팹에 `Player`/`PlayerSelectLogic`이 baked** — 클릭 1회에 이벤트 2번 Fire. `EventPoolMode.AllowNoHandler` 덕에 안 터지고 있을 뿐이다. `[에디터]`
+2. **모든 로그가 컴파일 제거** — 위 "실행 전 필수 설정" 1번. `[에디터]`
+3. **`ProcedureComponent`가 프리팹에 2개** — 루트 쪽은 네임스페이스 빠진 `ProcedureMain`(`GameFramework.prefab:782-784`)이고 등록 순서가 비결정적이다. `[에디터]`
+4. **빌드 씬이 빈 `SampleScene` 하나뿐** — 지금 빌드하면 프레임워크가 기동하지 않는다. `Restart`는 복구 불가 종료다. `[에디터]`
+5. **`Camera.main`이 null** — `MainScene.unity:296` 카메라가 `Untagged`라 마우스 조준이 죽어 있다. "회전만 안 됨"으로 보인다. `[에디터]`
 
 ## 자잘한 함정
 

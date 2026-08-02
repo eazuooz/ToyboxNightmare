@@ -7,7 +7,7 @@ namespace ToyBoxNightmare
     /// 경험치 보석. 플레이어 근처에서 자석처럼 끌려간다.
     /// 플레이어와 접촉하면 경험치를 주고 소멸한다.
     /// </summary>
-    public class ExpGem : EntityLogic
+    public class ExpGem : EntityLogicBase
     {
         private ExpGemData mData = null;
 
@@ -32,6 +32,8 @@ namespace ToyBoxNightmare
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 
+            if (mData == null || IsHiding) return;
+
             Player player = Player.Instance;
             if (player == null || player.IsDead) return;
 
@@ -40,9 +42,8 @@ namespace ToyBoxNightmare
 
             if (dist <= CollectRadius)
             {
-                // 수집
-                //SurvivalGame.Instance?.LevelSystem.AddExp(mData.ExpAmount);
-                GameEntry.GetComponent<EntityComponent>().HideEntity(Entity);
+                // 수집 — 경험치 지급은 레벨 시스템 복원 시 여기에 연결한다.
+                SafeHide();
                 return;
             }
 

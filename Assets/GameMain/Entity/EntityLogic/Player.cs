@@ -47,6 +47,16 @@ namespace ToyBoxNightmare
             Instance = this;
             CachedTransform.position = mPlayerData.Position;
             CachedTransform.rotation = mPlayerData.Rotation;
+
+            // 풀에서 재사용되므로 이전 판의 이동/애니 상태를 반드시 리셋한다.
+            mMoveDirection = Vector3.zero;
+            mLookDirection = CachedTransform.forward;
+
+            if (mAnimator != null)
+            {
+                mAnimator.Rebind();
+                mAnimator.Update(0f);
+            }
         }
 
         protected internal override void OnHide(bool isShutdown, object userData)
@@ -118,13 +128,6 @@ namespace ToyBoxNightmare
                 return ray.GetPoint(dist);
 
             return CachedTransform.position + CachedTransform.forward;
-        }
-
-        // ─── 스탯 ───
-
-        public void UpgradeMoveSpeed(float amount)
-        {
-            mPlayerData.MoveSpeed += amount;
         }
     }
 }

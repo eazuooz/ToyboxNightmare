@@ -729,7 +729,12 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 > 심각도 순 10개. **§4의 레시피를 실행하기 전에 이 절을 통독할 것.** 대부분은 "지금은 잠복, 기능을 추가하는 순간 발현"이다.
 > 각 항목 끝의 **[상태]**는 지금 실제로 터지고 있는지를 나타낸다.
 
-### 🔴 [1] Addressables 핸들 누수 — 메인 플로우에서 100% 발생 (게다가 살아있는 에셋을 조기 Release할 수 있다)
+### ✅ [1] Addressables 핸들 누수 — **해결됨(배치 C)**
+
+> `mAssetHandles`를 `Dictionary<string, List<AsyncOperationHandle>>`(키 = `assetName`)로 바꾸고 역참조용 `mAssetNames`를 두어 취득 1회 : 해제 1회로 맞췄다. 실패 경로에도 `Addressables.Release(op)`를 추가했다.
+> 아래는 수정 전 진단 기록이다. 씬 핸들 덮어쓰기는 **아직 미수정**이며 현재 도달 불가 상태다(호출자 0건).
+
+<details><summary>수정 전 진단 (기록용)</summary>
 
 `Assets/Scripts/Resource/ResourceManager.cs:167-168`
 ```csharp
@@ -744,6 +749,8 @@ if (!mAssetHandles.ContainsKey(op.Result)) mAssetHandles[op.Result] = op;
 - `mAssetHandles`가 로드된 오브젝트에 강참조를 유지하므로 `ResourceComponent.cs:52-64`의 `Resources.UnloadUnusedAssets()`로도 회수되지 않는다.
 
 **[상태] 지금 이미 새고 있다.** 짧은 플레이 세션에서는 체감되지 않을 뿐이다. 수정 방향은 §8-8.
+
+</details>
 
 ### 🔴 [2] Girl/Boy 프리팹에 EntityLogic 2종이 baked → 컴포넌트 중복 · 이벤트 2중 발행 · NRE 지뢰
 
@@ -794,7 +801,13 @@ if (!mAssetHandles.ContainsKey(op.Result)) mAssetHandles[op.Result] = op;
 
 **[상태] 지금 100% 침묵 중.**
 
-### 🔴 [4] ObjectPool 규약 위반 — `HideEntity` 이중 호출은 예외를 던진다
+### ✅ [4] `HideEntity` 이중 호출 — **해결됨(배치 B)**
+
+> `Assets/GameMain/Entity/EntityLogic/EntityLogicBase.cs`를 신설해 `mHidden` 가드 + `SafeHide()`를 제공하고, `TargetableObject`/`Projectile`/`ExpGem`/`PlayerSelectLogic`이 이를 상속하도록 했다. 직접 `HideEntity` 호출은 전부 `SafeHide()`로 교체했고, `TargetableObject.ApplyDamage` 선두에 `if (IsDead) return;`을 넣었다.
+> **남은 예외 1곳**: `SurvivalGame.cs:94,100`은 여전히 `EntityComponent.HideEntity`를 직접 호출한다(배치 D에서 정리 예정). 현재는 첫 호출이라 안전하다.
+> 아래는 수정 전 진단 기록이다.
+
+<details><summary>수정 전 진단 (기록용)</summary>
 
 `External/GameFramework/GameFramework/Entity/EntityManager.cs:505-521`
 ```csharp
@@ -814,6 +827,8 @@ if (entityInfo == null) throw new GameFrameworkException("Can not find entity '{
 **세 곳 모두 `mHidden` 같은 가드가 전혀 없다.**
 
 **[상태] 지금은 Projectile/ExpGem 스폰 경로가 죽어 있어 잠복.** §4-1/§4-2 레시피대로 적·투사체를 되살리는 **첫날에 터진다.** → §4-1 3단계의 가드를 **먼저** 넣을 것.
+
+</details>
 
 ### 🔴 [5] `ProcedureComponent`가 프리팹에 2개, 한쪽은 타입명이 깨져 있고 등록 순서가 비결정적
 
@@ -895,7 +910,7 @@ if (Camera.main == null || Mouse.current == null)
 **(b) 삭제된 시스템을 부르는 죽은 코드가 그대로** — **주석만 풀면 컴파일도 안 된다.**
 `Enemy.cs:64` `//player.TakeDamage(...)` / `Enemy.cs:71` `//SurvivalGame.Instance?.SpawnExpGem(...)` / `ExpGem.cs:44` `//SurvivalGame.Instance?.LevelSystem.AddExp(...)` / `TargetableObject.cs:82` `//AIUtility.PerformCollision(...)`. `Player.TakeDamage`, `SpawnExpGem`, `LevelSystem`, `AIUtility` 전부 존재하지 않는다.
 
-**(c) NRE 확정 메서드가 public으로 남음** — `Assets/GameMain/Entity/EntityLogic/Player.cs:125-128` `UpgradeMoveSpeed`가 `:127`에서 `mPlayerData`를 null 체크 없이 접근한다. 호출자는 0건(UpgradeSystem 삭제)이지만 public이라 누구든 부를 수 있다.
+**(c) ~~NRE 확정 메서드가 public으로 남음~~ — ✅ 해결됨(배치 B)** — `Player.UpgradeMoveSpeed`가 `mPlayerData`를 null 체크 없이 접근했다. 호출자가 0건(UpgradeSystem 삭제)이었으므로 메서드째 제거했다. 업그레이드 시스템을 되살릴 때 새로 작성할 것.
 
 **(d) Sample 공격 스크립트 5종이 Girl/Boy 프리팹에 살아 있다** — Missing Script도 죽은 오브젝트도 아니다. 실제 코드가 `Assets/Sample/Scripts/Attacks/`에 있고 런타임에 로드된다.
 
@@ -1018,7 +1033,7 @@ void Awake() { for(int i = 0; i < maxFreezableEnemies; i++) Instantiate(frostDeb
 | 11 | EntityData 계층 및 수치(100/5f, 30/2f/10/5, 5/4f) | 4개 파일 존재, 수치도 정확히 일치 | ✅ 구현됨 |
 | 12 | Player: `Input.GetAxisRaw` WASD 이동 | 신 InputSystem `Keyboard.current` + Rigidbody로 전면 재작성 | 🔄 다르게 구현 |
 | 13 | `Player.AttachWeapon<T>()` | 메서드 자체 없음. 프로젝트 전체 `AttachWeapon` 0건 | ❌ 삭제됨 |
-| 14 | `Player.TakeDamage` / `HealHitPoints` | 둘 다 없음. `UpgradeMoveSpeed`만 남고 호출자 0건 | ❌ 삭제됨 |
+| 14 | `Player.TakeDamage` / `HealHitPoints` | 둘 다 없음. `UpgradeMoveSpeed`도 배치 B에서 제거 | ❌ 삭제됨 |
 | 15 | Player.OnDead 오버라이드 → GameOver 발행, HideEntity 안 함 | 오버라이드 없음 → base가 그대로 HideEntity (**문서와 정반대**) | ❌ 삭제됨 |
 | 16 | Enemy: 추적, 사거리 1.5f, 1초마다 데미지 10 | 추적/사거리/타이머 동작, **데미지 호출 주석** | ⚠ 만들다 만 것 |
 | 17 | Enemy.OnDead → SpawnExpGem | **주석 처리** | ⚠ 만들다 만 것 |
@@ -1127,9 +1142,8 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
 | `Assets/GameMain/Entity/EntityLogic/Projectile.cs` + `EntityData/ProjectileData.cs` | 유일한 생성자 ProjectileWeapon이 죽어 있고 addressable 주소도 없음 (이중 차단) |
 | `Assets/GameMain/Weapon/WeaponBase.cs` + `ProjectileWeapon.cs` | `Initialize(Player)` 호출자 0건, AddComponent 0건, 프리팹 참조 0건 |
 | `WeaponBase.OnFireStart/OnFireHeld/OnFireStop` (`:51-57`) | 호출자 0건. 이걸 오버라이드하던 무기 4종이 88408fd에서 삭제됨. **fa2f999에서 추가된 그 4개 무기는 단 한 번도 실행된 적이 없다** |
-| `WeaponBase.GetMouseWorldPosition()` (`:86-97`) | 호출자 0건. `Player.cs:109-121`에 동일 로직이 중복 존재 |
-| `Enemy.SetSpeedMultiplier` (`:17-20`) | 호출자 0건. FrostWeapon 삭제됨. 항상 1f |
-| `Player.UpgradeMoveSpeed` (`:125-128`) | 호출자 0건 + NRE 확정 (§5.1 [10-c]) |
+| `WeaponBase.GetMouseWorldPosition()` (`:86-97`) | 호출자 0건. `Player.cs:119-131`에 동일 로직이 중복 존재 |
+| `Enemy.SetSpeedMultiplier` (`:17-20`) | 호출자 0건. 빙결 디버프 복원 시 수신부가 된다 |
 | `EnemyData.AttackDamage` / `ExpReward` | 유일 사용처가 주석 처리됨 |
 | `SurvivalGame.mPlayer` (`:17`) | `:121`에서 대입만 되고 읽는 곳이 없음 |
 | `GameMode` enum + `GameBase.GameMode` | 정의부 3곳(`GameMode.cs:11`, `GameBase.cs:38`, `SurvivalGame.cs:21`)만 존재. 매핑 테이블/switch 없음 |
@@ -1236,7 +1250,7 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
 **9. 적/무기/경험치 시스템을 되살릴 것인가, 완전히 버릴 것인가?**
 → 88408fd의 삭제 의도가 '완전 폐기'인지 '재설계를 위한 초기화'인지가 **미확인**이다. **이 문서에서 결론 낼 수 없는 유일한 제품 결정이다.**
   - **되살린다면**: 튜닝값을 예전처럼 C# const로 갈 것인지, DataTable/ScriptableObject 기반으로 바꿀 것인지(현재 `TypeId`가 전부 1로 하드코딩되어 있고 DataTable 참조가 0건이다). 그리고 **반드시 §4-1 3단계의 HideEntity 가드를 먼저 넣을 것**(§5.1 [4]).
-  - **버린다면**: Enemy/ExpGem/Projectile/Weapon 소스 + `GameFramework.prefab:1073-1087`의 엔티티 그룹 3개 + `ExpGem`/`Player.UpgradeMoveSpeed`/`ProjectileWeapon`의 public setter까지 함께 정리.
+  - **버린다면**: Enemy/ExpGem/Projectile/Weapon 소스 + `GameFramework.prefab:1073-1087`의 엔티티 그룹 3개 + `ExpGem`/`ProjectileWeapon`의 public setter까지 함께 정리.
 
 **10. 적 에셋은 무엇을 쓸 것인가?**
 → **권장: 이미 Addressable에 등록되고 콜라이더도 있는 `Zombunny`/`ZomBear`/`ZombieDuck`/`Hellephant`/`Clown`/`Sheep`/`Dog`를 쓴다.** `Assets/Prefabs/Enemy.prefab`은 콜라이더 없음 + Addressable 미등록이라 처음부터 다시 만드는 것과 같다. `Assets/Scripts/Entity/Entity.cs:98`이 EntityLogic을 런타임에 붙이므로 프리팹에 Enemy 스크립트가 없어도 무방하다. 이 경우 **`EnemyData`에 에셋 키 필드가 필요**하다(현재 없음). 단 이 프리팹들에는 Sample의 `EnemyAttack`/`EnemyHealth`/`EnemyMovement`가 붙어 있어 §5.1 [2]와 같은 중복이 생기므로 **프리팹 복제 후 스크립트를 떼는 것이 안전하다.**

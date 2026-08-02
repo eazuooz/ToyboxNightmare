@@ -13,7 +13,7 @@ namespace ToyBoxNightmare
 
         private float mSpeedMultiplier = 1f;
 
-        /// <summary>이동 속도 배율을 설정한다. FrostWeapon 이 사용한다.</summary>
+        /// <summary>이동 속도 배율을 설정한다. 빙결 계열 디버프의 수신부.</summary>
         public void SetSpeedMultiplier(float multiplier)
         {
             mSpeedMultiplier = Mathf.Clamp(multiplier, 0f, 1f);
@@ -61,15 +61,18 @@ namespace ToyBoxNightmare
                 if (mAttackTimer >= AttackInterval)
                 {
                     mAttackTimer = 0f;
-                    //player.TakeDamage(Entity, mEnemyData.AttackDamage);
+                    // 플레이어 피격은 전투 복원(M2) 시 여기에 구현한다.
+                    // player.ApplyDamage(Entity, mEnemyData.AttackDamage);
                 }
             }
         }
 
+        // 주의: 사망 연출(Die 트리거 → 침하 → 제거)을 도입할 때는 base.OnDead 를
+        // 호출하면 안 된다. base 가 즉시 SafeHide 하므로 연출이 생략되고,
+        // 연출 종료 시점의 Hide 와 합쳐져 중복 호출이 된다.
         protected override void OnDead(Entity attacker)
         {
-            //SurvivalGame.Instance?.SpawnExpGem(CachedTransform.position, mEnemyData.ExpReward);
-            base.OnDead(attacker);  // HideEntity 호출
+            base.OnDead(attacker);  // 현재는 즉시 SafeHide
         }
     }
 }

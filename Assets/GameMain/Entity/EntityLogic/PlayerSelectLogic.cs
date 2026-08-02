@@ -10,14 +10,17 @@ namespace ToyBoxNightmare
     /// 클릭 시 CharacterSelectedEventArgs 를 발생시키고,
     /// 선택받지 못한 캐릭터는 사망 연출 후 HideEntity 된다.
     ///
-    /// Addressables 키: "GirlSelect", "BoySelect"
+    /// Addressables 키: "Girl", "Boy" (SurvivalGame 이 넘기는 문자열과 동일)
     /// </summary>
-    public class PlayerSelectLogic : EntityLogic
+    public class PlayerSelectLogic : EntityLogicBase
     {
         [SerializeField] private string           characterKey    = "Girl";
         [SerializeField] private CapsuleCollider  capsuleCollider = null;
         [SerializeField] private Animator         animator        = null;
         [SerializeField] private Rigidbody        rigidBody       = null;
+
+        // 프리팹 원본 감쇠값. DisableAndHide 이후 재사용될 때 되돌리기 위해 보관한다.
+        private float mInitialLinearDamping = 0f;
 
         public string CharacterKey => characterKey;
 
@@ -27,11 +30,20 @@ namespace ToyBoxNightmare
             capsuleCollider = GetComponent<CapsuleCollider>();
             animator        = GetComponentInChildren<Animator>();
             rigidBody       = GetComponent<Rigidbody>();
+
+            if (rigidBody != null)
+            {
+                mInitialLinearDamping = rigidBody.linearDamping;
+            }
         }
 
         protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
+
+            // 풀에서 재사용되므로 DisableAndHide 가 남긴 상태를 반드시 되돌린다.
+            // 이걸 빼면 재시작 시 낙선했던 캐릭터가 콜라이더가 꺼진 죽은 포즈로 등장한다.
+            ResetVisualState();
 
             var data = userData as CharacterSelectData;
             if (data != null)
@@ -39,6 +51,25 @@ namespace ToyBoxNightmare
                 characterKey = data.CharacterKey;
                 CachedTransform.position = data.Position;
                 CachedTransform.rotation = data.Rotation;
+            }
+        }
+
+        private void ResetVisualState()
+        {
+            if (capsuleCollider != null)
+            {
+                capsuleCollider.enabled = true;
+            }
+
+            if (animator != null)
+            {
+                animator.Rebind();
+                animator.Update(0f);
+            }
+
+            if (rigidBody != null)
+            {
+                rigidBody.linearDamping = mInitialLinearDamping;
             }
         }
 
@@ -64,7 +95,7 @@ namespace ToyBoxNightmare
         private IEnumerator HideAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
-            GameEntry.GetComponent<EntityComponent>().HideEntity(Entity);
+            SafeHide();
         }
 
         // Death 애니메이션 이벤트에서 호출 (선택적)
