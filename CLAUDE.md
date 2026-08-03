@@ -90,14 +90,21 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 - ✅ **빌드 씬** — `MainScene`이 0번, `SampleScene`은 비활성.
 - ✅ **레이어 정의** — 8=Floor, 9=Shootable, 10=Blocking, 13=FrostFX, 14=Environment. 원본 마스크값(17920/512/256)을 그대로 쓸 수 있다.
 
-**미해결 — 전부 `[에디터-수동]`. 절차는 `WORKPLAN.md` 배치 A**
-1. **Girl/Boy 프리팹에 `Player`/`PlayerSelectLogic`이 baked** — 클릭 1회에 이벤트 2번 Fire. Sample 공격 5종도 붙어 있다(`FrostAttack` GO를 켜면 프리팹 20개 무단 Instantiate).
-2. **`ProcedureComponent`가 프리팹에 2개** — 루트 쪽은 네임스페이스 빠진 `ProcedureMain`이라 등록되면 프로시저가 안 돈다. 어느 쪽이 이길지 비결정적이다.
-3. **`Camera.main`이 null** — MainScene 카메라가 `Untagged`라 마우스 조준이 죽어 있다.
-4. **적 프리팹 5종에 Sample 스크립트 3종이 baked** — 접촉 즉시 `GameManager.Instance` NRE. NavMeshAgent도 켜져 있어 미베이크 상태에서 "Failed to create agent"가 난다. Hellephant만 레이어가 0(나머지 4종은 이미 9).
-5. **Missing Script 2건** — `Player.prefab`, `UpgradeForm.prefab`.
-6. **Addressables Play Mode Script** — `Library/`에 저장되어 **git 공유가 안 된다.** 클론한 사람이 각자 `Use Asset Database (fastest)`로 설정해야 한다.
-7. **NavMesh 미베이크** — `MainScene.unity:121`이 `m_NavMeshData: {fileID: 0}`. 적 이동을 NavMesh로 갈 거면 베이크 필요(agentRadius 0.5 / height 1.2 / slope 45).
+- ✅ **Girl/Boy baked 로직** — `Player`/`PlayerSelectLogic` + Sample 공격 5종 제거. `Antenna`(발사점 `(0.123, 0.948, 1.019)`)·`FrostCone`·LineRenderer·파티클은 **보존**되어 M3~M4에서 재사용한다.
+- ✅ **`ProcedureComponent` 중복** — 루트 쪽 제거. 자식 `Procedure` GO의 `ToyBoxNightmare.ProcedureMain` 1개만 남았고 씬의 고아 오버라이드도 정리됨.
+- ✅ **`Camera.main` null** — MainCamera 태그 지정. 마우스 조준 회전 동작.
+- ✅ **적 프리팹 5종** — Sample 스크립트 3종 제거, NavMeshAgent 비활성(씬 미베이크 대응), 전 종 레이어 9(Shootable). 콜라이더·HitParticles 보존. Addressables는 이미 등록돼 있어 클론 불필요.
+- ✅ **Missing Script 2건** — `Player.prefab`, `UpgradeForm.prefab` 삭제.
+
+> 전체 프리팹/씬 1204개 스캔 결과 dangling 참조 0건, missing script 0건.
+
+**미해결**
+1. **Addressables Play Mode Script** — `Library/`에 저장되어 **git 공유가 안 된다.** 클론한 사람이 각자 Groups 창에서 `Use Asset Database (fastest)`로 설정해야 한다.
+2. **NavMesh 미베이크** — `MainScene.unity`의 `m_NavMeshData: {fileID: 0}`. 적 이동을 NavMesh로 갈 거면 베이크 필요(agentRadius 0.5 / height 1.2 / slope 45). 현재는 NavMeshAgent를 꺼둬서 에러는 안 난다.
+3. **카메라 추종 없음** — MainCamera에 Transform/Camera/AudioListener/URP데이터 4개뿐. 걸어가면 화면 밖으로 나간다. `PlayerCameraFollow` 신규 작성 필요(ARCHITECTURE §4-9).
+4. **카메라가 선택 앵글에 고정** — pos `(0,4,6)` / rot ≈`(30,180,0)`, orthographic size 4.5. 원본은 게임 앵글 `(0,15,-22)`로 1초 전환한다(M6).
+5. **`Assets/_Recovery/0.unity`** — 크래시 복구 산출물. 빌드/로드 경로 밖이라 무해하지만 삭제 권장.
+6. **씬 핸들 덮어쓰기** — `ResourceManager`의 `mSceneHandles[...] = op`. 코어가 중복 로드를 선차단하고 `LoadScene` 호출이 0건이라 현재 도달 불가.
 
 ## 자잘한 함정
 

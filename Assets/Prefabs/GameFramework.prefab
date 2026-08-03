@@ -701,7 +701,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6401310487782641730}
   - component: {fileID: 2714497759568292825}
-  - component: {fileID: 7401751991573398765}
   m_Layer: 0
   m_Name: GameFramework
   m_TagString: Untagged
@@ -767,21 +766,6 @@ MonoBehaviour:
   mGameSpeed: 1
   mRunInBackground: 1
   mNeverSleep: 1
---- !u!114 &7401751991573398765
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6358112816711621563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 959bca2b68d03954897f38b1dbb00303, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityGameFramework.Runtime.ProcedureComponent
-  mAvailableProcedureTypeNames:
-  - ProcedureMain
-  mEntranceProcedureTypeName: ProcedureMain
 --- !u!1 &6528345121473580816
 GameObject:
   m_ObjectHideFlags: 0

@@ -23,23 +23,36 @@
 
 ---
 
-## 배치 A `[에디터-수동]` — Unity 한 세션에서 전부
+## 배치 A — ✅ 완료
 
-> **설정 파일 3건(A1·A4·A7)은 이미 적용되어 있다.** 나머지는 프리팹·씬이라 에디터에서 직접 한다
-> (`CLAUDE.md` 규약: Claude는 `.prefab`/`.unity` YAML을 편집하지 않는다).
-> 한 번 열어서 다 끝내는 것이 핵심. 따로 하면 세션 전환 비용만 늘어난다. **예상 20~30분.**
-
-| # | 작업 | 위치 | 상태 |
+| # | 작업 | 담당 | 결과 |
 |---|---|---|---|
-| A1 | Scripting Define Symbols = `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG` | Project Settings > Player | ✅ 적용됨 (Standalone·Android) |
-| A4 | `MainScene` 0번, `SampleScene` 비활성 | Build Profiles > Scene List | ✅ 적용됨 |
-| A7 | 레이어 8/9/10/13/14 명명 | Tags and Layers | ✅ 적용됨 |
-| A2 | Addressables Play Mode Script = **`Use Asset Database (fastest)`** | Addressables > Groups | ⬜ **각자 설정** — `Library/`에 저장돼 git 공유 안 됨 |
-| A3 | 카메라 GO의 Tag를 **`MainCamera`** 로 (현재 Untagged) | MainScene 의 "MainCamera" | ⬜ |
-| A5 | **루트** GameObject의 `ProcedureComponent` 삭제 | `Assets/Prefabs/GameFramework.prefab` | ⬜ 아래 A5 상세 |
-| A6 | Girl/Boy 프리팹 컴포넌트 정리 | `Assets/Art/Prefabs/Characters/` | ⬜ 아래 A6 상세 |
-| A8 | 적 5종 프리팹 정리 | `Assets/Art/Prefabs/Characters/` | ⬜ 아래 A8 상세 |
-| A9 | Missing Script 정리 | `Assets/Prefabs/` | ⬜ 아래 A9 상세 |
+| A1 | Scripting Define Symbols | Claude | ✅ Standalone·Android 두 타겟 |
+| A2 | Addressables Play Mode Script | 사용자 | ✅ 설정됨 (단 `Library/` 저장이라 **git 공유 안 됨** — 클론 시 각자 설정) |
+| A3 | MainCamera 태그 | 사용자 | ✅ |
+| A4 | 빌드 씬 목록 | Claude | ✅ MainScene 0번, SampleScene 비활성 |
+| A5 | 중복 `ProcedureComponent` | 사용자 + Claude | ✅ 루트 컴포넌트 제거(사용자) + 씬 고아 오버라이드 2건 제거(Claude) |
+| A6 | Girl/Boy 프리팹 | 사용자 | ✅ 7종 × 2 제거, 보존 대상 전부 살아 있음 |
+| A7 | 레이어 정의 | Claude | ✅ 8/9/10/13/14 |
+| A8 | 적 프리팹 5종 | 사용자 + Claude | ✅ 스크립트 3종 제거·NavAgent 비활성(사용자) + Hellephant 레이어 0→9(Claude) |
+| A9 | Missing Script | 사용자 | ✅ 두 프리팹 삭제 |
+
+**최종 검증**: 프리팹/씬 1204개 스캔 — dangling 참조 0건, missing script 0건.
+Girl/Boy 보존 확인 — `Antenna`·`FrostCone`·LineRenderer 1개·파티클 10개, 앵커 333개.
+적 5종 보존 확인 — 콜라이더 2종·HitParticles, 전 종 레이어 9.
+
+> **규약 예외 기록**: A5의 씬 오버라이드와 A8의 Hellephant 레이어는 사용자 요청으로 Claude가 `.unity`/`.prefab`을 직접 편집했다. 그 외 프리팹 작업은 전부 에디터에서 수동 처리했다.
+
+<details><summary>배치 A 원래 절차 (참고용)</summary>
+
+| # | 작업 | 위치 |
+|---|---|---|
+| A2 | Addressables Play Mode Script = `Use Asset Database (fastest)` | Addressables > Groups |
+| A3 | 카메라 GO Tag → `MainCamera` | MainScene |
+| A5 | **루트** GameObject의 `ProcedureComponent` 삭제 | `GameFramework.prefab` |
+| A6 | Girl/Boy 컴포넌트 7종 제거 | `Assets/Art/Prefabs/Characters/` |
+| A8 | 적 5종 스크립트 3종 제거 + NavAgent OFF + 레이어 9 | `Assets/Art/Prefabs/Characters/` |
+| A9 | Missing Script 프리팹 정리 | `Assets/Prefabs/` |
 
 ### A5 상세 — 중복 `ProcedureComponent`
 
@@ -134,6 +147,8 @@ Boy.prefab도 동일하게. 런타임에 `Entity.cs:98`이 `AddComponent` 하므
       ← 이게 빠지면 M3 Lightning이 **절대 안 맞는다**. 원인 추적이 매우 어렵다.
 - [ ] 콜라이더 2종(캡슐+트리거)과 `hitParticles` 자식 GO **보존**
 - [ ] Addressables Groups 창에서 등록 (Address = 짧은 키. 이미 등록된 10개 주소 참고)
+
+</details>
 
 </details>
 

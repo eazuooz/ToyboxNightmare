@@ -307,7 +307,7 @@ GameObject:
   - component: {fileID: 1006305777}
   m_Layer: 0
   m_Name: MainCamera
-  m_TagString: Untagged
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -731,14 +731,6 @@ PrefabInstance:
     - target: {fileID: 6401310487782641730, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7401751991573398765, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
-      propertyPath: mAvailableProcedureTypeNames.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7401751991573398765, guid: 0c57aed266d3dd04c8a7639f949371c0, type: 3}
-      propertyPath: 'mAvailableProcedureTypeNames.Array.data[0]'
-      value: ProcedureMain
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
