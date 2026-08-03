@@ -23,21 +23,75 @@
 
 ---
 
-## 배치 A `[에디터]` — Unity 한 세션에서 전부
+## 배치 A `[에디터-수동]` — Unity 한 세션에서 전부
 
-한 번 열어서 다 끝내는 것이 핵심. 따로 하면 세션 전환 비용만 늘어난다.
+> **설정 파일 3건(A1·A4·A7)은 이미 적용되어 있다.** 나머지는 프리팹·씬이라 에디터에서 직접 한다
+> (`CLAUDE.md` 규약: Claude는 `.prefab`/`.unity` YAML을 편집하지 않는다).
+> 한 번 열어서 다 끝내는 것이 핵심. 따로 하면 세션 전환 비용만 늘어난다. **예상 20~30분.**
 
-| # | 작업 | 위치 | 해소 |
+| # | 작업 | 위치 | 상태 |
 |---|---|---|---|
-| A1 | Scripting Define Symbols에 `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG` 입력 → Apply. **사용하는 빌드 타겟 탭마다 반복**(플랫폼별 딕셔너리) | Project Settings > Player > Other Settings | §5.1[3] |
-| A2 | Addressables Play Mode Script = **`Use Asset Database (fastest)`** | Window > Asset Management > Addressables > Groups | §0-2 |
-| A3 | 카메라 GameObject의 Tag를 **`MainCamera`** 로 지정 (현재 Untagged) | `MainScene.unity` 의 "MainCamera" GO | §5.1[9] |
-| A4 | `MainScene`을 빌드 씬 **0번**으로 추가, `SampleScene` 체크 해제 | File > Build Profiles > Scene List | §5.1[6] |
-| A5 | **루트** GameObject의 `ProcedureComponent` 삭제 (자식 `Procedure` GO 쪽만 남긴다) | `Assets/Prefabs/GameFramework.prefab` | §5.1[5] |
-| A6 | Girl/Boy 프리팹 정리 — 아래 A6 상세 | `Assets/Art/Prefabs/Characters/` | §5.1[2], §5.1[10-d] |
-| A7 | 레이어 정의 + 바닥 지정 — 아래 A7 상세 | Tags and Layers / Floor Collider 프리팹 | PORTING §3-9, §0-12 |
-| A8 | 적 5종 프리팹 클론·스트립·등록 — 아래 A8 상세 | `Assets/Art/Prefabs/Characters/` | PORTING §3-8, §0-1 |
-| A9 | Missing Script 정리: `Player.prefab:44` 컴포넌트 제거 / `UpgradeForm.prefab` 파일째 삭제 | `Assets/Prefabs/` | §5.1[10-a] |
+| A1 | Scripting Define Symbols = `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG` | Project Settings > Player | ✅ 적용됨 (Standalone·Android) |
+| A4 | `MainScene` 0번, `SampleScene` 비활성 | Build Profiles > Scene List | ✅ 적용됨 |
+| A7 | 레이어 8/9/10/13/14 명명 | Tags and Layers | ✅ 적용됨 |
+| A2 | Addressables Play Mode Script = **`Use Asset Database (fastest)`** | Addressables > Groups | ⬜ **각자 설정** — `Library/`에 저장돼 git 공유 안 됨 |
+| A3 | 카메라 GO의 Tag를 **`MainCamera`** 로 (현재 Untagged) | MainScene 의 "MainCamera" | ⬜ |
+| A5 | **루트** GameObject의 `ProcedureComponent` 삭제 | `Assets/Prefabs/GameFramework.prefab` | ⬜ 아래 A5 상세 |
+| A6 | Girl/Boy 프리팹 컴포넌트 정리 | `Assets/Art/Prefabs/Characters/` | ⬜ 아래 A6 상세 |
+| A8 | 적 5종 프리팹 정리 | `Assets/Art/Prefabs/Characters/` | ⬜ 아래 A8 상세 |
+| A9 | Missing Script 정리 | `Assets/Prefabs/` | ⬜ 아래 A9 상세 |
+
+### A5 상세 — 중복 `ProcedureComponent`
+
+`GameFramework.prefab`을 열면 `ProcedureComponent`가 **2개** 있다.
+
+| 위치 | 값 | 처리 |
+|---|---|---|
+| 루트 `GameFramework` GO | `ProcedureMain` (네임스페이스 없음) | **삭제** |
+| 자식 `Procedure` GO | `ToyBoxNightmare.ProcedureMain` | 유지 |
+
+루트 쪽 컴포넌트 헤더 우클릭 → Remove Component. 씬에 남는 무의미 오버라이드는 프리팹 인스턴스에서 Revert 하면 정리된다.
+
+### A6 상세 — Girl/Boy 프리팹 (양쪽 다)
+
+**Remove Component 할 것 (총 7개):**
+- 루트의 `Player`, `PlayerSelectLogic` ← 런타임에 `Entity.cs:98`이 자동 AddComponent 하므로 **기능 손실 없다**
+- Sample 공격 5종: `LightningBolt`, `LightningAttack`, `StinkAttack`, `SlimeAttack`, `FrostAttack`
+
+**GameObject는 지우지 말 것.** 자식 GO 계층·LineRenderer·파티클·발사점(`Antenna`, localPos `(0.123, 0.948, 1.019)`)은 M3~M4에서 재사용한다. **컴포넌트만** 제거한다.
+
+제거 전에 각 공격 스크립트의 인스펙터 값을 `PORTING.md` §5와 대조해 둘 것. `lightningHit: None` 처럼 씬에서 주입되던 필드는 프리팹에 값이 없다.
+
+### A8 상세 — 적 5종 (Zombunny / ZomBear / ZombieDuck / Clown / Hellephant)
+
+> **클론 불필요.** 5종 모두 이미 정확한 짧은 키로 Addressables에 등록돼 있다(확인 완료).
+
+각 프리팹마다:
+- [ ] `EnemyMovement`, `EnemyHealth`, `EnemyAttack` **Remove Component**
+      (남기면 접촉 즉시 `GameManager.Instance` NRE)
+- [ ] **NavMeshAgent 체크 해제** (컴포넌트 삭제 아님)
+      씬 미베이크 상태라 켜진 채 스폰하면 "Failed to create agent" + 이동 불능. M5에서 코드로 재활성한다
+- [ ] 콜라이더 2종과 `hitParticles` 자식 GO **보존**
+- [ ] **Hellephant만** 루트 레이어 `Default(0)` → **`Shootable(9)`**
+      나머지 4종은 이미 9다(원본 ZombieToys 값). A7에서 9를 `Shootable`로 명명해 이제 유효하다
+
+### A9 상세 — Missing Script
+
+- `Assets/Prefabs/Player.prefab` — Transform + Missing Script 하나뿐인 껍데기. 컴포넌트 제거 또는 프리팹째 삭제
+- `Assets/Prefabs/UpgradeForm.prefab` — 참조 0건. 삭제
+
+<details><summary>참고: 이전에 스크립트로 편집을 시도했을 때 드러난 사실</summary>
+
+프리팹 편집을 코드로 시도했다가 규약에 맞춰 되돌렸다. 그 과정에서 확인된 것:
+
+1. **적 프리팹은 레거시 직렬화 포맷이다.** Girl/Boy는 `- component: {fileID: X}`인데 적 프리팹은 `- 114: {fileID: X}`를 쓴다. 스크립트로 프리팹을 다루는 도구를 만들 일이 있으면 두 포맷을 모두 처리해야 한다.
+2. **적 5종은 이미 Addressables에 등록돼 있다** — 등록된 10개 주소: Boy, Clown, Dog, Environment, Girl, Hellephant, Sheep, ZomBear, ZombieDuck, Zombunny.
+3. **레이어 9가 이미 프리팹에 박혀 있었다** — 4종은 손댈 필요 없고 Hellephant만 0이다.
+4. Girl/Boy 프리팹의 앵커는 각각 332개, 제거 대상 컴포넌트는 각 7개다.
+
+</details>
+
+<details><summary>원래 계획의 상세 절차 (구버전, 참고용)</summary>
 
 ### A6 상세 — Girl/Boy 프리팹
 
@@ -81,9 +135,11 @@ Boy.prefab도 동일하게. 런타임에 `Entity.cs:98`이 `AddComponent` 하므
 - [ ] 콜라이더 2종(캡슐+트리거)과 `hitParticles` 자식 GO **보존**
 - [ ] Addressables Groups 창에서 등록 (Address = 짧은 키. 이미 등록된 10개 주소 참고)
 
+</details>
+
 ---
 
-## 배치 B `[코드]` — 엔티티 안전 기반
+## 배치 B `[코드]` — ✅ 완료 — 엔티티 안전 기반
 
 전부 `Assets/GameMain/Entity/` 안. "풀링 재사용 안전성"이라는 한 가지 개념이라 한 번에 훑는 게 맞다. **배치 A와 병렬 가능**(파일이 겹치지 않는다).
 
@@ -98,7 +154,7 @@ Boy.prefab도 동일하게. 런타임에 `Entity.cs:98`이 `AddComponent` 하므
 
 ---
 
-## 배치 C `[코드]` — Addressables 누수
+## 배치 C `[코드]` — ✅ 완료 — Addressables 누수
 
 `Assets/Scripts/Resource/ResourceManager.cs` 한 파일. **A·B와 병렬 가능.**
 이 파일은 100% 자작 코드라 upstream 부채가 없다 — 프레임워크 계층이지만 자유롭게 고쳐도 된다.

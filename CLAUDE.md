@@ -84,15 +84,20 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 전체 10건과 근거는 `ARCHITECTURE.md` §5.1. 작업 순서와 분담은 `WORKPLAN.md`. 코드를 건드리기 전에 반드시 읽을 것.
 
 **해결됨**
-- ✅ **Addressables 핸들 누수** (배치 C) — `ResourceManager`가 `assetName` 키 + 핸들 목록으로 취득/해제 1:1. 실패 경로도 Release.
-- ✅ **`HideEntity` 이중 호출** (배치 B) — `EntityLogicBase`의 `mHidden` 가드 + `SafeHide()`. 단 `SurvivalGame.cs:94,100`은 아직 직접 호출한다(배치 D 예정).
+- ✅ **Addressables 핸들 누수** (배치 C, `32b8c36`) — `ResourceManager`가 `assetName` 키 + 핸들 목록으로 취득/해제 1:1. 실패 경로도 Release.
+- ✅ **`HideEntity` 이중 호출** (배치 B, `75870a8`) — `EntityLogicBase`의 `mHidden` 가드 + `SafeHide()`. 단 `SurvivalGame.cs:94,100`은 아직 직접 호출한다(배치 D 예정).
+- ✅ **로그 컴파일 제거** — `ProjectSettings.asset`에 `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG` (Standalone/Android).
+- ✅ **빌드 씬** — `MainScene`이 0번, `SampleScene`은 비활성.
+- ✅ **레이어 정의** — 8=Floor, 9=Shootable, 10=Blocking, 13=FrostFX, 14=Environment. 원본 마스크값(17920/512/256)을 그대로 쓸 수 있다.
 
-**미해결**
-1. **Girl/Boy 프리팹에 `Player`/`PlayerSelectLogic`이 baked** — 클릭 1회에 이벤트 2번 Fire. `EventPoolMode.AllowNoHandler` 덕에 안 터지고 있을 뿐이다. `[에디터]`
-2. **모든 로그가 컴파일 제거** — 위 "실행 전 필수 설정" 1번. `[에디터]`
-3. **`ProcedureComponent`가 프리팹에 2개** — 루트 쪽은 네임스페이스 빠진 `ProcedureMain`(`GameFramework.prefab:782-784`)이고 등록 순서가 비결정적이다. `[에디터]`
-4. **빌드 씬이 빈 `SampleScene` 하나뿐** — 지금 빌드하면 프레임워크가 기동하지 않는다. `Restart`는 복구 불가 종료다. `[에디터]`
-5. **`Camera.main`이 null** — `MainScene.unity:296` 카메라가 `Untagged`라 마우스 조준이 죽어 있다. "회전만 안 됨"으로 보인다. `[에디터]`
+**미해결 — 전부 `[에디터-수동]`. 절차는 `WORKPLAN.md` 배치 A**
+1. **Girl/Boy 프리팹에 `Player`/`PlayerSelectLogic`이 baked** — 클릭 1회에 이벤트 2번 Fire. Sample 공격 5종도 붙어 있다(`FrostAttack` GO를 켜면 프리팹 20개 무단 Instantiate).
+2. **`ProcedureComponent`가 프리팹에 2개** — 루트 쪽은 네임스페이스 빠진 `ProcedureMain`이라 등록되면 프로시저가 안 돈다. 어느 쪽이 이길지 비결정적이다.
+3. **`Camera.main`이 null** — MainScene 카메라가 `Untagged`라 마우스 조준이 죽어 있다.
+4. **적 프리팹 5종에 Sample 스크립트 3종이 baked** — 접촉 즉시 `GameManager.Instance` NRE. NavMeshAgent도 켜져 있어 미베이크 상태에서 "Failed to create agent"가 난다. Hellephant만 레이어가 0(나머지 4종은 이미 9).
+5. **Missing Script 2건** — `Player.prefab`, `UpgradeForm.prefab`.
+6. **Addressables Play Mode Script** — `Library/`에 저장되어 **git 공유가 안 된다.** 클론한 사람이 각자 `Use Asset Database (fastest)`로 설정해야 한다.
+7. **NavMesh 미베이크** — `MainScene.unity:121`이 `m_NavMeshData: {fileID: 0}`. 적 이동을 NavMesh로 갈 거면 베이크 필요(agentRadius 0.5 / height 1.2 / slope 45).
 
 ## 자잘한 함정
 

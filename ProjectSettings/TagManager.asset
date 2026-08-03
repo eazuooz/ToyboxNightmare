@@ -13,13 +13,13 @@ TagManager:
   - UI
   - 
   - 
+  - Floor
+  - Shootable
+  - Blocking
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - FrostFX
+  - Environment
   - 
   - 
   - 
