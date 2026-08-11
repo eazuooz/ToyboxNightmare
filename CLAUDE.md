@@ -116,9 +116,43 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 - `Assets/Scripts` 하위에 Editor 폴더가 없어 프리팹 인스펙터에 raw 필드명이 그대로 노출된다
 - `EntitySerialId`에 리셋 API가 없다. `TypeId`는 전부 하드코딩 `1`
 
+## Unity CLI (에디터 직접 제어)
+
+`com.unity.pipeline` 이 설치되어 있어 **Unity 에디터가 켜져 있으면** 터미널에서 직접 조회·조작할 수 있다.
+바이너리: `%LOCALAPPDATA%\Unity\bin\unity.exe` (새 셸에서는 `unity` 로 실행 가능)
+
+```bash
+unity status                       # 연결 확인 (포트/프로젝트/PID)
+unity command                      # 노출된 명령 150여 개 목록
+unity command <name> --json        # 실행
+```
+
+**가장 자주 쓸 것**
+
+| 목적 | 명령 |
+|---|---|
+| 컴파일 에러 확인 | `unity command recompile_status` / `eval` 로 `EditorUtility.scriptCompilationFailed` |
+| 콘솔 로그 읽기 | `unity command console --tail 30 --level error` |
+| 씬/프리팹 조회 | `get_scene_hierarchy`, `find_gameobjects`, `find_assets`, `get_serialized_fields` |
+| 프리팹 안전 편집 | `remove_component`, `add_component`, `set_layer`, `set_tag`, `save_prefab_contents` |
+| 플레이 모드 | `editor_play`, `editor_pause`, `editor_stop` |
+| NavMesh 베이크 | `bake_navmesh` → `navmesh_bake_status` 폴링 |
+| 화면 캡처 | `capture_game_view`, `capture_scene_view` |
+
+**함정 (실제로 겪은 것)**
+
+- 결과는 JSON의 **`.data.result`** 에 들어 있다.
+- **`--quiet` 를 쓰지 말 것** — 결과 출력까지 숨긴다.
+- `eval` 은 **메서드 본문으로 컴파일된다.** `using` 지시문을 쓸 수 없고 `System.Linq` 확장 메서드도 못 쓴다. **전부 정규화된 이름**을 쓸 것 (`UnityEditor.AssetDatabase...`).
+- PowerShell에서 `--code` 로 넘기면 **큰따옴표가 벗겨진다.** 문자열 리터럴이 있는 코드는 반드시 파일에 쓴 뒤 **`eval_file --file <path>`** 로 실행할 것.
+- 파괴적 명령(`delete_asset`, `package_remove`, `set_*_settings` 등)은 `--confirm true` 를 요구하고 `--dry_run` 을 지원한다. **먼저 dry_run 으로 확인할 것.**
+
+> 이 경로가 생기면서 프리팹 작업은 **YAML 직접 편집 대신 Unity API**로 할 수 있게 됐다. 아래 "작업 시" 규약보다 이쪽이 우선이다.
+
 ## 작업 시
 
 - 게임 로직은 `Assets/GameMain/` 안에서 한다.
 - 프레임워크 계층(`External/`, `Assets/Scripts/`)을 고쳐야 한다는 결론이 나오면 **먼저 사용자에게 확인**한다. 예외는 `Assets/Scripts/Resource/ResourceManager.cs` — 100% 자작 코드라 upstream 부채가 없다.
-- 프리팹/씬(`.prefab`, `.unity`) YAML을 직접 편집하지 않는다. 필요하면 사용자에게 에디터 조작을 요청한다.
-- 코드 변경 후 컴파일 확인이 필요하면 사용자에게 Unity 에디터에서 확인해 달라고 요청한다 (CLI 빌드 경로가 설정되어 있지 않다).
+- **프리팹/씬(`.prefab`, `.unity`) YAML을 직접 편집하지 않는다.** Unity CLI의 `remove_component`/`set_layer`/`save_prefab_contents` 등 **Unity API를 쓴다.** 에디터가 꺼져 있으면 켜 달라고 요청한다.
+  (YAML 직접 편집은 실제로 사고를 낸 적이 있다 — 적 프리팹이 레거시 직렬화 포맷(`- 114: {fileID}`)이라 최신 포맷(`- component:`) 패턴이 안 맞아 dangling 참조가 생겼다.)
+- **컴파일 확인은 직접 한다** — `unity command recompile_status` 와 `console --level error`. 사용자에게 물어보지 않는다.
