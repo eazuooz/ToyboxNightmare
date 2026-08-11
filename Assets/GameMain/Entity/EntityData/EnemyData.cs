@@ -1,27 +1,29 @@
 using System;
-using UnityEngine;
 
 namespace ToyBoxNightmare
 {
     [Serializable]
     public class EnemyData : TargetableObjectData
     {
-        [SerializeField] private int mMaxHP = 30;
-        [SerializeField] private float mMoveSpeed = 2f;
-        [SerializeField] private int mAttackDamage = 10;
-        [SerializeField] private int mExpReward = 5;
+        private readonly EnemyStats mStats;
 
-        public EnemyData(int entityId, int typeId) : base(entityId, typeId)
+        public EnemyData(int entityId, int typeId, EnemyStats stats) : base(entityId, typeId)
         {
-            HitPoints = mMaxHP;
+            mStats = stats;
+
+            // TargetableObjectData 생성자가 HitPoints 를 0 으로 두므로 여기서 반드시 채운다.
+            // 빠뜨리면 스폰 즉시 IsDead 가 true 다.
+            HitPoints = stats.MaxHitPoints;
         }
 
-        public override int MaxHitPoints => mMaxHP;
+        public EnemyStats Stats => mStats;
 
-        public float MoveSpeed => mMoveSpeed;
+        public override int MaxHitPoints => mStats.MaxHitPoints;
 
-        public int AttackDamage => mAttackDamage;
-
-        public int ExpReward => mExpReward;
+        public string AssetName          => mStats.AssetName;
+        public float  MoveSpeed          => mStats.MoveSpeed;
+        public int    AttackDamage       => mStats.AttackDamage;
+        public float  TimeBetweenAttacks => mStats.TimeBetweenAttacks;
+        public int    ScoreValue         => mStats.ScoreValue;
     }
 }

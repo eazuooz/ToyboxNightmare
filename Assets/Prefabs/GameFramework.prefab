@@ -690,6 +690,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mAvailableProcedureTypeNames:
   - ToyBoxNightmare.ProcedureMain
+  - ToyBoxNightmare.ProcedureGameOver
   mEntranceProcedureTypeName: ToyBoxNightmare.ProcedureMain
 --- !u!1 &6358112816711621563
 GameObject:

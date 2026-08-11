@@ -129,5 +129,22 @@ namespace ToyBoxNightmare
 
             return CachedTransform.position + CachedTransform.forward;
         }
+
+        // ─── 사망 ───
+
+        /// <summary>
+        /// 주의: M2 에서 사망 연출(Die 트리거 + 지연 회수)을 넣을 때는
+        /// <c>base.OnDead</c> 호출을 빼야 한다. base 가 즉시 SafeHide 하므로
+        /// 연출이 생략되고 연출 종료 시점의 Hide 와 겹친다(Enemy.OnDead 참고).
+        /// </summary>
+        protected override void OnDead(Entity attacker)
+        {
+            // 회수보다 먼저 발행한다. base.OnDead 가 SafeHide 하면 OnHide 에서
+            // Instance 가 null 이 되어 구독자가 상태를 읽지 못한다.
+            int finalScore = SurvivalGame.Instance != null ? SurvivalGame.Instance.Score : 0;
+            GameEntry.GetComponent<EventComponent>().Fire(this, PlayerDiedEventArgs.Create(finalScore));
+
+            base.OnDead(attacker);
+        }
     }
 }

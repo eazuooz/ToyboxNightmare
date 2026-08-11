@@ -24,8 +24,14 @@ namespace ToyBoxNightmare
         // 회전을 따로 하드코딩하지 않으므로 offset 만 바꾸면 각도가 함께 맞는다.
         private Quaternion mTargetRotation = Quaternion.identity;
 
+        // 씬에 배치된 원본 위치/회전 = 캐릭터 선택 앵글. 플레이어가 사라지면 여기로 돌아간다.
+        private Vector3    mSelectPosition = Vector3.zero;
+        private Quaternion mSelectRotation = Quaternion.identity;
+
         private void Start()
         {
+            mSelectPosition = transform.position;
+            mSelectRotation = transform.rotation;
             RecalculateRotation();
         }
 
@@ -44,19 +50,21 @@ namespace ToyBoxNightmare
 
         private void LateUpdate()
         {
-            Player player = Player.Instance;
-            if (player == null)
-            {
-                return;
-            }
+            float t = smoothing * Time.deltaTime;
 
-            Transform target = player.CachedTransform;
+            Player player = Player.Instance;
+            Transform target = (player != null && player.Available) ? player.CachedTransform : null;
+
             if (target == null)
             {
+                // 플레이어가 없다 = 캐릭터 선택 단계이거나 게임오버 직후다.
+                // 여기서 그냥 return 하면 카메라가 플레이어가 죽은 자리에 얼어붙고,
+                // 재시작 시 (∓2, 0, 0) 에 스폰되는 선택 캐릭터가 화면 밖이라
+                // 클릭할 수 없어 영구 소프트락이 된다. 반드시 선택 앵글로 되돌린다.
+                transform.position = Vector3.Lerp(transform.position, mSelectPosition, t);
+                transform.rotation = Quaternion.Slerp(transform.rotation, mSelectRotation, t);
                 return;
             }
-
-            float t = smoothing * Time.deltaTime;
 
             transform.position = Vector3.Lerp(transform.position, target.position + offset, t);
             transform.rotation = Quaternion.Slerp(transform.rotation, mTargetRotation, t);

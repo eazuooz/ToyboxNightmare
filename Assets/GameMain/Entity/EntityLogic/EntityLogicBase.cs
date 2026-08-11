@@ -42,8 +42,11 @@ namespace ToyBoxNightmare
         /// <summary>
         /// HideEntity 를 정확히 1회만 호출한다. 중복 호출은 조용히 무시된다.
         /// 엔티티 제거는 반드시 이 메서드를 통할 것 — Destroy/SetActive 는 풀을 깨뜨린다.
+        ///
+        /// 외부(SurvivalGame, 프로시저 등)에서도 호출할 수 있게 public 이다.
+        /// EntityComponent.HideEntity 를 직접 부르면 이 가드를 우회하게 되므로 쓰지 말 것.
         /// </summary>
-        protected void SafeHide()
+        public void SafeHide()
         {
             if (mHidden)
             {
