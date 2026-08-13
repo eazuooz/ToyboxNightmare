@@ -104,7 +104,9 @@ namespace ToyBoxNightmare
         private void EquipWeapons()
         {
             Equip<LightningWeapon>();
-            // M4: FrostWeapon / StinkWeapon / SlimeWeapon
+            Equip<FrostWeapon>();
+            Equip<StinkWeapon>();
+            Equip<SlimeWeapon>();
         }
 
         /// <summary>

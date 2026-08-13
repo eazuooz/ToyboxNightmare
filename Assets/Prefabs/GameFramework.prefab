@@ -1070,3 +1070,8 @@ MonoBehaviour:
     mInstanceCapacity: 64
     mInstanceExpireTime: 60
     mInstancePriority: 0
+  - mName: Effect
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 32
+    mInstanceExpireTime: 60
+    mInstancePriority: 0

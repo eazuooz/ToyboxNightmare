@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityGameFramework.Runtime;
 
@@ -15,10 +16,13 @@ namespace ToyBoxNightmare
     public abstract class WeaponBase : MonoBehaviour
     {
         /// <summary>Shootable(9). 적 탐색용.</summary>
-        protected const int ShootableMask = 1 << 9;
+        protected const int ShootableMask = WeaponUtil.ShootableMask;
 
         /// <summary>Shootable(9) | Blocking(10) | Environment(14) = 17920. 원본 Lightning 마스크.</summary>
-        protected const int HitscanMask = (1 << 9) | (1 << 10) | (1 << 14);
+        protected const int HitscanMask = WeaponUtil.HitscanMask;
+
+        /// <summary>파생 무기가 재사용하는 스크래치 버퍼. 프레임 할당을 없앤다.</summary>
+        protected readonly List<Enemy> Candidates = new List<Enemy>(32);
 
         protected Player Owner { get; private set; }
 
@@ -63,6 +67,15 @@ namespace ToyBoxNightmare
         /// <summary>쿨다운마다 호출된다. 파생 무기가 여기서 발사한다.</summary>
         protected abstract void Attack();
 
+        /// <summary>
+        /// 이번 발사가 헛방이었을 때 파생 무기가 호출한다. seconds 뒤에 다시 시도한다.
+        /// 대상이 없는데 매 프레임 OverlapSphere 를 도는 것을 막는다.
+        /// </summary>
+        protected void RetryAfter(float seconds)
+        {
+            mAttackTimer = attackInterval - Mathf.Max(0f, seconds);
+        }
+
         // ─── 공통 유틸 ───
 
         /// <summary>
@@ -76,35 +89,7 @@ namespace ToyBoxNightmare
                 return null;
             }
 
-            Vector3 origin = Owner.CachedTransform.position;
-            Collider[] hits = Physics.OverlapSphere(origin, radius, ShootableMask);
-
-            Enemy nearest = null;
-            float minSqr = float.MaxValue;
-
-            foreach (Collider col in hits)
-            {
-                Entity entity = col.GetComponentInParent<Entity>();
-                if (entity == null)
-                {
-                    continue;
-                }
-
-                Enemy enemy = entity.Logic as Enemy;
-                if (enemy == null || enemy.IsDead || !enemy.Available)
-                {
-                    continue;
-                }
-
-                float sqr = (enemy.CachedTransform.position - origin).sqrMagnitude;
-                if (sqr < minSqr)
-                {
-                    minSqr = sqr;
-                    nearest = enemy;
-                }
-            }
-
-            return nearest;
+            return WeaponUtil.FindNearestEnemy(Owner.CachedTransform.position, radius, Candidates);
         }
     }
 }

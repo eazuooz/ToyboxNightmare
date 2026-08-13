@@ -21,6 +21,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0be25656e85360a4db0f5a63132dae93
+    m_Address: SlimeProjectile
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 149d6dcc67e8d1240bbc0dd6ddf0c1bd
     m_Address: Environment
     m_ReadOnly: 0
@@ -45,6 +50,16 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4a3cb14c5e88d144ea87f6954156e45a
+    m_Address: SlimeHit
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5671dd473fd4e8e49b686f50a7c1c252
+    m_Address: StinkProjectile
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 66a5b91494d6fee428652fa1e1e92808
     m_Address: Sheep
     m_ReadOnly: 0
@@ -62,6 +77,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb280a69b475d104ab31cbd5a3598f97
+    m_Address: StinkHit
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cd60940a6e45a457097be96cca6a8af3
     m_Address: Hellephant
