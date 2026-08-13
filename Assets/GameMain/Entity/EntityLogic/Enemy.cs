@@ -15,6 +15,9 @@ namespace ToyBoxNightmare
         private Animator        mAnimator     = null;
         private CapsuleCollider mBodyCollider = null;
 
+        // 프리팹의 HitParticles 자식(흰 솜뭉치). 원본과 값까지 동일하게 보존돼 있다.
+        private ParticleSystem  mHitParticles = null;
+
         private float mAttackTimer     = 0f;
         private float mRetargetTimer   = 0f;
         private float mSpeedMultiplier = 1f;
@@ -29,6 +32,9 @@ namespace ToyBoxNightmare
         private bool  mDying      = false;
         private bool  mSinking    = false;
         private float mDeathTimer = 0f;
+
+        // 플레이어 사망 연출을 한 번만 재생하기 위한 플래그
+        private bool mPlayerDeadNotified = false;
 
         /// <summary>이동 속도 배율을 설정한다. 빙결 계열 디버프의 수신부(M4).</summary>
         public void SetSpeedMultiplier(float multiplier)
@@ -45,6 +51,9 @@ namespace ToyBoxNightmare
             mAgent        = GetComponent<NavMeshAgent>();
             mAnimator     = GetComponentInChildren<Animator>();
             mBodyCollider = GetComponent<CapsuleCollider>();
+
+            // 적 프리팹 5종 모두 ParticleSystem 이 정확히 1개(HitParticles)뿐이다.
+            mHitParticles = GetComponentInChildren<ParticleSystem>(true);
 
             // OnInit 은 인스턴스당 1회, 첫 OnHide(레이어 평탄화)보다 먼저 돈다.
             // 따라서 여기서 뜬 스냅샷이 프리팹 원본 값이다.
@@ -90,17 +99,24 @@ namespace ToyBoxNightmare
             }
 
             // 풀에서 재사용되므로 이전 판의 상태를 전부 되돌린다.
-            mAttackTimer     = 0f;
-            mSpeedMultiplier = 1f;
-            mDying           = false;
-            mSinking         = false;
-            mDeathTimer      = 0f;
+            mAttackTimer        = 0f;
+            mSpeedMultiplier    = 1f;
+            mDying              = false;
+            mSinking            = false;
+            mDeathTimer         = 0f;
+            mPlayerDeadNotified = false;
 
             // 임계값으로 채워 둔다. 0 으로 두면 첫 SetDestination 이 0.5초 뒤에나
             // 나가서 스폰 직후 반 초 동안 제자리 달리기를 한다.
             mRetargetTimer = EnemyTable.RetargetInterval;
 
             RestoreChildLayers();
+
+            // 원본은 SetActive 풀링이라 자동 초기화됐지만 GF 풀은 그렇지 않다.
+            if (mHitParticles != null)
+            {
+                mHitParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
 
             if (mBodyCollider != null)
             {
@@ -141,13 +157,22 @@ namespace ToyBoxNightmare
             }
 
             Player player = Player.Instance;
-            if (player == null || !player.Available || player.IsDead)
+            if (player == null || !player.Available)
             {
                 StopMoving();
                 return;
             }
 
+            if (player.IsDead)
+            {
+                StopMoving();
+                NotifyPlayerDead();
+                return;
+            }
+
+            // 추적 목적지는 발밑(트랜스폼 원점), 공격 판정은 콜라이더 중심 기준이다.
             Vector3 playerPosition = player.CachedTransform.position;
+            Vector3 playerCenter   = player.CenterPosition;
             EnemyStats stats = mEnemyData.Stats;
 
             // 목적지는 0.5초 주기로만 갱신한다(경로 계산 비용 절감).
@@ -175,11 +200,32 @@ namespace ToyBoxNightmare
             {
                 mAttackTimer -= stats.TimeBetweenAttacks;
 
-                if (GetPlanarDistance(playerPosition) <= stats.AttackRange)
+                if (GetPlanarDistance(playerCenter) <= stats.AttackRange)
                 {
                     player.ApplyDamage(Entity, stats.AttackDamage);
                 }
             }
+        }
+
+        /// <summary>피격 파편. 원본 EnemyHealth.TakeDamage 가 매 피격 hitParticles.Play() 하는 것과 같다.</summary>
+        protected override void OnDamaged(Entity attacker, int damageHitPoints)
+        {
+            if (mHitParticles != null)
+            {
+                mHitParticles.Play();
+            }
+        }
+
+        /// <summary>플레이어가 죽으면 승리 연출로 전환한다. 적 애니메이터의 PlayerDead 트리거.</summary>
+        private void NotifyPlayerDead()
+        {
+            if (mPlayerDeadNotified || mAnimator == null)
+            {
+                return;
+            }
+
+            mPlayerDeadNotified = true;
+            mAnimator.SetTrigger("PlayerDead");
         }
 
         /// <summary>

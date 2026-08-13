@@ -7,6 +7,28 @@
 
 # §0. 계획 정정 — 본문보다 우선한다
 
+## ⚠ 확정된 설계 결정 — 무기 UX는 **뱀서라이크**다
+
+사용자 결정: **자동 발사 + 다중 장착**(뱀서라이크). 원본 재현이 아니다.
+
+**따라서 본문의 다음 서술은 무효다:**
+
+| 무효가 된 서술 | 실제 |
+|---|---|
+| §2 매핑표 `PlayerAttack → WeaponController`(공용 쿨다운·Tab 전환·입력 라우팅) | `WeaponController` 를 만들지 않는다. 무기마다 **자기 쿨다운**을 돌린다 |
+| §2/§4 의 `OnFireStart` / `OnFireHeld` / `OnFireStop` 훅 | 전부 제거됨. `WeaponBase.Attack()` 하나로 통일 |
+| §4 M3 "마우스 좌클릭 발사 + Tab 전환" | 입력 없음. 쿨다운마다 **가장 가까운 적을 자동 조준** |
+| §0-10 "Frost 는 공용 쿨다운을 소모하지 않는 예외" | 공용 쿨다운 자체가 없으므로 무의미 |
+| §6 "Lightning/Frost 는 press, Stink/Slime 은 release 발사" | 전부 자동 발사 |
+| §8-2 미결정 "무기 UX 방향" | **해결됨** |
+
+**여전히 유효한 것**: §5 튜닝값 전부(데미지 50, 사거리 20, 마스크 17920, 쿨다운 값 등), 무기별 효과의 성질(Frost 빙결, Stink 도주, Slime DoT), M4 의 투사체·디버프 설계.
+
+M4 의 Frost/Stink/Slime 도 같은 방식으로 자동화한다 — Frost 는 홀드가 아니라 주기적 콘 판정, Stink/Slime 은 자동 조준 투사체.
+
+---
+
+
 아래는 계획 초안을 양쪽 저장소와 대조 검증한 결과다. **본문(§1~§8)의 서술과 충돌하면 이 절이 이긴다.**
 튜닝값(§5)은 표본 전수 대조에서 전부 일치했다 — 정정 대상은 수치가 아니라 **절차와 판정**이다.
 검증 방법: 계획서의 주장을 양쪽 저장소에서 직접 대조했다(타깃 `SurvivalGame.cs`/`Enemy.cs`/`TargetableObject.cs`/`WeaponBase.cs`/`Prefabs.asset`/`GameFramework.prefab`, 원본 `EnemyHealth.cs`/`EnemyAttack.cs`/`EnemySpawner.cs`/`PlayerAttack.cs`/`AllyManager.cs` 및 프리팹 직렬화 값). 튜닝표 수치는 표본 전수(적 5종 스탯, 스포너 5종, Lightning 50/20/17920, Stink 5/9, StinkHit 4/4/512, StinkProjectile 10, SlimeDebuff 3/2/20, Sheep 10, allyCost 30, delayOnPlayerDeath 1, 선택 배치 -3)가 **전부 일치**했다. 문제는 수치가 아니라 절차와 판정에 있다.

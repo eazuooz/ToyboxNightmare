@@ -35,15 +35,28 @@ namespace ToyBoxNightmare
             mTargetableObjectData.HitPoints -= damageHitPoints;
             float toRatio = mTargetableObjectData.HitPointRatio;
 
+            // 사망 여부와 무관하게 매 피격 호출한다. 원본도 치명타에서 피격 이펙트를 낸다.
+            OnDamaged(attacker, damageHitPoints);
+
             if (fromRatio > toRatio)
             {
-                // HPBar 업데이트 - 나중에 구현
+                OnHitPointChanged(fromRatio, toRatio);
             }
 
             if (mTargetableObjectData.HitPoints <= 0)
             {
                 OnDead(attacker);
             }
+        }
+
+        /// <summary>피격될 때마다 호출된다. 타격 이펙트/사운드를 여기서 낸다.</summary>
+        protected virtual void OnDamaged(Entity attacker, int damageHitPoints)
+        {
+        }
+
+        /// <summary>체력 비율이 실제로 줄었을 때 호출된다. HUD 갱신 이벤트를 여기서 발행한다.</summary>
+        protected virtual void OnHitPointChanged(float fromRatio, float toRatio)
+        {
         }
 
         protected internal override void OnInit(object userData)

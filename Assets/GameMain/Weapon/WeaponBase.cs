@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityGameFramework.Runtime;
 
 namespace ToyBoxNightmare
@@ -7,13 +6,20 @@ namespace ToyBoxNightmare
     /// <summary>
     /// 무기 베이스. Player GameObject 에 AddComponent 로 붙는다.
     ///
-    /// 두 가지 발사 모드를 지원한다:
-    ///   - 자동 발사 (Attack 오버라이드): 일정 간격마다 자동으로 호출된다. ProjectileWeapon, AreaWeapon 용.
-    ///   - 수동 발사 (OnFireStart/OnFireHeld/OnFireStop 오버라이드): Player 의 입력에 따라 호출된다.
-    ///     Lightning, Frost, Stink, Slime 무기 용.
+    /// 뱀서라이크 모델이다 — 조준·발사 입력이 없다. 각 무기가 자기 쿨다운을 돌리며
+    /// 자동으로 <see cref="Attack"/> 을 호출하고, 여러 무기를 동시에 장착한다.
+    ///
+    /// Player 엔티티는 풀에서 재사용되므로 무기 컴포넌트도 인스턴스에 남는다.
+    /// 재스폰 때마다 <see cref="Initialize"/> 를 다시 불러 상태를 리셋할 것.
     /// </summary>
     public abstract class WeaponBase : MonoBehaviour
     {
+        /// <summary>Shootable(9). 적 탐색용.</summary>
+        protected const int ShootableMask = 1 << 9;
+
+        /// <summary>Shootable(9) | Blocking(10) | Environment(14) = 17920. 원본 Lightning 마스크.</summary>
+        protected const int HitscanMask = (1 << 9) | (1 << 10) | (1 << 14);
+
         protected Player Owner { get; private set; }
 
         [SerializeField] private float attackInterval = 1f;
@@ -22,78 +28,83 @@ namespace ToyBoxNightmare
         public float AttackInterval
         {
             get => attackInterval;
-            set => attackInterval = Mathf.Max(0.1f, value);
+            set => attackInterval = Mathf.Max(0.05f, value);
         }
 
+        /// <summary>스폰(재스폰)마다 호출된다. 소유자 연결과 쿨다운 리셋을 겸한다.</summary>
         public void Initialize(Player owner)
         {
             Owner = owner;
-            mAttackTimer = attackInterval; // 초기화 즉시 공격 가능
+            mAttackTimer = attackInterval; // 장착 직후 첫 발은 즉시
+            OnInitialize();
         }
+
+        /// <summary>파생 무기가 자기 상태를 리셋할 훅.</summary>
+        protected virtual void OnInitialize() { }
 
         private void Update()
         {
-            if (Owner == null || Owner.IsDead) return;
+            if (Owner == null || !Owner.Available || Owner.IsDead)
+            {
+                return;
+            }
 
             mAttackTimer += Time.deltaTime;
-            if (mAttackTimer >= attackInterval)
+            if (mAttackTimer < attackInterval)
             {
-                mAttackTimer = 0f;
-                Attack();
+                return;
             }
+
+            // 위상을 유지한다. 프레임이 튀어도 발사 주기가 밀리지 않는다.
+            mAttackTimer -= attackInterval;
+            Attack();
         }
 
-        // ─── 자동 발사 (오버라이드 선택적) ───
-        protected virtual void Attack() { }
-
-        // ─── 수동 발사 입력 (오버라이드 선택적) ───
-        /// <summary>Fire1 버튼을 누른 순간 한 번 호출된다.</summary>
-        public virtual void OnFireStart() { }
-
-        /// <summary>Fire1 버튼을 누르고 있는 동안 매 프레임 호출된다.</summary>
-        public virtual void OnFireHeld() { }
-
-        /// <summary>Fire1 버튼을 뗀 순간 한 번 호출된다.</summary>
-        public virtual void OnFireStop() { }
+        /// <summary>쿨다운마다 호출된다. 파생 무기가 여기서 발사한다.</summary>
+        protected abstract void Attack();
 
         // ─── 공통 유틸 ───
 
-        /// <summary>Owner 주변 radius 안에서 가장 가까운 살아있는 적을 반환한다.</summary>
-        protected Enemy FindNearestEnemy(float radius = 20f)
+        /// <summary>
+        /// Owner 주변 radius 안에서 가장 가까운 살아있는 적을 반환한다.
+        /// Shootable 레이어만 훑으므로 바닥/환경 콜라이더를 건드리지 않는다.
+        /// </summary>
+        protected Enemy FindNearestEnemy(float radius)
         {
-            Collider[] hits = Physics.OverlapSphere(Owner.CachedTransform.position, radius);
+            if (Owner == null)
+            {
+                return null;
+            }
+
+            Vector3 origin = Owner.CachedTransform.position;
+            Collider[] hits = Physics.OverlapSphere(origin, radius, ShootableMask);
+
             Enemy nearest = null;
-            float minDist = float.MaxValue;
+            float minSqr = float.MaxValue;
 
             foreach (Collider col in hits)
             {
-                Entity entity = col.GetComponent<Entity>();
-                if (entity?.Logic is Enemy enemy && !enemy.IsDead)
+                Entity entity = col.GetComponentInParent<Entity>();
+                if (entity == null)
                 {
-                    float dist = Vector3.Distance(Owner.CachedTransform.position, enemy.CachedTransform.position);
-                    if (dist < minDist)
-                    {
-                        minDist = dist;
-                        nearest = enemy;
-                    }
+                    continue;
+                }
+
+                Enemy enemy = entity.Logic as Enemy;
+                if (enemy == null || enemy.IsDead || !enemy.Available)
+                {
+                    continue;
+                }
+
+                float sqr = (enemy.CachedTransform.position - origin).sqrMagnitude;
+                if (sqr < minSqr)
+                {
+                    minSqr = sqr;
+                    nearest = enemy;
                 }
             }
 
             return nearest;
-        }
-
-        /// <summary>마우스 커서가 가리키는 지면(Y=0 평면) 위치를 반환한다.</summary>
-        protected Vector3 GetMouseWorldPosition()
-        {
-            if (Camera.main == null) return Owner.CachedTransform.position;
-
-            Vector2 mousePos = Mouse.current?.position.ReadValue() ?? Vector2.zero;
-            Ray ray = Camera.main.ScreenPointToRay(mousePos);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-            if (groundPlane.Raycast(ray, out float dist))
-                return ray.GetPoint(dist);
-
-            return Owner.CachedTransform.position + Owner.CachedTransform.forward;
         }
     }
 }
