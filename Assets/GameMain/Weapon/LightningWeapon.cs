@@ -19,6 +19,9 @@ namespace ToyBoxNightmare
         private const string MuzzlePath = "Antenna";
         private const string BoltPath   = "Antenna/LightningAttack/LightningBolt";
 
+        /// <summary>총구 스파클. 무기를 바꾸면 베이스가 꺼 준다.</summary>
+        protected override string VfxRootPath => "Antenna/LightningAttack";
+
         private Transform        mMuzzle = null;
         private LightningBoltVfx mBolt   = null;
 
@@ -96,6 +99,11 @@ namespace ToyBoxNightmare
                 {
                     hitEnemy.ApplyDamage(Owner.Entity, Damage);
                 }
+
+                // 착탄 이펙트. 원본은 위치만 옮기고 회전은 건드리지 않는다.
+                // strikeableMask 에 걸렸을 때만 나오므로(바닥 레이어 8 은 마스크 밖) 여기가 맞다.
+                WeaponUtil.SpawnEffect(typeof(HitEffect), WeaponTable.LightningHitAsset,
+                    hit.point, Quaternion.identity, WeaponTable.LightningHitLifetime);
             }
             else
             {

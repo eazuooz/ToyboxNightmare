@@ -89,6 +89,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: da206bf54c0714d40b528c133f3168b7
+    m_Address: LightningHit
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f813aca6ad702f340b886ebe71be64cf
     m_Address: Dog
     m_ReadOnly: 0

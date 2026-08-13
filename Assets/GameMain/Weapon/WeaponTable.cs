@@ -11,10 +11,14 @@ namespace ToyBoxNightmare
         public const string EffectGroup     = "Effect";
 
         // ─── Addressables 주소 ───
+        public const string LightningHitAsset    = "LightningHit";
         public const string StinkProjectileAsset = "StinkProjectile";
         public const string StinkHitAsset        = "StinkHit";
         public const string SlimeProjectileAsset = "SlimeProjectile";
         public const string SlimeHitAsset        = "SlimeHit";
+
+        /// <summary>착탄 이펙트 수명. 원본 파티클이 0.5~0.75초라 여유를 둔 값.</summary>
+        public const float LightningHitLifetime = 1f;
 
         // ─── Frost (데미지 0. Lightning 과 병행 장착이 전제다) ───
         public const float FrostRetickInterval = 0.2f;  // 발사가 아니라 콘 재판정 주기

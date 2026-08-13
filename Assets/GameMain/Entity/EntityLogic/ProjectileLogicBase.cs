@@ -105,18 +105,7 @@ namespace ToyBoxNightmare
         protected static void SpawnEffect(System.Type logicType, string assetName,
                                           Vector3 position, Quaternion rotation, float lifetime)
         {
-            int id = EntitySerialId.Next();
-            GameEntry.GetComponent<EntityComponent>().ShowEntity(
-                id,
-                logicType,
-                assetName,
-                WeaponTable.EffectGroup,
-                new EffectData(id, 1)
-                {
-                    Position = position,
-                    Rotation = rotation,
-                    Lifetime = lifetime,
-                });
+            WeaponUtil.SpawnEffect(logicType, assetName, position, rotation, lifetime);
         }
     }
 }

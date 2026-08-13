@@ -12,6 +12,12 @@ namespace ToyBoxNightmare
     {
         private const string MuzzlePath = "Antenna";
 
+        protected override string VfxRootPath => "Antenna/StinkAttack";
+
+        // 마우스 조준 링을 "지금 노리는 적" 마커로 전용한다.
+        protected override string TargetRingPath   => "Antenna/StinkAttack/TargetRing";
+        protected override float  TargetRingRadius => WeaponTable.StinkDetectRadius;
+
         private Transform mMuzzle = null;
 
         protected override void OnInitialize()

@@ -52,6 +52,29 @@ namespace ToyBoxNightmare
             return result.Count;
         }
 
+        /// <summary>
+        /// 일회성 이펙트 엔티티를 띄운다.
+        ///
+        /// 원본은 씬에 하나씩 깔아둔 오브젝트를 좌표만 옮겨 재사용했다(그래서 동시 명중이
+        /// 겹치면 이전 이펙트가 끊겼다). 엔티티 풀로 띄우면 그 제약이 사라진다.
+        /// </summary>
+        public static void SpawnEffect(System.Type logicType, string assetName,
+                                       Vector3 position, Quaternion rotation, float lifetime)
+        {
+            int id = EntitySerialId.Next();
+            GameEntry.GetComponent<EntityComponent>().ShowEntity(
+                id,
+                logicType,
+                assetName,
+                WeaponTable.EffectGroup,
+                new EffectData(id, 1)
+                {
+                    Position = position,
+                    Rotation = rotation,
+                    Lifetime = lifetime,
+                });
+        }
+
         /// <summary>origin 에서 가장 가까운 살아있는 적. 없으면 null.</summary>
         public static Enemy FindNearestEnemy(Vector3 origin, float radius, List<Enemy> scratch)
         {

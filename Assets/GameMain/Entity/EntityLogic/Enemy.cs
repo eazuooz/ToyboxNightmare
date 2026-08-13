@@ -50,6 +50,11 @@ namespace ToyBoxNightmare
         private float mFrostTimer       = 0f;
         private float mFrostRefreshTime = -999f;
 
+        // 해동 대기가 시작됐는지. 원본은 콘에서 한 번 벗어나면 재진입해도 해동을 취소하지
+        // 않는다(FrostDebuff.AttachToEnemy 의 `if (target != null) return;` 때문).
+        // 그 동작을 그대로 재현한다 — 없으면 자동조준 특성상 무한 빙결이 된다.
+        private bool mFrostThawing = false;
+
         // Stink
         private float mFleeTimer = 0f;
 
@@ -334,12 +339,20 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            if (inCone)
+            if (!mFrostThawing)
             {
-                mFrostTimer = 0f;
-                return;
+                // 콘 안에 머무는 동안은 계속 얼어 있다.
+                if (inCone)
+                {
+                    return;
+                }
+
+                // 벗어나는 순간 해동이 확정된다.
+                mFrostThawing = true;
+                mFrostTimer   = 0f;
             }
 
+            // 여기서부터는 inCone 을 보지 않는다 — 재진입해도 해동은 예정대로 진행된다.
             mFrostTimer += elapseSeconds;
             if (mFrostTimer >= FrostThawDuration)
             {
@@ -349,8 +362,9 @@ namespace ToyBoxNightmare
 
         private void Freeze()
         {
-            mFrozen     = true;
-            mFrostTimer = 0f;
+            mFrozen       = true;
+            mFrostThawing = false;
+            mFrostTimer   = 0f;
 
             SetSpeedMultiplier(0f);
             if (mAnimator != null)
@@ -363,8 +377,9 @@ namespace ToyBoxNightmare
 
         private void Unfreeze()
         {
-            mFrozen     = false;
-            mFrostTimer = 0f;
+            mFrozen       = false;
+            mFrostThawing = false;
+            mFrostTimer   = 0f;
 
             SetSpeedMultiplier(1f);
             if (mAnimator != null)
@@ -415,6 +430,7 @@ namespace ToyBoxNightmare
         private void ClearAllDebuffs()
         {
             mFrozen           = false;
+            mFrostThawing     = false;
             mFrostTimer       = 0f;
             mFrostRefreshTime = -999f;
             mFleeTimer        = 0f;

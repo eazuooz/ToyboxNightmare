@@ -18,6 +18,9 @@ namespace ToyBoxNightmare
         private const string FrostConePath   = "Antenna/FrostAttack/FrostCone";
         private const string FrostArcPath    = "Antenna/FrostAttack/FrostArc";
 
+        /// <summary>총구 스파클. 무기를 바꾸면 베이스가 꺼 준다.</summary>
+        protected override string VfxRootPath => FrostAttackPath;
+
         /// <summary>콘 꼭짓점의 FrostAttack 로컬 좌표. 원본 Arc 메시 정점에서 역산했다.</summary>
         private static readonly Vector3 ApexLocal = new Vector3(-0.015296f, 0.044137f, 0.342790f);
 
@@ -40,8 +43,8 @@ namespace ToyBoxNightmare
                 }
                 else
                 {
-                    // 프리팹에 비활성으로 저장돼 있다. 이 GO 자신의 파티클이 총구 스파클이다.
-                    mFrostAttack.gameObject.SetActive(true);
+                    // 활성/비활성은 베이스가 VfxRootPath 로 관리한다. 여기서 켜면
+                    // 다른 무기로 바꿔도 총구 파티클이 남는다.
 
                     // 코드 판정으로 갈았으므로 원본 판정용 콜라이더는 꺼 둔다(이중 판정 방지).
                     Transform arc = transform.Find(FrostArcPath);
@@ -141,7 +144,7 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>다른 무기로 전환되면 콘과 루프 사운드를 반드시 끈다.</summary>
-        private void OnDisable()
+        protected override void OnWeaponDisabled()
         {
             SetConeActive(false);
         }

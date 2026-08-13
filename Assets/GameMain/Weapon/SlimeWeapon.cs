@@ -13,6 +13,12 @@ namespace ToyBoxNightmare
     {
         private const string MuzzlePath = "Antenna";
 
+        protected override string VfxRootPath => "Antenna/SlimeAttack";
+
+        // 스티키 타겟 선택 링을 "지금 노리는 적" 마커로 전용한다.
+        protected override string TargetRingPath   => "Antenna/SlimeAttack/SlimeSelectRing";
+        protected override float  TargetRingRadius => WeaponTable.SlimeDetectRadius;
+
         private Transform mMuzzle = null;
 
         protected override void OnInitialize()
