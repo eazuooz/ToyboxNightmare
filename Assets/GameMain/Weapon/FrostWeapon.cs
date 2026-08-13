@@ -140,6 +140,12 @@ namespace ToyBoxNightmare
                 mFrostAttack.rotation, want, TurnSpeed * Time.deltaTime);
         }
 
+        /// <summary>다른 무기로 전환되면 콘과 루프 사운드를 반드시 끈다.</summary>
+        private void OnDisable()
+        {
+            SetConeActive(false);
+        }
+
         private void SetConeActive(bool active)
         {
             if (mFrostCone != null && mFrostCone.activeSelf != active)

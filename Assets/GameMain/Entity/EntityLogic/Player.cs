@@ -26,8 +26,16 @@ namespace ToyBoxNightmare
         private Vector3 mMoveDirection = Vector3.zero;
         private Vector3 mLookDirection = Vector3.forward;
 
-        // 장착된 무기. 뱀서라이크 모델이라 여러 개가 각자 쿨다운을 돌린다.
+        // 장착된 무기. 각자 자기 쿨다운을 돌린다.
         private readonly List<WeaponBase> mWeapons = new List<WeaponBase>();
+
+        /// <summary>
+        /// true 면 한 번에 하나만 쓰고 Tab 으로 전환한다(무기별 확인용).
+        /// false 면 장착한 무기가 전부 동시에 나간다(뱀서라이크 본래 형태).
+        /// </summary>
+        private const bool SingleWeaponMode = true;
+
+        private int mActiveWeaponIndex = 0;
 
         // 사망 연출
         private bool  mDying      = false;
@@ -107,6 +115,41 @@ namespace ToyBoxNightmare
             Equip<FrostWeapon>();
             Equip<StinkWeapon>();
             Equip<SlimeWeapon>();
+
+            // 재스폰 때마다 첫 무기부터 시작한다.
+            mActiveWeaponIndex = 0;
+            ApplyWeaponSelection();
+
+            if (SingleWeaponMode && mWeapons.Count > 0)
+            {
+                Log.Info("무기 {0}종 장착. Tab 으로 전환. 현재 → {1}",
+                    mWeapons.Count, mWeapons[mActiveWeaponIndex].GetType().Name);
+            }
+        }
+
+        /// <summary>
+        /// 활성 무기만 켜고 나머지는 컴포넌트째 끈다.
+        /// 꺼진 무기는 Update/LateUpdate 가 돌지 않으므로 완전히 멈춘다.
+        /// </summary>
+        private void ApplyWeaponSelection()
+        {
+            for (int i = 0; i < mWeapons.Count; i++)
+            {
+                WeaponBase weapon = mWeapons[i];
+                if (weapon == null)
+                {
+                    continue;
+                }
+
+                bool active = !SingleWeaponMode || i == mActiveWeaponIndex;
+                weapon.enabled = active;
+
+                if (active)
+                {
+                    // 전환 즉시 쏠 수 있게 쿨다운을 채워 준다.
+                    weapon.Initialize(this);
+                }
+            }
         }
 
         /// <summary>
@@ -154,6 +197,28 @@ namespace ToyBoxNightmare
             if (IsDead) return;
 
             ReadMoveInput();
+            ReadWeaponSwitchInput();
+        }
+
+        private void ReadWeaponSwitchInput()
+        {
+            if (!SingleWeaponMode || mWeapons.Count <= 1)
+            {
+                return;
+            }
+
+            var kb = Keyboard.current;
+            if (kb == null || !kb.tabKey.wasPressedThisFrame)
+            {
+                return;
+            }
+
+            mActiveWeaponIndex = (mActiveWeaponIndex + 1) % mWeapons.Count;
+            ApplyWeaponSelection();
+
+            Log.Info("무기 전환 → {0} ({1}/{2})",
+                mWeapons[mActiveWeaponIndex].GetType().Name,
+                mActiveWeaponIndex + 1, mWeapons.Count);
         }
 
         // ─── 물리 이동 (FixedUpdate) ───
