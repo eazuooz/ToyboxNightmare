@@ -1,4 +1,3 @@
-using GameFramework.Procedure;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
@@ -8,10 +7,7 @@ namespace ToyBoxNightmare
     {
         private SurvivalGame mGame = null;
 
-        protected override void OnInit(ProcedureOwner procedureOwner)
-        {
-            base.OnInit(procedureOwner);
-        }
+        public override bool UseNativeDialog => false;
 
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
@@ -27,10 +23,8 @@ namespace ToyBoxNightmare
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
 
-            if (mGame == null)
-            {
-                return;
-            }
+            // OnEnter 가 아직 돌지 않았거나 이미 OnLeave 로 정리된 상태 방어.
+            if (mGame == null) return;
 
             mGame.Update(elapseSeconds, realElapseSeconds);
 
@@ -67,28 +61,21 @@ namespace ToyBoxNightmare
         private static void CleanupEntities()
         {
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
-            if (entityComponent == null)
-            {
-                return;
-            }
 
-            int loading = entityComponent.GetAllLoadingEntityIds().Length;
-            int loaded  = entityComponent.GetAllLoadedEntities().Length;
+            // 앱 종료 경로(isShutdown)로 들어오면 컴포넌트가 이미 파괴됐을 수 있다.
+            // 이때는 회수할 대상도 함께 사라진 뒤라 조용히 빠져나가는 게 맞다.
+            if (entityComponent == null) return;
+
+            int loadingCount = entityComponent.GetAllLoadingEntityIds().Length;
+            int loadedCount  = entityComponent.GetAllLoadedEntities().Length;
 
             entityComponent.HideAllLoadingEntities();
             entityComponent.HideAllLoadedEntities();
 
-            if (loading > 0 || loaded > 0)
+            if (loadingCount > 0 || loadedCount > 0)
             {
-                Log.Info("ProcedureMain: 엔티티 회수 — 로드됨 {0}, 로딩 중 {1}", loaded, loading);
+                Log.Info("ProcedureMain: 엔티티 회수 — 로드됨 {0}, 로딩 중 {1}", loadedCount, loadingCount);
             }
         }
-
-        protected override void OnDestroy(ProcedureOwner procedureOwner)
-        {
-            base.OnDestroy(procedureOwner);
-        }
-
-        public override bool UseNativeDialog => false;
     }
 }

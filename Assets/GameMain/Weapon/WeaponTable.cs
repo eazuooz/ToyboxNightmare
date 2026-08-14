@@ -17,6 +17,9 @@ namespace ToyBoxNightmare
         public const string SlimeProjectileAsset = "SlimeProjectile";
         public const string SlimeHitAsset        = "SlimeHit";
 
+        // ─── Lightning ───
+        // 사거리·데미지·쿨다운은 아직 LightningWeapon.cs 안에 있다. 여기로 모으면 좋다.
+
         /// <summary>착탄 이펙트 수명. 원본 파티클이 0.5~0.75초라 여유를 둔 값.</summary>
         public const float LightningHitLifetime = 1f;
 

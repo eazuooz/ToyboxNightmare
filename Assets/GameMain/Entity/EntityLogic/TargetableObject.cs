@@ -8,6 +8,9 @@ namespace ToyBoxNightmare
     /// </summary>
     public abstract class TargetableObject : EntityLogicBase
     {
+        [SerializeField]
+        private TargetableObjectData mTargetableObjectData = null;
+
         public bool IsDead
         {
             get
@@ -18,29 +21,29 @@ namespace ToyBoxNightmare
 
         public void ApplyDamage(Entity attacker, int damageHitPoints)
         {
-            if (mTargetableObjectData == null)
-            {
-                return;
-            }
+            // 아직 OnShow 를 거치지 않았거나 잘못된 userData 로 뜬 인스턴스.
+            // 런타임에 실제로 생길 수 있는 상황이고 OnShow 가 이미 로그를 남기므로 조용히 빠진다.
+            if (mTargetableObjectData == null) return;
 
             // 이미 죽은 대상에 대한 추가 피격은 무시한다.
             // 사망 연출이 끝나고 Hide 될 때까지 엔티티가 살아 있으므로,
             // 가드가 없으면 그 사이의 피격이 OnDead 를 여러 번 호출해 Hide 가 중복된다.
-            if (IsDead)
-            {
-                return;
-            }
+            if (IsDead) return;
 
-            float fromRatio = mTargetableObjectData.HitPointRatio;
+            // 회복 경로는 없다. 음수가 들어오면 체력이 도로 늘어 사망 판정이 영영 안 난다.
+            GameAssert.IsTrue(damageHitPoints >= 0,
+                "ApplyDamage 에 음수 데미지가 들어왔다. 회복은 이 경로로 처리하지 않는다.");
+
+            float ratioBeforeDamage = mTargetableObjectData.HitPointRatio;
             mTargetableObjectData.HitPoints -= damageHitPoints;
-            float toRatio = mTargetableObjectData.HitPointRatio;
+            float ratioAfterDamage = mTargetableObjectData.HitPointRatio;
 
             // 사망 여부와 무관하게 매 피격 호출한다. 원본도 치명타에서 피격 이펙트를 낸다.
             OnDamaged(attacker, damageHitPoints);
 
-            if (fromRatio > toRatio)
+            if (ratioBeforeDamage > ratioAfterDamage)
             {
-                OnHitPointChanged(fromRatio, toRatio);
+                OnHitPointChanged(ratioBeforeDamage, ratioAfterDamage);
             }
 
             if (mTargetableObjectData.HitPoints <= 0)
@@ -90,28 +93,23 @@ namespace ToyBoxNightmare
             // OnTriggerEnter 는 GameObject 에 붙은 모든 컴포넌트에 전달된다.
             // 프리팹에 EntityLogic 이 baked 되어 있으면 그 인스턴스는 OnInit 을 거치지
             // 않아 Entity 가 null 이므로, 아래 Entity.Id 접근에서 NRE 가 난다.
-            if (Entity == null)
-            {
-                return;
-            }
+            if (Entity == null) return;
 
             Entity otherEntity = other.gameObject.GetComponent<Entity>();
-            if (otherEntity == null)
-            {
-                return;
-            }
+            if (otherEntity == null) return;
 
-            // 충돌은 양쪽 엔티티 모두에서 통지되므로 한쪽만 처리한다.
-            // Id 가 작은 쪽이 처리하도록 해서 중복 판정을 막는다.
-            if (otherEntity.Logic is TargetableObject && otherEntity.Id >= Entity.Id)
-            {
-                return;
-            }
+            if (IsCollisionHandledByOther(otherEntity)) return;
 
             // 충돌 결과 처리는 전투 시스템 복원 시 이 자리에 구현한다.
         }
 
-        [SerializeField]
-        private TargetableObjectData mTargetableObjectData = null;
+        /// <summary>
+        /// 충돌은 양쪽 엔티티 모두에서 통지되므로 한쪽만 처리해야 중복 판정이 안 난다.
+        /// 상대도 TargetableObject 일 때만 Id 비교로 담당을 정한다.
+        /// </summary>
+        private bool IsCollisionHandledByOther(Entity otherEntity)
+        {
+            return otherEntity.Logic is TargetableObject && otherEntity.Id >= Entity.Id;
+        }
     }
 }

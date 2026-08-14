@@ -19,9 +19,13 @@ namespace ToyBoxNightmare
         /// <summary>공격자 엔티티 Id. DoT 를 누가 넣었는지 추적용.</summary>
         public int AttackerEntityId { get; set; }
 
-        public float Speed { get; set; } = 20f;
+        /// <summary>초당 이동 거리. 기본값은 Slime 기본 속도와 같은 값이다.</summary>
+        public float Speed { get; set; } = WeaponTable.SlimeSpeed;
 
-        /// <summary>명중 판정 거리. 콜라이더가 아니라 거리로 판정한다(원본과 동일).</summary>
-        public float HitRadius { get; set; } = 1f;
+        /// <summary>
+        /// 명중 판정 거리. 콜라이더가 아니라 거리로 판정한다(원본과 동일).
+        /// 기본값은 Slime 기본 판정 반경과 같은 값이다.
+        /// </summary>
+        public float HitRadius { get; set; } = WeaponTable.SlimeHitRadius;
     }
 }

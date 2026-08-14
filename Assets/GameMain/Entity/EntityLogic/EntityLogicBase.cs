@@ -48,13 +48,22 @@ namespace ToyBoxNightmare
         /// </summary>
         public void SafeHide()
         {
-            if (mHidden)
-            {
-                return;
-            }
+            if (mHidden) return;
+
+            // Entity 는 OnInit 에서 잡힌다. null 이라는 것은 이 인스턴스가 EntityManager 를
+            // 거치지 않고 프리팹에 baked 된 로직이라는 뜻이다(규약 위반). 회수할 대상 자체가
+            // 없으므로 요청을 버린다 — HideEntity(null) 은 코어에서 예외가 된다.
+            GameAssert.IsTrue(Entity != null,
+                "SafeHide 대상의 Entity 가 null 이다. 프리팹에 EntityLogic 이 baked 되어 있는지 확인할 것.");
+            if (Entity == null) return;
+
+            // 게임 종료나 씬 언로드 중에는 EntityComponent 가 먼저 파괴돼 있을 수 있다.
+            // 그 경우 엔티티도 함께 정리되므로 조용히 빠진다.
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+            if (entityComponent == null) return;
 
             mHidden = true;
-            GameEntry.GetComponent<EntityComponent>().HideEntity(Entity);
+            entityComponent.HideEntity(Entity);
         }
     }
 }

@@ -22,22 +22,39 @@ namespace ToyBoxNightmare
         {
             base.OnEnter(procedureOwner);
 
-            // 회수가 제대로 됐는지 확인용. 0 이 아니면 ProcedureMain.OnLeave 를 의심할 것.
-            var entityComponent = GameEntry.GetComponent<EntityComponent>();
-            int remaining = entityComponent == null ? 0 : entityComponent.GetAllLoadedEntities().Length;
+            int remainingEntityCount = CountRemainingEntities();
 
-            Log.Info("ProcedureGameOver: Enter. 잔존 엔티티 {0}개. R 키로 재시작.", remaining);
+            Log.Info("ProcedureGameOver: Enter. 잔존 엔티티 {0}개. R 키로 재시작.", remainingEntityCount);
         }
 
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
 
-            Keyboard kb = Keyboard.current;
-            if (kb != null && kb.rKey.wasPressedThisFrame)
-            {
-                ChangeState<ProcedureMain>(procedureOwner);
-            }
+            if (!IsRestartRequested()) return;
+
+            ChangeState<ProcedureMain>(procedureOwner);
+        }
+
+        /// <summary>재시작 키(R)가 이번 프레임에 눌렸는가.</summary>
+        private static bool IsRestartRequested()
+        {
+            // 키보드가 연결돼 있지 않으면 Keyboard.current 가 null 이다(패드만 꽂힌 경우 등).
+            Keyboard keyboard = Keyboard.current;
+
+            return keyboard != null && keyboard.rKey.wasPressedThisFrame;
+        }
+
+        /// <summary>
+        /// 회수가 제대로 됐는지 확인용. 0 이 아니면 ProcedureMain.OnLeave 를 의심할 것.
+        /// </summary>
+        private static int CountRemainingEntities()
+        {
+            // 앱 종료 중이면 컴포넌트가 이미 파괴됐을 수 있다. 그때는 셀 대상도 없다.
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+            if (entityComponent == null) return 0;
+
+            return entityComponent.GetAllLoadedEntities().Length;
         }
     }
 }

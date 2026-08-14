@@ -28,8 +28,10 @@ namespace ToyBoxNightmare
         /// <summary>지그재그 세로 진폭 배율. 원본 rayHeight.</summary>
         private const float RayHeight = 2f;
 
-        // 원본 rayPhases — 커브별 key.time
-        private static readonly float[][] PhaseT =
+        // 원본 rayPhases — 커브별 key.time.
+        // 값 하나가 정점 하나이며, 0=발사점 / 1=착탄점 사이의 보간 비율이다.
+        // PhaseKeyOffsets 와 인덱스가 1:1 로 대응한다(같은 위상의 같은 정점).
+        private static readonly float[][] PhaseKeyTimes =
         {
             new[]{0f,.0355f,.0757f,.0974f,.1174f,.1388f,.1504f,.1934f,.2206f,.3176f,
                   .3429f,.3995f,.4697f,.4894f,.5059f,.5123f,.5563f,.5808f,.5912f,.6593f,
@@ -48,8 +50,9 @@ namespace ToyBoxNightmare
                   .9345f,.9503f,.9684f,1f},
         };
 
-        // 원본 rayPhases — 커브별 key.value (월드 +Y 로만 흔들린다. 수평 흔들림은 없다)
-        private static readonly float[][] PhaseV =
+        // 원본 rayPhases — 커브별 key.value.
+        // 해당 정점을 직선에서 밀어내는 양이다. 월드 +Y 로만 흔들린다(수평 흔들림은 없다).
+        private static readonly float[][] PhaseKeyOffsets =
         {
             new[]{0f,-.0017f,.0296f,-.0178f,.0006f,-.0099f,.0144f,-.0087f,.0239f,-.0161f,
                   .0184f,-.0066f,.0256f,-.0026f,.0059f,-.0016f,-.0014f,-.0184f,.0194f,-.0064f,
@@ -93,35 +96,37 @@ namespace ToyBoxNightmare
                 mLine.useWorldSpace = true;
             }
 
-            // 이 GameObject 는 프리팹에서 비활성이었다가 무기 장착 시 켜진다.
-            // Play On Awake 파티클이 그대로 돌면 안테나에서 계속 스파크가 튄다.
-            //
-            // 한 번 멈추는 것만으로는 부족하다. 이 GameObject 의 부모(Antenna/LightningAttack)가
-            // 무기 전환 때마다 껐다 켜지는데, playOnAwake 파티클은 **재활성될 때마다** 다시
-            // 재생을 시작한다(프리팹 실측: playOnAwake=True, loop=True). 그러면 발사와 무관하게
-            // 안테나 끝에서 착탄 스파크가 영구히 루프한다. 자동 재생 자체를 끈다.
+            DisableAutoPlay();
+            StopParticles();
+            SetVisible(false);
+        }
+
+        /// <summary>
+        /// 이 GameObject 는 프리팹에서 비활성이었다가 무기 장착 시 켜진다.
+        /// Play On Awake 파티클이 그대로 돌면 안테나에서 계속 스파크가 튄다.
+        ///
+        /// 한 번 멈추는 것만으로는 부족하다. 이 GameObject 의 부모(Antenna/LightningAttack)가
+        /// 무기 전환 때마다 껐다 켜지는데, playOnAwake 파티클은 <b>재활성될 때마다</b> 다시
+        /// 재생을 시작한다(프리팹 실측: playOnAwake=True, loop=True). 그러면 발사와 무관하게
+        /// 안테나 끝에서 착탄 스파크가 영구히 루프한다. 자동 재생 자체를 끈다.
+        /// </summary>
+        private void DisableAutoPlay()
+        {
             if (mParticles != null)
             {
                 foreach (var ps in mParticles)
                 {
-                    if (ps == null)
-                    {
-                        continue;
-                    }
+                    if (ps == null) continue;
 
                     ParticleSystem.MainModule main = ps.main;
                     main.playOnAwake = false;
                 }
             }
 
-            StopParticles();
-
             if (mAudio != null)
             {
                 mAudio.playOnAwake = false;
             }
-
-            SetVisible(false);
         }
 
         /// <summary>
@@ -136,22 +141,8 @@ namespace ToyBoxNightmare
 
             SetVisible(true);
             ChangePhase();
-
-            if (mParticles != null)
-            {
-                foreach (var ps in mParticles)
-                {
-                    if (ps != null)
-                    {
-                        ps.Play(true);
-                    }
-                }
-            }
-
-            if (mAudio != null && mAudio.clip != null)
-            {
-                mAudio.Play();
-            }
+            PlayParticles();
+            PlayAudio();
         }
 
         /// <summary>
@@ -170,72 +161,79 @@ namespace ToyBoxNightmare
 
             SetVisible(false);
             StopParticles();
-
-            if (mAudio != null)
-            {
-                mAudio.Stop();
-            }
+            StopAudio();
         }
 
         private void Update()
         {
-            if (mRemaining <= 0f)
-            {
-                return;
-            }
+            if (mRemaining <= 0f) return;
 
             mRemaining -= Time.deltaTime;
             if (mRemaining <= 0f)
             {
+                // 수명이 다했다. 형상만 지운다 — 오디오를 끊는 곳은 StopImmediate 뿐이다.
                 SetVisible(false);
                 StopParticles();
                 return;
             }
 
             mPhaseTimer += Time.deltaTime;
-            if (mPhaseTimer >= PhaseDuration)
-            {
-                mPhaseTimer = 0f;
-                ChangePhase();
-            }
+            if (mPhaseTimer < PhaseDuration) return;
+
+            mPhaseTimer = 0f;
+            ChangePhase();
         }
 
         /// <summary>다음 커브로 넘어가 정점을 다시 배치한다.</summary>
         private void ChangePhase()
         {
-            if (mLine == null)
-            {
-                return;
-            }
+            if (mLine == null) return;
 
             // 원본과 같은 순서 — 쓰기 '전에' 증가시킨다.
             mPhaseIndex++;
-            if (mPhaseIndex >= PhaseT.Length)
+            if (mPhaseIndex >= PhaseKeyTimes.Length)
             {
                 mPhaseIndex = 0;
             }
 
-            float[] t = PhaseT[mPhaseIndex];
-            float[] v = PhaseV[mPhaseIndex];
+            float[] keyTimes   = PhaseKeyTimes[mPhaseIndex];
+            float[] keyOffsets = PhaseKeyOffsets[mPhaseIndex];
 
-            Vector3 start        = transform.position;
-            Vector3 vectorOfBolt = mEndPoint - start;
+            // 두 배열은 같은 정점을 가리키는 쌍이다. 길이가 어긋나면 한쪽이 범위를 넘는다.
+            GameAssert.IsTrue(keyTimes.Length == keyOffsets.Length,
+                "LightningBoltVfx: PhaseKeyTimes 와 PhaseKeyOffsets 의 길이가 다르다.");
 
-            mLine.positionCount = t.Length;
-            for (int i = 0; i < t.Length; i++)
+            int pointCount = Mathf.Min(keyTimes.Length, keyOffsets.Length);
+
+            Vector3 start      = transform.position;
+            Vector3 startToEnd = mEndPoint - start;
+
+            mLine.positionCount = pointCount;
+            for (int i = 0; i < pointCount; i++)
             {
-                Vector3 point = start + vectorOfBolt * t[i];
-                point += Vector3.up * (v[i] * RayHeight);
+                // 직선 위의 한 점을 잡고, 그 점만 월드 +Y 로 밀어 지그재그를 만든다.
+                Vector3 point = start + startToEnd * keyTimes[i];
+                point += Vector3.up * (keyOffsets[i] * RayHeight);
                 mLine.SetPosition(i, point);
+            }
+        }
+
+        private void PlayParticles()
+        {
+            if (mParticles == null) return;
+
+            foreach (var ps in mParticles)
+            {
+                if (ps != null)
+                {
+                    ps.Play(true);
+                }
             }
         }
 
         private void StopParticles()
         {
-            if (mParticles == null)
-            {
-                return;
-            }
+            if (mParticles == null) return;
 
             foreach (var ps in mParticles)
             {
@@ -243,6 +241,23 @@ namespace ToyBoxNightmare
                 {
                     ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 }
+            }
+        }
+
+        /// <summary>클립이 비어 있으면 재생하지 않는다 — 빈 AudioSource 는 경고만 남긴다.</summary>
+        private void PlayAudio()
+        {
+            if (mAudio != null && mAudio.clip != null)
+            {
+                mAudio.Play();
+            }
+        }
+
+        private void StopAudio()
+        {
+            if (mAudio != null)
+            {
+                mAudio.Stop();
             }
         }
 

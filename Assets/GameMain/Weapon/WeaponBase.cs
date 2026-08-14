@@ -42,13 +42,20 @@ namespace ToyBoxNightmare
 
         private bool mActiveApplied = false;
 
+        /// <summary>
+        /// 쿨다운 하한. 0 이하를 허용하면 한 프레임에 여러 발이 나가고
+        /// <see cref="RetryAfter"/> 도 재시도 간격을 잃는다.
+        /// </summary>
+        private const float MinAttackInterval = 0.05f;
+
         private float mAttackInterval = 1f;
         private float mAttackTimer    = 0f;
 
+        /// <summary>발사(또는 재판정) 주기. 파생 무기가 <see cref="OnInitialize"/> 에서 정한다.</summary>
         protected float AttackInterval
         {
             get => mAttackInterval;
-            set => mAttackInterval = Mathf.Max(0.05f, value);
+            set => mAttackInterval = Mathf.Max(MinAttackInterval, value);
         }
 
         // ─── 생명주기 ───
@@ -59,6 +66,10 @@ namespace ToyBoxNightmare
         /// </summary>
         public void Initialize(Player owner)
         {
+            // 계약: 소유자 없이는 초기화할 수 없다. Root 가 null 이면 파생 무기의
+            // Root.Find(...) 가 그 자리에서 NRE 를 낸다 — 여기서 원인을 남겨 둔다.
+            GameAssert.IsTrue(owner != null, "WeaponBase.Initialize: owner 가 null 이다.");
+
             Owner = owner;
             Root  = owner != null ? owner.CachedTransform : null;
 
@@ -81,10 +92,7 @@ namespace ToyBoxNightmare
         /// </summary>
         public void SetActive(bool active)
         {
-            if (mActiveApplied && Active == active)
-            {
-                return;
-            }
+            if (mActiveApplied && Active == active) return;
 
             mActiveApplied = true;
             Active         = active;
@@ -124,26 +132,8 @@ namespace ToyBoxNightmare
         /// </summary>
         public void Dispose()
         {
-            for (int i = 0; i < mRings.Count; i++)
-            {
-                if (mRings[i] != null)
-                {
-                    Object.Destroy(mRings[i].gameObject);
-                }
-            }
-
-            mRings.Clear();
-            mRingTargets.Clear();
-            mRingTemplate       = null;
-            mTargetRingResolved = false;
-
-            if (mVfxRoot != null)
-            {
-                mVfxRoot.gameObject.SetActive(mVfxRootDefaultActive);
-            }
-
-            mVfxRoot     = null;
-            mVfxResolved = false;
+            DestroyClonedRings();
+            RestoreVfxRootToPrefabState();
 
             // 다음 Initialize 뒤의 첫 SetActive 가 무조건 적용되게 한다.
             mActiveApplied = false;
@@ -154,17 +144,20 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>
+        /// 무기를 굴릴 수 있는 상태인가. 소유자가 회수됐거나 죽었으면 거짓이다.
+        /// (Owner 는 MonoBehaviour 파생이라 == null 이 "파괴됨" 까지 잡아 준다.)
+        /// </summary>
+        private bool IsOwnerAlive => Owner != null && Owner.Available && !Owner.IsDead;
+
+        /// <summary>
         /// <see cref="Player.OnUpdate"/> 가 매 프레임 부른다.
         /// 플레이어의 입력 처리가 끝난 뒤에 호출되므로 조준이 한 프레임 밀리지 않는다.
         /// </summary>
         public void OnUpdate(float elapseSeconds)
         {
-            if (!Active)
-            {
-                return;
-            }
+            if (!Active) return;
 
-            if (Owner == null || !Owner.Available || Owner.IsDead)
+            if (!IsOwnerAlive)
             {
                 // 소유자가 사라지면 스스로 꺼진다. 재스폰 시 Initialize → SetActive 로 되살아난다.
                 SetActive(false);
@@ -174,15 +167,21 @@ namespace ToyBoxNightmare
             OnAim(elapseSeconds);
             UpdateTargetRing();
 
-            mAttackTimer += elapseSeconds;
-            if (mAttackTimer < mAttackInterval)
+            if (HasCooldownElapsed(elapseSeconds))
             {
-                return;
+                Attack();
             }
+        }
+
+        /// <summary>쿨다운을 elapseSeconds 만큼 진행시키고, 이번 프레임에 발사할 차례면 true.</summary>
+        private bool HasCooldownElapsed(float elapseSeconds)
+        {
+            mAttackTimer += elapseSeconds;
+            if (mAttackTimer < mAttackInterval) return false;
 
             // 위상을 유지한다. 프레임이 튀어도 발사 주기가 밀리지 않는다.
             mAttackTimer -= mAttackInterval;
-            Attack();
+            return true;
         }
 
         /// <summary>
@@ -221,30 +220,55 @@ namespace ToyBoxNightmare
 
         private void SetVfxRootActive(bool active)
         {
-            if (!mVfxResolved)
-            {
-                mVfxResolved = true;
-
-                string path = VfxRootPath;
-                if (!string.IsNullOrEmpty(path) && Root != null)
-                {
-                    mVfxRoot = Root.Find(path);
-                    if (mVfxRoot == null)
-                    {
-                        Log.Warning("{0}: VFX 루트 '{1}' 을 찾지 못했다.", GetType().Name, path);
-                    }
-                    else
-                    {
-                        // 아직 아무것도 바꾸기 전이라 프리팹 기본값이다. Dispose 에서 되돌린다.
-                        mVfxRootDefaultActive = mVfxRoot.gameObject.activeSelf;
-                    }
-                }
-            }
+            ResolveVfxRoot();
 
             if (mVfxRoot != null && mVfxRoot.gameObject.activeSelf != active)
             {
                 mVfxRoot.gameObject.SetActive(active);
             }
+        }
+
+        /// <summary>
+        /// VFX 루트를 딱 한 번 찾아 캐시한다. 못 찾아도 <see cref="mVfxResolved"/> 는 세워 둔다 —
+        /// 매 프레임 Find 를 반복하고 경고를 도배하지 않기 위해서다.
+        /// </summary>
+        private void ResolveVfxRoot()
+        {
+            if (mVfxResolved) return;
+
+            mVfxResolved = true;
+
+            string path = VfxRootPath;
+            if (string.IsNullOrEmpty(path) || Root == null)
+            {
+                // 총구 VFX 를 쓰지 않는 무기다. 정상 경로이므로 로그를 남기지 않는다.
+                return;
+            }
+
+            mVfxRoot = Root.Find(path);
+            if (mVfxRoot == null)
+            {
+                Log.Warning("{0}: VFX 루트 '{1}' 을 찾지 못했다.", GetType().Name, path);
+                return;
+            }
+
+            // 아직 아무것도 바꾸기 전이라 프리팹 기본값이다. Dispose 에서 되돌린다.
+            mVfxRootDefaultActive = mVfxRoot.gameObject.activeSelf;
+        }
+
+        /// <summary>
+        /// 총구 VFX 루트를 프리팹 기본 활성 상태로 되돌리고 캐시를 버린다.
+        /// 안 되돌리면 이 캐릭터가 다음 판 선택화면에 재사용될 때 이펙트가 꺼진 채로 등장한다.
+        /// </summary>
+        private void RestoreVfxRootToPrefabState()
+        {
+            if (mVfxRoot != null)
+            {
+                mVfxRoot.gameObject.SetActive(mVfxRootDefaultActive);
+            }
+
+            mVfxRoot     = null;
+            mVfxResolved = false;
         }
 
         // ─── 타겟 마커 ───
@@ -278,17 +302,11 @@ namespace ToyBoxNightmare
             results.Clear();
 
             float radius = MarkerRadius;
-            if (Owner == null || radius <= 0f)
-            {
-                return 0;
-            }
+            if (Owner == null || radius <= 0f) return 0;
 
             Vector3 origin = Owner.CachedTransform.position;
 
-            if (MarkAllTargets)
-            {
-                return WeaponUtil.FindEnemiesInSphere(origin, radius, results);
-            }
+            if (MarkAllTargets) return WeaponUtil.FindEnemiesInSphere(origin, radius, results);
 
             Enemy nearest = WeaponUtil.FindNearestEnemy(origin, radius, Candidates);
             if (nearest != null)
@@ -302,16 +320,17 @@ namespace ToyBoxNightmare
         /// <summary>
         /// 이 적을 지금 때릴 수 있는지 판정한다 — 마커 색이 여기서 나온다.
         /// 기본은 순수 거리 판정. 시야·각도 제약이 있는 무기가 재정의한다.
+        ///
+        /// enemy 와 Owner 의 null 검사가 없는 이유: 호출 경로가
+        /// <see cref="OnUpdate"/>(Owner 생존 확인) → <see cref="UpdateTargetRing"/>(enemy null 스킵)
+        /// 하나뿐이라 여기 도달하면 둘 다 살아 있다. 새 호출부를 만들면 그 전제를 함께 옮길 것.
         /// </summary>
         protected virtual TargetState EvaluateTarget(Enemy enemy)
         {
             float distance = WeaponUtil.PlanarDistance(
                 enemy.CachedTransform.position, Owner.CachedTransform.position);
 
-            if (distance <= AttackRadius)
-            {
-                return TargetState.InRange;
-            }
+            if (distance <= AttackRadius) return TargetState.InRange;
 
             return distance <= AttackRadius * WeaponUtil.NearRangeScale
                 ? TargetState.Near
@@ -339,44 +358,50 @@ namespace ToyBoxNightmare
         private void UpdateTargetRing()
         {
             ResolveRingTemplate();
-            if (mRingTemplate == null)
-            {
-                return;
-            }
+            if (mRingTemplate == null) return;
 
             int count = Mathf.Min(CollectTargets(mRingTargets), MaxTargetRings);
 
             for (int i = 0; i < count; i++)
             {
                 Enemy enemy = mRingTargets[i];
-                if (enemy == null)
-                {
-                    continue;
-                }
+                if (enemy == null) continue;
 
                 Transform ring = GetRing(i);
                 if (ring == null)
                 {
+                    // 링을 더 만들 수 없다. 남은 대상도 마찬가지이므로 여기서 끊는다.
                     break;
                 }
 
-                if (!ring.gameObject.activeSelf)
-                {
-                    ring.gameObject.SetActive(true);
-                }
-
-                Vector3 position = enemy.CachedTransform.position;
-                position.y += TargetRingHeight;
-                ring.position = position;
-
-                // 부모(캐릭터)가 회전하므로 월드 회전을 고정해 항상 지면에 눕힌다.
-                ring.rotation = Quaternion.Euler(-90f, 0f, 0f);
-
-                ApplyRingColor(ring, WeaponUtil.GetTargetColor(EvaluateTarget(enemy)));
+                ShowRingOn(ring, enemy);
             }
 
-            // 남는 링은 숨긴다.
-            for (int i = count; i < mRings.Count; i++)
+            HideRingsFrom(count);
+        }
+
+        /// <summary>링 하나를 적 발밑에 놓고 "지금 때릴 수 있나" 에 맞는 색을 입힌다.</summary>
+        private void ShowRingOn(Transform ring, Enemy enemy)
+        {
+            if (!ring.gameObject.activeSelf)
+            {
+                ring.gameObject.SetActive(true);
+            }
+
+            Vector3 position = enemy.CachedTransform.position;
+            position.y += TargetRingHeight;
+            ring.position = position;
+
+            // 부모(캐릭터)가 회전하므로 월드 회전을 고정해 항상 지면에 눕힌다.
+            ring.rotation = Quaternion.Euler(-90f, 0f, 0f);
+
+            ApplyRingColor(ring, WeaponUtil.GetTargetColor(EvaluateTarget(enemy)));
+        }
+
+        /// <summary>이번 프레임에 쓰지 않은 남는 링을 숨긴다.</summary>
+        private void HideRingsFrom(int firstUnusedIndex)
+        {
+            for (int i = firstUnusedIndex; i < mRings.Count; i++)
             {
                 if (mRings[i] != null && mRings[i].gameObject.activeSelf)
                 {
@@ -385,20 +410,35 @@ namespace ToyBoxNightmare
             }
         }
 
+        /// <summary>
+        /// 복제해 둔 링을 전부 파괴하고 템플릿 캐시를 버린다.
+        /// 링은 캐릭터의 자식이라 무기 객체보다 오래 살아남는다 — <see cref="Dispose"/> 주석 참조.
+        /// </summary>
+        private void DestroyClonedRings()
+        {
+            for (int i = 0; i < mRings.Count; i++)
+            {
+                if (mRings[i] != null)
+                {
+                    Object.Destroy(mRings[i].gameObject);
+                }
+            }
+
+            mRings.Clear();
+            mRingTargets.Clear();
+
+            mRingTemplate       = null;
+            mTargetRingResolved = false;
+        }
+
         private void ResolveRingTemplate()
         {
-            if (mTargetRingResolved)
-            {
-                return;
-            }
+            if (mTargetRingResolved) return;
 
             mTargetRingResolved = true;
 
             string path = TargetRingPath;
-            if (string.IsNullOrEmpty(path) || Root == null)
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(path) || Root == null) return;
 
             mRingTemplate = Root.Find(path);
             if (mRingTemplate == null)
@@ -412,9 +452,14 @@ namespace ToyBoxNightmare
             mRingTemplate.gameObject.SetActive(false);
         }
 
-        /// <summary>i 번째 링을 얻는다. 모자라면 템플릿을 복제한다.</summary>
+        /// <summary>i 번째 링을 얻는다. 모자라면 템플릿을 복제한다. 더 못 만들면 null.</summary>
         private Transform GetRing(int index)
         {
+            GameAssert.InRange(index, MaxTargetRings, "GetRing(index)");
+
+            // 템플릿이 파괴됐을 수 있다(캐릭터 회수). Instantiate(null) 은 예외를 던진다.
+            if (mRingTemplate == null) return null;
+
             while (mRings.Count <= index && mRings.Count < MaxTargetRings)
             {
                 Transform clone = Object.Instantiate(mRingTemplate, Root);
@@ -426,12 +471,19 @@ namespace ToyBoxNightmare
             return index < mRings.Count ? mRings[index] : null;
         }
 
+        /// <summary>레거시 파티클 셰이더의 색 프로퍼티.</summary>
+        private const string LegacyTintColorProperty = "_TintColor";
+
+        /// <summary>URP Lit/Unlit 의 색 프로퍼티. 마커 머티리얼을 URP 로 갈았을 때 대비다.</summary>
+        private const string UrpBaseColorProperty = "_BaseColor";
+
         private static void ApplyRingColor(Transform ring, Color color)
         {
             // material 프로퍼티를 직접 건드리면 Renderer 마다 머티리얼 사본이 생겨 샌다.
             var renderer = ring.GetComponent<Renderer>();
             if (renderer == null)
             {
+                // 링 프리팹 구성 문제지만 게임플레이는 계속된다. 매 프레임 도는 경로라 로그는 생략한다.
                 return;
             }
 
@@ -441,8 +493,8 @@ namespace ToyBoxNightmare
             }
 
             renderer.GetPropertyBlock(sRingBlock);
-            sRingBlock.SetColor("_TintColor", color); // 레거시 파티클 셰이더
-            sRingBlock.SetColor("_BaseColor", color); // URP 로 교체했을 때 대비
+            sRingBlock.SetColor(LegacyTintColorProperty, color);
+            sRingBlock.SetColor(UrpBaseColorProperty, color);
             renderer.SetPropertyBlock(sRingBlock);
         }
 
@@ -465,10 +517,7 @@ namespace ToyBoxNightmare
         /// </summary>
         protected Enemy FindNearestEnemy(float radius)
         {
-            if (Owner == null)
-            {
-                return null;
-            }
+            if (Owner == null) return null;
 
             return WeaponUtil.FindNearestEnemy(Owner.CachedTransform.position, radius, Candidates);
         }

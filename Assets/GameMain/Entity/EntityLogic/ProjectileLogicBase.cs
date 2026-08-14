@@ -9,8 +9,11 @@ namespace ToyBoxNightmare
     /// </summary>
     public abstract class ProjectileLogicBase : EntityLogicBase
     {
+        /// <summary>파생 클래스가 따로 잡지 않았을 때 쓰는 수명 상한.</summary>
+        private const float DefaultMaxLifetime = 3f;
+
         /// <summary>이 시간이 지나면 무조건 회수된다. 유실 투사체 방지.</summary>
-        protected float MaxLifetime = 3f;
+        protected float MaxLifetime = DefaultMaxLifetime;
 
         private float mElapsed = 0f;
 
@@ -40,35 +43,39 @@ namespace ToyBoxNightmare
         /// <summary>위치를 다 잡은 뒤 파생 클래스가 호출한다.</summary>
         protected void PlayEffects()
         {
-            if (mParticles != null)
+            PlayParticles();
+            PlayAudios();
+        }
+
+        private void PlayParticles()
+        {
+            if (mParticles == null) return;
+
+            foreach (var ps in mParticles)
             {
-                foreach (var ps in mParticles)
+                if (ps != null)
                 {
-                    if (ps != null)
-                    {
-                        ps.Play(true);
-                    }
+                    ps.Play(true); // 인자 true 가 자식까지 재생한다
                 }
             }
+        }
 
-            if (mAudios != null)
+        private void PlayAudios()
+        {
+            if (mAudios == null) return;
+
+            foreach (var audio in mAudios)
             {
-                foreach (var audio in mAudios)
+                if (audio != null && audio.clip != null)
                 {
-                    if (audio != null && audio.clip != null)
-                    {
-                        audio.Play();
-                    }
+                    audio.Play();
                 }
             }
         }
 
         protected void StopParticles()
         {
-            if (mParticles == null)
-            {
-                return;
-            }
+            if (mParticles == null) return;
 
             foreach (var ps in mParticles)
             {
@@ -83,10 +90,7 @@ namespace ToyBoxNightmare
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 
-            if (IsHiding)
-            {
-                return;
-            }
+            if (IsHiding) return;
 
             mElapsed += elapseSeconds;
             if (mElapsed >= MaxLifetime)
@@ -105,6 +109,15 @@ namespace ToyBoxNightmare
         protected static void SpawnEffect(System.Type logicType, string assetName,
                                           Vector3 position, Quaternion rotation, float lifetime)
         {
+            // assetName 이 비면 ShowEntity 가 조용히 실패해 "착탄했는데 아무것도 안 보이는"
+            // 증상만 남는다. 여기서 걸러 원인을 로그에 남긴다.
+            if (logicType == null || string.IsNullOrEmpty(assetName))
+            {
+                Log.Error("착탄 이펙트 스폰 인자가 잘못됐다. logicType={0}, assetName='{1}' — WeaponTable 을 확인할 것.",
+                    logicType, assetName);
+                return;
+            }
+
             WeaponUtil.SpawnEffect(logicType, assetName, position, rotation, lifetime);
         }
     }

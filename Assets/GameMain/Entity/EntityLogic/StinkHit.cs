@@ -15,21 +15,38 @@ namespace ToyBoxNightmare
     /// </summary>
     public class StinkHit : HitEffect
     {
+        /// <summary>
+        /// 판정 결과를 담을 공용 버퍼. 매 착탄마다 List 를 새로 만들면 GC 가 돈다.
+        /// static 이어도 안전한 이유는 이 버퍼를 쓰는 구간(아래 순회)이
+        /// 다른 StinkHit 을 스폰하지도, 재진입하지도 않기 때문이다 —
+        /// ApplyFlee 는 Enemy 의 도주 타이머만 건드린다.
+        /// </summary>
         private static readonly List<Enemy> sBuffer = new List<Enemy>(32);
 
         protected override void OnEffectStarted()
         {
             base.OnEffectStarted();
 
-            int count = WeaponUtil.FindEnemiesInSphere(
+            int fleeingCount = WeaponUtil.FindEnemiesInSphere(
                 CachedTransform.position, WeaponTable.StinkBlastRadius, sBuffer);
 
+            GameAssert.IsTrue(fleeingCount <= sBuffer.Count,
+                "FindEnemiesInSphere 가 채운 개수보다 큰 값을 돌려줬다.");
+
+            MakeEnemiesFlee(fleeingCount);
+
+            Log.Info("StinkHit: {0}마리 도주", fleeingCount);
+        }
+
+        private static void MakeEnemiesFlee(int count)
+        {
             for (int i = 0; i < count; i++)
             {
-                sBuffer[i].ApplyFlee(WeaponTable.StinkFleeDuration);
-            }
+                Enemy enemy = sBuffer[i];
+                if (enemy == null) continue;
 
-            Log.Info("StinkHit: {0}마리 도주", count);
+                enemy.ApplyFlee(WeaponTable.StinkFleeDuration);
+            }
         }
     }
 }

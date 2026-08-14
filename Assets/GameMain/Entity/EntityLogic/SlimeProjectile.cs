@@ -12,6 +12,21 @@ namespace ToyBoxNightmare
     /// </summary>
     public class SlimeProjectile : ProjectileLogicBase
     {
+        /// <summary>유실 투사체 방지 상한. 원본에는 수명도 최대 사거리도 없다.</summary>
+        private const float MaxFlightSeconds = 3f;
+
+        /// <summary>적 트랜스폼 원점이 발밑이라 몸통 높이까지 올려 조준한다.</summary>
+        private const float AimHeightOffset = 0.5f;
+
+        /// <summary>속도가 0 이하로 들어오면 제자리에 뜬 채 수명을 다 쓴다.</summary>
+        private const float MinSpeed = 0.1f;
+
+        /// <summary>명중 반경이 0 이하로 들어오면 영원히 명중 판정에 걸리지 않는다.</summary>
+        private const float MinHitRadius = 0.1f;
+
+        /// <summary>LookAt 에 이보다 짧은 벡터를 넘기면 Unity 가 매 프레임 에러를 뱉는다.</summary>
+        private const float MinLookSqrDistance = 1e-6f;
+
         private int   mTargetId   = 0;
         private int   mAttackerId = 0;
         private float mSpeed      = WeaponTable.SlimeSpeed;
@@ -31,11 +46,11 @@ namespace ToyBoxNightmare
 
             mTargetId   = data.TargetEntityId;
             mAttackerId = data.AttackerEntityId;
-            mSpeed      = Mathf.Max(0.1f, data.Speed);
-            mHitRadius  = Mathf.Max(0.1f, data.HitRadius);
+            mSpeed      = Mathf.Max(MinSpeed, data.Speed);
+            mHitRadius  = Mathf.Max(MinHitRadius, data.HitRadius);
 
             // 원본에는 수명도 최대 사거리도 없다. 유실 방지 상한을 반드시 둔다.
-            MaxLifetime = 3f;
+            MaxLifetime = MaxFlightSeconds;
 
             CachedTransform.position = data.Position;
             CachedTransform.rotation = data.Rotation;
@@ -53,62 +68,83 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            Vector3 aim = target.CachedTransform.position + Vector3.up * 0.5f;
+            Vector3 aimPoint = GetAimPoint(target);
 
-            CachedTransform.LookAt(aim);
+            TurnToward(aimPoint);
             CachedTransform.Translate(0f, 0f, mSpeed * elapseSeconds);
 
-            if (Vector3.Distance(CachedTransform.position, aim) <= mHitRadius)
+            bool hasReachedTarget = Vector3.Distance(CachedTransform.position, aimPoint) <= mHitRadius;
+            if (hasReachedTarget)
             {
                 Explode(target);
             }
         }
 
+        private static Vector3 GetAimPoint(Enemy target)
+        {
+            return target.CachedTransform.position + Vector3.up * AimHeightOffset;
+        }
+
+        /// <summary>
+        /// 조준점을 바라본다. 이미 조준점에 겹쳐 있으면 회전을 건드리지 않는다 —
+        /// 길이 0 벡터를 LookAt 에 넘기면 Unity 가 "viewing vector is zero" 에러를 내고
+        /// 회전은 어차피 그대로 남기 때문에, 건너뛰는 것과 결과가 같다.
+        /// </summary>
+        private void TurnToward(Vector3 aimPoint)
+        {
+            Vector3 toAimPoint = aimPoint - CachedTransform.position;
+            if (toAimPoint.sqrMagnitude < MinLookSqrDistance) return;
+
+            CachedTransform.LookAt(aimPoint);
+        }
+
         private Enemy ResolveTarget()
         {
             var entityComponent = GameEntry.GetComponent<EntityComponent>();
-            if (entityComponent == null || !entityComponent.HasEntity(mTargetId))
-            {
-                return null;
-            }
+            if (entityComponent == null || !entityComponent.HasEntity(mTargetId)) return null;
 
             Entity entity = entityComponent.GetEntity(mTargetId);
-            if (entity == null)
-            {
-                return null;
-            }
+            if (entity == null) return null;
 
             Enemy enemy = entity.Logic as Enemy;
-            if (enemy == null || enemy.IsDead || !enemy.Available)
-            {
-                return null;
-            }
+            if (enemy == null || enemy.IsDead || !enemy.Available) return null;
 
             return enemy;
         }
 
+        /// <summary>
+        /// DoT 를 누가 넣었는지 추적하기 위한 공격자. 이미 회수됐으면 null 이다 —
+        /// 회수된 엔티티를 Enemy 쪽에 넘기면 다음 판까지 물고 간다.
+        /// </summary>
+        private Entity ResolveAttacker()
+        {
+            if (mAttackerId == 0) return null;
+
+            var entityComponent = GameEntry.GetComponent<EntityComponent>();
+            if (entityComponent == null || !entityComponent.HasEntity(mAttackerId)) return null;
+
+            return entityComponent.GetEntity(mAttackerId);
+        }
+
         private void Explode(Enemy target)
         {
-            if (IsHiding)
+            if (IsHiding) return;
+
+            GameAssert.IsTrue(target != null, "SlimeProjectile.Explode 는 살아 있는 대상만 받는다.");
+            if (target == null)
             {
+                SafeHide();
                 return;
             }
 
             SpawnEffect(typeof(HitEffect), WeaponTable.SlimeHitAsset,
                 CachedTransform.position, Quaternion.identity, WeaponTable.SlimeHitLifetime);
 
-            Entity attacker = null;
-            var entityComponent = GameEntry.GetComponent<EntityComponent>();
-            if (entityComponent != null && mAttackerId != 0 && entityComponent.HasEntity(mAttackerId))
-            {
-                attacker = entityComponent.GetEntity(mAttackerId);
-            }
-
             target.ApplySlime(
                 WeaponTable.SlimeTicks,
                 WeaponTable.SlimeTickInterval,
                 WeaponTable.SlimeTickDamage,
-                attacker);
+                ResolveAttacker());
 
             SafeHide();
         }

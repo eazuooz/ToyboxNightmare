@@ -19,11 +19,29 @@ namespace ToyBoxNightmare
             new Keyframe(0.8967965f,  0.85f,      -4.88826f,     -4.88826f),
             new Keyframe(0.9999976f,  0.0000331f, -8.236026f,    -8.236026f));
 
-        private Vector3 mStart    = Vector3.zero;
-        private Vector3 mPath     = Vector3.zero;
-        private float   mTotal    = 0f;
-        private float   mTraveled = 0f;
-        private float   mSpeed    = WeaponTable.StinkSpeed;
+        /// <summary>속도가 0 이하로 들어오면 영원히 도착하지 못한다.</summary>
+        private const float MinSpeed = 0.1f;
+
+        /// <summary>
+        /// 이보다 짧으면 방향 정규화도 진행률 계산도 의미가 없다(0 나눗셈). 즉시 착탄시킨다.
+        /// </summary>
+        private const float MinFlightDistance = 0.01f;
+
+        /// <summary>비행 예정 시간에 얹는 여유. 이 시간이 지나면 베이스가 강제로 회수한다.</summary>
+        private const float LifetimeMargin = 0.5f;
+
+        /// <summary>
+        /// 루트가 X -90° 로 저작돼 있다. identity 로 두면 가스 구름이 눕는다.
+        /// </summary>
+        private static readonly Quaternion HitRotation = Quaternion.Euler(-90f, 0f, 0f);
+
+        private Vector3 mStart     = Vector3.zero;
+        private Vector3 mPath      = Vector3.zero;
+        /// <summary>mPath 의 단위 벡터. 발사 후 변하지 않으므로 매 프레임 정규화하지 않는다.</summary>
+        private Vector3 mDirection = Vector3.forward;
+        private float   mTotal     = 0f;
+        private float   mTraveled  = 0f;
+        private float   mSpeed     = WeaponTable.StinkSpeed;
 
         protected internal override void OnShow(object userData)
         {
@@ -37,19 +55,22 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            mStart    = data.Position;
-            mSpeed    = Mathf.Max(0.1f, data.Speed);
-            mPath     = data.ImpactPoint - mStart;
-            mTotal    = mPath.magnitude;
-            mTraveled = 0f;
+            mStart     = data.Position;
+            mSpeed     = Mathf.Max(MinSpeed, data.Speed);
+            mPath      = data.ImpactPoint - mStart;
+            mTotal     = mPath.magnitude;
+            mDirection = Vector3.forward;
+            mTraveled  = 0f;
 
-            if (mTotal < 0.01f)
+            // 아래 계산이 전부 mTotal 로 나누므로, 0 나눗셈이 될 거리는 여기서 걸러낸다.
+            if (mTotal < MinFlightDistance)
             {
                 Explode();
                 return;
             }
 
-            MaxLifetime = mTotal / mSpeed + 0.5f;
+            mDirection  = mPath / mTotal;
+            MaxLifetime = mTotal / mSpeed + LifetimeMargin;
 
             CachedTransform.position = mStart;
             CachedTransform.rotation = Quaternion.identity;
@@ -61,32 +82,41 @@ namespace ToyBoxNightmare
         {
             mTraveled += mSpeed * elapseSeconds;
 
-            float t = Mathf.Clamp01(mTraveled / mTotal);
-            Vector3 position = mStart + mPath.normalized * mTraveled;
-            position.y += Arc.Evaluate(t);
-            CachedTransform.position = position;
+            CachedTransform.position = GetArcPosition(mTraveled);
 
-            if (mTraveled >= mTotal)
+            bool hasArrived = mTraveled >= mTotal;
+            if (hasArrived)
             {
                 Explode();
             }
         }
 
+        /// <summary>진행 거리에 대응하는 궤적 위의 한 점 — 직선 위치에 진행률 커브 높이를 얹은 것.</summary>
+        private Vector3 GetArcPosition(float traveled)
+        {
+            float progress = Mathf.Clamp01(traveled / mTotal);
+
+            Vector3 position = mStart + mDirection * traveled;
+            position.y += Arc.Evaluate(progress);
+            return position;
+        }
+
         private void Explode()
         {
-            if (IsHiding)
-            {
-                return;
-            }
+            if (IsHiding) return;
 
-            Vector3 impact = mStart + mPath;
-            impact.y = 0f;
-
-            // 루트가 X -90° 로 저작돼 있다. identity 로 두면 가스 구름이 눕는다.
             SpawnEffect(typeof(StinkHit), WeaponTable.StinkHitAsset,
-                impact, Quaternion.Euler(-90f, 0f, 0f), WeaponTable.StinkHitLifetime);
+                GetImpactPoint(), HitRotation, WeaponTable.StinkHitLifetime);
 
             SafeHide();
+        }
+
+        /// <summary>가스 구름이 설 지면 좌표. 발사 시점에 확정된 착탄점을 Y=0 으로 눌러 쓴다.</summary>
+        private Vector3 GetImpactPoint()
+        {
+            Vector3 impact = mStart + mPath;
+            impact.y = 0f;
+            return impact;
         }
     }
 }

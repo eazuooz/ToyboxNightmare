@@ -17,6 +17,17 @@ namespace ToyBoxNightmare
         // 싱글턴 - 다른 로직에서 플레이어 위치를 참조할 때 사용
         public static Player Instance { get; private set; }
 
+        // ─── 애니메이터 파라미터 이름 ───
+        // 이름이 틀려도 Unity 는 조용히 무시하므로 문자열을 흩뿌리지 않고 여기 모아 둔다.
+        private const string WalkingBoolParam = "IsWalking";
+        private const string DieTriggerParam  = "Die";
+
+        /// <summary>
+        /// 방향 벡터가 이보다 짧으면 "방향이 없다" 로 본다.
+        /// 길이 0 에 가까운 벡터를 <c>Quaternion.LookRotation</c> 에 넘기면 회전이 튄다.
+        /// </summary>
+        private const float MinLookSqrMagnitude = 0.001f;
+
         private PlayerData      mPlayerData = null;
         private Rigidbody       mRigidbody  = null;
         private Animator        mAnimator   = null;
@@ -66,8 +77,36 @@ namespace ToyBoxNightmare
         {
             base.OnInit(userData);
             mRigidbody = GetComponent<Rigidbody>();
-            mAnimator  = GetComponentInChildren<Animator>();
+            // includeInactive: true 가 필수다. 이 캐릭터 GameObject 는 선택화면
+            // (PlayerSelectLogic)으로 먼저 쓰인 뒤 회수됐다가 Player 로 재사용되는데,
+            // 회수 시점에 OnHide 가 SetActive(false) 를 걸어 두고 OnInit 은 OnShow 보다 먼저 돈다.
+            // 기본값(false)이면 여기서 Animator 를 못 찾아 걷기·사망 애니메이션이 조용히 안 나온다.
+            mAnimator  = GetComponentInChildren<Animator>(true);
             mCollider  = GetComponent<CapsuleCollider>();
+
+            WarnOnMissingComponents();
+        }
+
+        /// <summary>
+        /// 캐시가 비어도 사용처마다 null 가드가 있어 예외는 나지 않는다. 대신 이동이나
+        /// 애니메이션이 <b>조용히</b> 죽어 원인을 찾기 어려우므로 여기서 한 번 알린다.
+        /// </summary>
+        private void WarnOnMissingComponents()
+        {
+            if (mRigidbody == null)
+            {
+                Log.Error("Player '{0}': Rigidbody 가 없어 이동이 동작하지 않는다.", Name);
+            }
+
+            if (mAnimator == null)
+            {
+                Log.Warning("Player '{0}': Animator 를 찾지 못했다. 이동/사망 애니메이션이 재생되지 않는다.", Name);
+            }
+
+            if (mCollider == null)
+            {
+                Log.Warning("Player '{0}': CapsuleCollider 가 없다. 중심점이 트랜스폼 원점으로 대체된다.", Name);
+            }
         }
 
         protected internal override void OnShow(object userData)
@@ -85,7 +124,16 @@ namespace ToyBoxNightmare
             CachedTransform.position = mPlayerData.Position;
             CachedTransform.rotation = mPlayerData.Rotation;
 
-            // 풀에서 재사용되므로 이전 판의 이동/애니/사망 상태를 반드시 리셋한다.
+            ResetRuntimeState();
+            EquipWeapons();
+        }
+
+        /// <summary>
+        /// 풀에서 재사용되므로 이전 판의 이동/애니/사망 상태를 반드시 리셋한다.
+        /// 빠뜨리면 두 번째 판이 죽은 포즈에 콜라이더가 꺼진 채로 시작한다.
+        /// </summary>
+        private void ResetRuntimeState()
+        {
             mMoveDirection = Vector3.zero;
             mLookDirection = CachedTransform.forward;
             mDying         = false;
@@ -102,8 +150,6 @@ namespace ToyBoxNightmare
                 mAnimator.Rebind();
                 mAnimator.Update(0f);
             }
-
-            EquipWeapons();
         }
 
         // ─── 무기 ───
@@ -151,12 +197,17 @@ namespace ToyBoxNightmare
         /// </summary>
         private void ApplyWeaponSelection()
         {
+            if (mWeapons.Count > 0)
+            {
+                GameAssert.InRange(mActiveWeaponIndex, mWeapons.Count, "mActiveWeaponIndex");
+            }
+
             for (int i = 0; i < mWeapons.Count; i++)
             {
-                bool active = !SingleWeaponMode || i == mActiveWeaponIndex;
-                mWeapons[i].SetActive(active);
+                bool isSelectedWeapon = !SingleWeaponMode || i == mActiveWeaponIndex;
+                mWeapons[i].SetActive(isSelectedWeapon);
 
-                if (active)
+                if (isSelectedWeapon)
                 {
                     // 전환 즉시 쏠 수 있게 쿨다운을 채워 준다.
                     mWeapons[i].ResetCooldown();
@@ -217,13 +268,7 @@ namespace ToyBoxNightmare
 
             if (mDying)
             {
-                // 즉시 사라지지 않고 사망 애니메이션이 보일 시간을 준다.
-                mDeathTimer += elapseSeconds;
-                if (mDeathTimer >= DeathDelay)
-                {
-                    NotifyDied();
-                    SafeHide();
-                }
+                UpdateDeathSequence(elapseSeconds);
                 return;
             }
 
@@ -234,18 +279,25 @@ namespace ToyBoxNightmare
             UpdateWeapons(elapseSeconds);
         }
 
+        /// <summary>
+        /// 즉시 사라지지 않고 사망 애니메이션이 보일 시간을 준다.
+        /// 이 타이머가 <see cref="OnDead"/> 대신 회수(Hide)를 담당한다.
+        /// </summary>
+        private void UpdateDeathSequence(float elapseSeconds)
+        {
+            mDeathTimer += elapseSeconds;
+            if (mDeathTimer < DeathDelay) return;
+
+            NotifyDied();
+            SafeHide();
+        }
+
         private void ReadWeaponSwitchInput()
         {
-            if (!SingleWeaponMode || mWeapons.Count <= 1)
-            {
-                return;
-            }
+            if (!SingleWeaponMode || mWeapons.Count <= 1) return;
 
-            var kb = Keyboard.current;
-            if (kb == null || !kb.tabKey.wasPressedThisFrame)
-            {
-                return;
-            }
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null || !keyboard.tabKey.wasPressedThisFrame) return;
 
             mActiveWeaponIndex = (mActiveWeaponIndex + 1) % mWeapons.Count;
             ApplyWeaponSelection();
@@ -261,54 +313,102 @@ namespace ToyBoxNightmare
         {
             if (mRigidbody == null || mPlayerData == null || IsDead) return;
 
-            // 이동
-            Vector3 move = mMoveDirection.normalized * mPlayerData.MoveSpeed * Time.fixedDeltaTime;
-            mRigidbody.MovePosition(mRigidbody.position + move);
+            MoveByInput();
+            TurnToLookDirection();
+            UpdateWalkAnimation();
+        }
 
-            // 회전
+        private void MoveByInput()
+        {
+            // normalized 는 길이 0 벡터에 대해 0 을 돌려주므로 0 나눗셈이 없다.
+            Vector3 step = mMoveDirection.normalized * mPlayerData.MoveSpeed * Time.fixedDeltaTime;
+            mRigidbody.MovePosition(mRigidbody.position + step);
+        }
+
+        private void TurnToLookDirection()
+        {
             Vector3 look = mLookDirection;
             look.y = 0f;
-            if (look.sqrMagnitude > 0.001f)
-                mRigidbody.MoveRotation(Quaternion.LookRotation(look));
 
-            // 애니메이터
-            if (mAnimator != null)
-                mAnimator.SetBool("IsWalking", mMoveDirection.sqrMagnitude > 0f);
+            if (look.sqrMagnitude <= MinLookSqrMagnitude) return;
+
+            mRigidbody.MoveRotation(Quaternion.LookRotation(look));
+        }
+
+        private void UpdateWalkAnimation()
+        {
+            if (mAnimator == null) return;
+
+            mAnimator.SetBool(WalkingBoolParam, mMoveDirection.sqrMagnitude > 0f);
         }
 
         // ─── 입력 처리 ───
 
+        /// <summary>
+        /// 키보드가 없으면 조준까지 통째로 건너뛴다. 이동을 못 하는 상황에서
+        /// 캐릭터만 마우스를 따라 도는 것이 더 어색하기 때문이다.
+        /// </summary>
         private void ReadMoveInput()
         {
-            var kb = Keyboard.current;
-            if (kb == null) return;
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null) return;
 
-            float h = (kb.dKey.isPressed || kb.rightArrowKey.isPressed ? 1f : 0f)
-                    - (kb.aKey.isPressed || kb.leftArrowKey.isPressed  ? 1f : 0f);
-            float v = (kb.wKey.isPressed || kb.upArrowKey.isPressed   ? 1f : 0f)
-                    - (kb.sKey.isPressed || kb.downArrowKey.isPressed  ? 1f : 0f);
-            mMoveDirection = new Vector3(h, 0f, v);
+            mMoveDirection = ReadMoveDirection(keyboard);
+            UpdateLookDirection();
+        }
 
-            // 마우스가 가리키는 지면 방향으로 회전
-            Vector3 mousePos = GetMouseWorldPosition();
-            Vector3 lookDir  = mousePos - CachedTransform.position;
-            lookDir.y = 0f;
-            if (lookDir.sqrMagnitude > 0.001f)
-                mLookDirection = lookDir;
+        /// <summary>WASD 와 방향키를 같은 축으로 합친다.</summary>
+        private static Vector3 ReadMoveDirection(Keyboard keyboard)
+        {
+            float horizontal = ReadAxis(
+                keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed,
+                keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed);
+
+            float vertical = ReadAxis(
+                keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed,
+                keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed);
+
+            return new Vector3(horizontal, 0f, vertical);
+        }
+
+        /// <summary>양쪽을 동시에 누르면 0 이 된다(레거시 GetAxisRaw 와 같은 의미).</summary>
+        private static float ReadAxis(bool positivePressed, bool negativePressed)
+        {
+            return (positivePressed ? 1f : 0f) - (negativePressed ? 1f : 0f);
+        }
+
+        /// <summary>마우스가 가리키는 지면 쪽으로 바라볼 방향을 갱신한다.</summary>
+        private void UpdateLookDirection()
+        {
+            Vector3 toMouse = GetMouseWorldPosition() - CachedTransform.position;
+            toMouse.y = 0f;
+
+            // 커서가 캐릭터와 겹치면 방향이 0 에 수렴한다. 그때는 직전 방향을 유지한다.
+            if (toMouse.sqrMagnitude > MinLookSqrMagnitude)
+            {
+                mLookDirection = toMouse;
+            }
+        }
+
+        /// <summary>마우스 지면 조준점을 못 구할 때 쓰는 대체 조준점. 지금 보는 방향을 유지한다.</summary>
+        private Vector3 ForwardAimPoint
+        {
+            get { return CachedTransform.position + CachedTransform.forward; }
         }
 
         private Vector3 GetMouseWorldPosition()
         {
-            if (Camera.main == null || Mouse.current == null)
-                return CachedTransform.position + CachedTransform.forward;
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null || Mouse.current == null) return ForwardAimPoint;
 
-            Vector2 mousePos = Mouse.current.position.ReadValue();
-            Ray ray = Camera.main.ScreenPointToRay(mousePos);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-            if (groundPlane.Raycast(ray, out float dist))
-                return ray.GetPoint(dist);
+            Vector2 screenPosition = Mouse.current.position.ReadValue();
+            Ray     ray            = mainCamera.ScreenPointToRay(screenPosition);
+            Plane   groundPlane    = new Plane(Vector3.up, Vector3.zero);
 
-            return CachedTransform.position + CachedTransform.forward;
+            // 카메라가 지면과 평행하면 교차점이 없다. 정상적으로 일어날 수 있으므로 로그 없이 대체값.
+            if (!groundPlane.Raycast(ray, out float distance)) return ForwardAimPoint;
+
+            return ray.GetPoint(distance);
         }
 
         // ─── 사망 ───
@@ -320,10 +420,9 @@ namespace ToyBoxNightmare
         /// </summary>
         protected override void OnDead(Entity attacker)
         {
-            if (mDying)
-            {
-                return;
-            }
+            GameAssert.IsTrue(IsDead, "OnDead 는 체력이 0 이하가 된 뒤에만 호출되어야 한다.");
+
+            if (mDying) return;
 
             mDying      = true;
             mDeathTimer = 0f;
@@ -331,21 +430,29 @@ namespace ToyBoxNightmare
             // 사망 후에는 OnUpdate 가 무기를 굴리지 않으므로 여기서 확실히 끈다.
             // 안 그러면 총구 VFX 와 타겟 마커가 시체 위에 남는다.
             ShutdownWeapons();
+            StopMovementAndCollision();
+            PlayDeathAnimation();
 
-            // 이동/충돌을 즉시 끊는다. 적이 시체를 계속 때리지 않게 콜라이더도 끈다.
+            // 사망 이벤트는 여기서 쏘지 않는다. NotifyDied() 를 볼 것.
+        }
+
+        /// <summary>이동/충돌을 즉시 끊는다. 적이 시체를 계속 때리지 않게 콜라이더도 끈다.</summary>
+        private void StopMovementAndCollision()
+        {
             mMoveDirection = Vector3.zero;
+
             if (mCollider != null)
             {
                 mCollider.enabled = false;
             }
+        }
 
-            if (mAnimator != null)
-            {
-                mAnimator.SetBool("IsWalking", false);
-                mAnimator.SetTrigger("Die");
-            }
+        private void PlayDeathAnimation()
+        {
+            if (mAnimator == null) return;
 
-            // 사망 이벤트는 여기서 쏘지 않는다. NotifyDied() 를 볼 것.
+            mAnimator.SetBool(WalkingBoolParam, false);
+            mAnimator.SetTrigger(DieTriggerParam);
         }
 
         /// <summary>
@@ -360,15 +467,20 @@ namespace ToyBoxNightmare
         /// </summary>
         private void NotifyDied()
         {
-            if (mDeathNotified)
-            {
-                return;
-            }
+            if (mDeathNotified) return;
 
             mDeathNotified = true;
 
+            // Create 는 참조 풀에서 꺼내 오므로, 발행하지 못할 상황이면 만들기 전에 빠진다.
+            EventComponent eventComponent = GameEntry.GetComponent<EventComponent>();
+            if (eventComponent == null)
+            {
+                Log.Error("EventComponent 가 없어 PlayerDied 를 발행하지 못했다.");
+                return;
+            }
+
             int finalScore = SurvivalGame.Instance != null ? SurvivalGame.Instance.Score : 0;
-            GameEntry.GetComponent<EventComponent>().Fire(this, PlayerDiedEventArgs.Create(finalScore));
+            eventComponent.Fire(this, PlayerDiedEventArgs.Create(finalScore));
         }
     }
 }

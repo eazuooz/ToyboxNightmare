@@ -11,6 +11,9 @@ namespace ToyBoxNightmare
     {
         private ExpGemData mData = null;
 
+        // CollectRadius 가 0 보다 크고 AttractRadius 보다 작다는 것이 자석 이동의 전제다.
+        // 수집 반경 안이면 먼저 회수되므로, 자석 분기에서는 거리가 절대 0 이 아니다
+        // (= normalized 가 길이 0 벡터를 만나지 않는다).
         private const float AttractRadius = 5f;   // 자석 발동 반경
         private const float CollectRadius = 0.5f; // 수집 판정 반경
 
@@ -37,21 +40,37 @@ namespace ToyBoxNightmare
             Player player = Player.Instance;
             if (player == null || player.IsDead) return;
 
-            Vector3 toPlayer = player.CachedTransform.position - CachedTransform.position;
-            float dist = toPlayer.magnitude;
+            Vector3 toPlayer         = player.CachedTransform.position - CachedTransform.position;
+            float   distanceToPlayer = toPlayer.magnitude;
 
-            if (dist <= CollectRadius)
+            if (distanceToPlayer <= CollectRadius)
             {
-                // 수집 — 경험치 지급은 레벨 시스템 복원 시 여기에 연결한다.
-                SafeHide();
+                Collect();
                 return;
             }
 
-            if (dist <= AttractRadius)
+            if (distanceToPlayer <= AttractRadius)
             {
-                // 자석 이동
-                CachedTransform.position += toPlayer.normalized * mData.MoveSpeed * elapseSeconds;
+                AttractToward(toPlayer, elapseSeconds);
             }
+        }
+
+        /// <summary>
+        /// 수집. 경험치 지급은 레벨 시스템 복원 시 여기에 연결한다
+        /// (그때까지 <c>ExpGemData.ExpAmount</c> 는 쓰이지 않는다).
+        /// </summary>
+        private void Collect()
+        {
+            SafeHide();
+        }
+
+        /// <summary>
+        /// 자석 이동. 호출 시점에 거리가 CollectRadius 보다 크다는 것이 보장돼 있어
+        /// normalized 가 길이 0 벡터를 만나지 않는다.
+        /// </summary>
+        private void AttractToward(Vector3 toPlayer, float elapseSeconds)
+        {
+            CachedTransform.position += toPlayer.normalized * mData.MoveSpeed * elapseSeconds;
         }
     }
 }

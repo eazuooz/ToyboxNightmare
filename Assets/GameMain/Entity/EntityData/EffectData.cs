@@ -6,11 +6,18 @@ namespace ToyBoxNightmare
     [Serializable]
     public class EffectData : EntityData
     {
+        /// <summary>
+        /// 호출부가 수명을 지정하지 않았을 때 쓸 값.
+        /// 이펙트별 실제 수명은 WeaponTable 에 종류별로 따로 있고 SpawnEffect 가 항상 명시하므로,
+        /// 이 값은 그 경로를 거치지 않는 스폰에만 적용된다.
+        /// </summary>
+        private const float DefaultLifetime = 2f;
+
         public EffectData(int entityId, int typeId) : base(entityId, typeId)
         {
         }
 
         /// <summary>이 시간이 지나면 회수된다.</summary>
-        public float Lifetime { get; set; } = 2f;
+        public float Lifetime { get; set; } = DefaultLifetime;
     }
 }
