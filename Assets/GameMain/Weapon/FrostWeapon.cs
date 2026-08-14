@@ -22,7 +22,8 @@ namespace ToyBoxNightmare
         /// <summary>콘 꼭짓점의 FrostAttack 로컬 좌표. 원본 Arc 메시 정점에서 역산했다.</summary>
         private static readonly Vector3 ApexLocal = new Vector3(-0.015296f, 0.044137f, 0.342790f);
 
-        private const float TurnSpeed = 360f; // deg/s
+        // 콘 회전 속도는 WeaponTable.FrostConeTurnSpeed 로 옮겼다 — 무기별로 튜닝 창구가
+        // 갈리면 밸런스를 만질 때 어느 파일을 열어야 하는지가 매번 달라진다.
 
         /// <summary>방향 벡터로 쓰기엔 너무 짧다고 볼 제곱 길이. 이보다 짧으면 정규화가 무의미하다.</summary>
         private const float MinDirectionSqrMagnitude = 0.0001f;
@@ -63,14 +64,14 @@ namespace ToyBoxNightmare
             ConePose cone;
             if (!TryGetCone(out cone)) return TargetState.OutOfRange;
 
+            // 거리는 콘 꼭짓점 기준이다. 캐릭터 원점이 아니라 실제로 뿜어져 나오는 지점이라야
+            // 마커와 실제 판정(CollectCone)이 같은 집합을 가리킨다.
             float distance = WeaponUtil.PlanarDistance(enemy.CachedTransform.position, cone.Apex);
-            if (distance > WeaponTable.FrostConeRadius)
-            {
-                return distance <= WeaponTable.FrostConeRadius * WeaponUtil.NearRangeScale
-                    ? TargetState.Near
-                    : TargetState.OutOfRange;
-            }
 
+            TargetState state = WeaponUtil.ClassifyByRange(distance, WeaponTable.FrostConeRadius);
+            if (state != TargetState.InRange) return state;
+
+            // 반경 안이어도 부채꼴 밖이면 노랑 — "콘을 돌리면 닿는다" 는 뜻이다.
             return IsInCone(enemy, cone) ? TargetState.InRange : TargetState.Near;
         }
 
@@ -108,10 +109,22 @@ namespace ToyBoxNightmare
             axis.y = 0f;
 
             // 안테나가 정확히 수직을 보고 있으면 수평 성분이 사라진다. 그때만 캐릭터 정면으로 대신한다.
-            cone.Axis = axis.sqrMagnitude >= MinDirectionSqrMagnitude
-                ? axis
-                : Owner.CachedTransform.forward;
+            if (axis.sqrMagnitude < MinDirectionSqrMagnitude)
+            {
+                axis   = Owner.CachedTransform.forward;
+                axis.y = 0f;
+            }
 
+            // 축은 반드시 수평이어야 한다. IsInCone 은 적까지의 상대 벡터만 눕히므로,
+            // 축에 y 가 남으면 두 벡터 사이 각이 부풀려져 부채꼴이 실제보다 좁아진다.
+            // (폴백 경로에서 이 평탄화가 빠져 있던 것이 W7 의 버그다.)
+            if (axis.sqrMagnitude < MinDirectionSqrMagnitude)
+            {
+                // 캐릭터까지 수직을 보고 있다. 수평 방향을 만들 수 없으니 이번 판정은 포기한다.
+                return false;
+            }
+
+            cone.Axis = axis;
             return true;
         }
 
@@ -123,19 +136,16 @@ namespace ToyBoxNightmare
             return Vector3.Angle(cone.Axis, toEnemy) <= WeaponTable.FrostConeHalfAngle;
         }
 
+        /// <summary>
+        /// Root 가 null 인 경우는 없다 — <see cref="WeaponBase.Initialize"/> 가 owner 없이는
+        /// 여기까지 오지 않는다.
+        /// </summary>
         protected override void OnInitialize()
         {
             // 발사가 아니라 콘 재판정 주기다.
             AttackInterval = WeaponTable.FrostRetickInterval;
 
-            // Root 는 Initialize 가 넘겨준 Player 의 트랜스폼이다. 없으면 아래 Find 가 전부 NRE 다.
-            GameAssert.IsTrue(Root != null,
-                "FrostWeapon: Root 가 없다. Initialize 에 유효한 Player 를 넘겨야 한다.");
-            if (Root != null)
-            {
-                ResolveConeTransforms();
-            }
-
+            ResolveConeTransforms();
             SetConeActive(false);
         }
 
@@ -218,13 +228,24 @@ namespace ToyBoxNightmare
 
             Quaternion wantedRotation = Quaternion.LookRotation(toTarget);
             mFrostAttack.rotation = Quaternion.RotateTowards(
-                mFrostAttack.rotation, wantedRotation, TurnSpeed * elapseSeconds);
+                mFrostAttack.rotation, wantedRotation, WeaponTable.FrostConeTurnSpeed * elapseSeconds);
         }
 
         /// <summary>다른 무기로 전환되면 콘과 루프 사운드를 반드시 끈다.</summary>
         protected override void OnWeaponDisabled()
         {
             SetConeActive(false);
+        }
+
+        /// <summary>
+        /// 캐릭터가 바뀌면 이 둘은 남의 트랜스폼이 된다. 버려서 다음 Initialize 가 다시 찾게 한다 —
+        /// <see cref="ResolveConeTransforms"/> 가 <c>if (mX == null)</c> 로만 걸러서,
+        /// 여기서 안 버리면 옛 캐릭터의 콘을 계속 돌리게 된다.
+        /// </summary>
+        protected override void OnDispose()
+        {
+            mFrostAttack = null;
+            mFrostCone   = null;
         }
 
         private void SetConeActive(bool active)

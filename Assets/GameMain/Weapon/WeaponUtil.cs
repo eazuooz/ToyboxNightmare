@@ -45,6 +45,26 @@ namespace ToyBoxNightmare
             }
         }
 
+        /// <summary>
+        /// 거리 하나로 매기는 사거리 상태. 마커 색 판정의 <b>공통 1층</b>이다.
+        ///
+        /// 시야·각도 같은 추가 조건이 있는 무기는 이 결과가 <see cref="TargetState.InRange"/> 일 때만
+        /// 자기 조건을 얹는다(Lightning=시야, Frost=부채꼴 각도). 통과 못 하면 노랑으로 낮춘다 —
+        /// "거리는 됐는데 조건이 안 맞는다" 를 뜻한다.
+        ///
+        /// <b>두 경계 모두 닫힌 구간이다.</b> distance == attackRadius 는 InRange,
+        /// distance == attackRadius * <see cref="NearRangeScale"/> 은 Near.
+        /// 무기 3종이 같은 자리에서 같은 색을 내려면 이 부등호를 바꾸면 안 된다.
+        /// </summary>
+        public static TargetState ClassifyByRange(float distance, float attackRadius)
+        {
+            if (distance <= attackRadius) return TargetState.InRange;
+
+            return distance <= attackRadius * NearRangeScale
+                ? TargetState.Near
+                : TargetState.OutOfRange;
+        }
+
         // ─── 거리 ───
 
         /// <summary>
@@ -67,11 +87,27 @@ namespace ToyBoxNightmare
         public const int HitscanMask = (1 << 9) | (1 << 10) | (1 << 14);
 
         /// <summary>
+        /// OverlapSphere 결과 스크래치의 길이.
+        ///
+        /// 적 1기당 콜라이더가 2개(CapsuleCollider + Shootable 트리거 구)라 <b>실효 상한은 절반</b>인
+        /// 128기다. 64였을 때는 32기가 상한이라 몰리는 구간에서 반경 안의 적이 탐색에서 빠졌고,
+        /// 물리 반환 순서가 거리순이 아니라 <see cref="FindNearestEnemy"/> 가 최근접을 놓쳤다.
+        /// </summary>
+        private const int OverlapBufferSize = 256;
+
+        /// <summary>
         /// OverlapSphere 결과 스크래치. 프레임 할당을 없앤다.
         /// 전역 공유지만 <see cref="FindEnemiesInSphere"/> 안에서만 살아 있고 결과는 호출자
         /// 리스트로 복사되므로, 호출을 중첩해도 서로의 결과를 덮지 않는다.
         /// </summary>
-        private static readonly Collider[] sOverlapBuffer = new Collider[64];
+        private static readonly Collider[] sOverlapBuffer = new Collider[OverlapBufferSize];
+
+        /// <summary>
+        /// 버퍼 포화를 <b>한 번만</b> 알리기 위한 플래그. 매 프레임 도는 경로라 반복 로그는
+        /// 콘솔을 도배해 다른 로그를 전부 밀어낸다. 한 번 뜨면 그것으로 충분한 진단이므로
+        /// 일부러 되돌리지 않는다(플레이 모드 재진입 시 도메인 리로드가 알아서 리셋한다).
+        /// </summary>
+        private static bool sOverlapOverflowReported = false;
 
         /// <summary>
         /// 구 안의 살아있는 적을 중복 없이 채운다. 반환값은 개수.
@@ -87,10 +123,8 @@ namespace ToyBoxNightmare
 
             result.Clear();
 
-            // 버퍼가 꽉 차면 초과분은 조용히 잘린다. 적 1기당 콜라이더가 2개라 실효 상한은
-            // 약 32기다 — 동시 스폰 수를 올릴 때 sOverlapBuffer 도 함께 키워야 한다.
-            // (매 프레임 도는 경로라 포화를 로그로 알리지 않는다. 알리면 그 순간부터 도배된다.)
             int hitCount = Physics.OverlapSphereNonAlloc(origin, radius, sOverlapBuffer, ShootableMask);
+            WarnOnBufferSaturation(hitCount);
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -114,6 +148,22 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>
+        /// 버퍼가 가득 찼으면 <b>딱 한 번</b> 알린다.
+        ///
+        /// <c>OverlapSphereNonAlloc</c> 은 초과분을 조용히 버린다 — 반경 안의 적이 탐색에서
+        /// 통째로 빠지고, 물리 반환 순서가 거리순이 아니라 최근접 판정까지 틀어진다.
+        /// 증상만 보면 "가끔 적을 안 때린다" 라서 원인을 못 찾는다. 여기서 이름을 붙여 준다.
+        /// </summary>
+        private static void WarnOnBufferSaturation(int hitCount)
+        {
+            if (hitCount < sOverlapBuffer.Length || sOverlapOverflowReported) return;
+
+            sOverlapOverflowReported = true;
+            Log.Warning("WeaponUtil: 적 탐색 버퍼({0})가 가득 찼다. 초과분이 잘려 최근접 판정이 틀어질 수 있다. "
+                        + "OverlapBufferSize 를 키울 것. (이 경고는 한 번만 나온다)", OverlapBufferSize);
+        }
+
+        /// <summary>
         /// 콜라이더 하나에서 "지금 때릴 수 있는 적" 을 꺼낸다. 아니면 null.
         /// 바닥·환경 콜라이더, 시체, 회수된 엔티티가 전부 여기서 걸러진다.
         /// </summary>
@@ -126,7 +176,9 @@ namespace ToyBoxNightmare
             if (entity == null) return null;
 
             Enemy enemy = entity.Logic as Enemy;
-            if (enemy == null || enemy.IsDead || !enemy.Available) return null;
+            // Available 을 IsDead 보다 먼저 본다. IsDead 는 스폰 데이터를 읽는데,
+            // 회수된 엔티티의 데이터는 이미 풀로 반납된 뒤라 답을 신뢰할 수 없다.
+            if (enemy == null || !enemy.Available || enemy.IsDead) return null;
 
             return enemy;
         }
@@ -192,12 +244,7 @@ namespace ToyBoxNightmare
                 logicType,
                 assetName,
                 WeaponTable.EffectGroup,
-                new EffectData(id, 1)
-                {
-                    Position = position,
-                    Rotation = rotation,
-                    Lifetime = lifetime,
-                });
+                EffectData.Create(id, 1, position, rotation, lifetime));
         }
     }
 }

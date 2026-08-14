@@ -16,8 +16,11 @@ namespace ToyBoxNightmare
         /// <summary>플레이어·선택 캐릭터가 들어가는 엔티티 그룹. GameFramework.prefab 의 mEntityGroups 와 일치해야 한다.</summary>
         private const string PlayerEntityGroup = "Player";
 
-        /// <summary>EntityData 의 TypeId. 아직 타입 테이블이 없어 프로젝트 전체가 1 로 고정이다.</summary>
-        private const int DefaultEntityTypeId = 1;
+        /// <summary>
+        /// EntityData 의 TypeId. 아직 타입 테이블이 없어 프로젝트 전체가 1 로 고정이다.
+        /// <see cref="EnemySpawner"/> 도 같은 값으로 적을 띄우므로 public 이다.
+        /// </summary>
+        public const int DefaultEntityTypeId = 1;
 
         /// <summary>선택 화면에서 두 캐릭터가 서는 자리.</summary>
         private static readonly Vector3 GirlSelectPosition = new Vector3(-2f, 0f, 0f);
@@ -37,13 +40,9 @@ namespace ToyBoxNightmare
         private float mGameTime = 0f;
 
         // ─── 스포너 ───
-        // 캐릭터를 고르기 전에는 돌지 않는다(원본의 스포너 SetActive 게이트와 같은 의미).
-        private bool             mSpawningEnabled = false;
-        private readonly float[] mSpawnTimers     = new float[EnemyTable.SpawnPoints.Length];
-
-        // ShowEntity 요청 후 아직 인스턴스화되지 않은 수. GetEntities 가 세지 못하므로
-        // 따로 들고 있지 않으면 로드 지연 동안 상한을 넘겨 과다 스폰한다.
-        private readonly int[]   mPendingSpawns = new int[EnemyTable.SpawnPoints.Length];
+        // 적 스폰은 통째로 EnemySpawner 가 맡는다. 여기서는 매 프레임 굴려 주고,
+        // 엔티티 표시 성공/실패 콜백만 중계한다.
+        private readonly EnemySpawner mSpawner = new EnemySpawner();
 
         public override GameMode GameMode => GameMode.Survival;
 
@@ -66,6 +65,10 @@ namespace ToyBoxNightmare
             base.Initialize();
 
             Instance = this;
+
+            // 스폰 테이블 정합성은 판이 시작될 때 한 번만 본다.
+            // [Conditional] 이라 릴리스 빌드에서는 이 호출 자체가 사라진다.
+            EnemyTable.Validate();
 
             ResetRoundState();
             SubscribeEvents();
@@ -91,17 +94,13 @@ namespace ToyBoxNightmare
             mGirlSelect = null;
             mBoySelect  = null;
 
-            mSpawningEnabled = false;
-            for (int i = 0; i < mSpawnTimers.Length; i++)
-            {
-                mSpawnTimers[i]   = 0f;
-                mPendingSpawns[i] = 0;
-            }
+            mSpawner.Reset();
         }
 
         private void SubscribeEvents()
         {
-            EventComponent events = GetEventComponent();
+            // 초기화 시점에 EventComponent 가 없으면 게임이 성립하지 않는다 — 시끄럽게 알린다.
+            EventComponent events = RequireEventComponent();
             if (events == null) return;
 
             events.Subscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
@@ -115,7 +114,10 @@ namespace ToyBoxNightmare
 
         private void UnsubscribeEvents()
         {
-            EventComponent events = GetEventComponent();
+            // 앱 종료 경로에서는 EventComponent 가 먼저 파괴됐을 수 있다.
+            // 그때는 구독도 함께 사라진 뒤라 조용히 빠져나가는 게 맞다 — 여기서 로그를 남기면
+            // 정상 종료마다 에러가 찍힌다.
+            EventComponent events = FindEventComponent();
             if (events == null) return;
 
             events.Unsubscribe(ShowEntitySuccessEventArgs.EventId, OnShowEntitySuccess);
@@ -131,7 +133,8 @@ namespace ToyBoxNightmare
         {
             if (!mCharacterSelectSubscribed) return;
 
-            EventComponent events = GetEventComponent();
+            // Shutdown 경로에서도 불리므로 조용한 쪽을 쓴다(UnsubscribeEvents 주석 참조).
+            EventComponent events = FindEventComponent();
             if (events == null) return;
 
             events.Unsubscribe(CharacterSelectedEventArgs.EventId, OnCharacterSelected);
@@ -149,104 +152,7 @@ namespace ToyBoxNightmare
 
             mGameTime += elapseSeconds;
 
-            if (mSpawningEnabled)
-            {
-                UpdateSpawners(elapseSeconds);
-            }
-        }
-
-        // ─── 스포너 ───
-
-        private void UpdateSpawners(float elapseSeconds)
-        {
-            // 반복문마다 다시 찾을 이유가 없다. 스폰 지점 수만큼 리스트를 훑게 된다.
-            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
-            if (entityComponent == null)
-            {
-                Log.Error("EntityComponent 를 찾을 수 없어 적 스폰을 건너뛴다. GameFramework.prefab 구성을 확인할 것.");
-                return;
-            }
-
-            for (int spawnIndex = 0; spawnIndex < EnemyTable.SpawnPoints.Length; spawnIndex++)
-            {
-                if (!TickSpawnTimer(spawnIndex, elapseSeconds)) continue;
-
-                // 상한에 걸리면 이번 틱은 그냥 건너뛴다(원본 EnemySpawner 동작).
-                if (IsSpawnLimitReached(entityComponent, spawnIndex)) continue;
-
-                SpawnEnemy(entityComponent, spawnIndex);
-            }
-        }
-
-        /// <summary>
-        /// 스폰 타이머를 진행시킨다. 이번 틱이 스폰 차례면 타이머를 되감고 true 를 돌려준다.
-        /// 상한에 걸려 스폰을 못 해도 타이머는 이미 되감긴 상태다(원본 동작).
-        /// </summary>
-        private bool TickSpawnTimer(int spawnIndex, float elapseSeconds)
-        {
-            GameAssert.InRange(spawnIndex, mSpawnTimers.Length, "spawnIndex");
-
-            mSpawnTimers[spawnIndex] += elapseSeconds;
-            if (mSpawnTimers[spawnIndex] < EnemyTable.SpawnPoints[spawnIndex].Interval) return false;
-
-            mSpawnTimers[spawnIndex] = 0f;
-            return true;
-        }
-
-        /// <summary>
-        /// 이 종이 동시 생존 상한에 도달했는가.
-        /// 아직 로드 중인 요청(mPendingSpawns)까지 세지 않으면 로드 지연 동안 과다 스폰한다.
-        /// </summary>
-        private bool IsSpawnLimitReached(EntityComponent entityComponent, int spawnIndex)
-        {
-            EnemySpawnPoint point = EnemyTable.SpawnPoints[spawnIndex];
-
-            int aliveCount   = entityComponent.GetEntities(point.AssetName).Length;
-            int pendingCount = mPendingSpawns[spawnIndex];
-
-            return aliveCount + pendingCount >= point.MaxAlive;
-        }
-
-        private void SpawnEnemy(EntityComponent entityComponent, int spawnIndex)
-        {
-            EnemySpawnPoint point = EnemyTable.SpawnPoints[spawnIndex];
-
-            EnemyStats stats;
-            if (!EnemyTable.TryGetStats(point.AssetName, out stats))
-            {
-                // 스폰 지점 주소가 EnemyTable 에 없다 — 데이터 누락이다.
-                Log.Error("Enemy stats not found for '{0}'.", point.AssetName);
-                return;
-            }
-
-            int id = EntitySerialId.Next();
-
-            // 반드시 ShowEntity 보다 먼저 올린다. 성공/실패 콜백이 이 카운트를 되돌린다.
-            mPendingSpawns[spawnIndex]++;
-
-            entityComponent.ShowEntity(
-                id,
-                typeof(Enemy),
-                point.AssetName,
-                EnemyTable.EntityGroup,
-                new EnemyData(id, DefaultEntityTypeId, stats) { Position = point.Position });
-        }
-
-        /// <summary>로드가 끝났거나 실패한 스폰 요청을 대기 카운트에서 뺀다.</summary>
-        private void DecrementPendingSpawn(string assetName)
-        {
-            for (int i = 0; i < EnemyTable.SpawnPoints.Length; i++)
-            {
-                if (EnemyTable.SpawnPoints[i].AssetName != assetName) continue;
-
-                if (mPendingSpawns[i] > 0)
-                {
-                    mPendingSpawns[i]--;
-                }
-
-                // 주소는 스폰 지점당 하나뿐이므로 첫 일치에서 끝낸다.
-                return;
-            }
+            mSpawner.OnUpdate(elapseSeconds);
         }
 
         // ─── 점수 ───
@@ -258,7 +164,7 @@ namespace ToyBoxNightmare
 
             Score += delta;
 
-            EventComponent events = GetEventComponent();
+            EventComponent events = RequireEventComponent();
             if (events == null)
             {
                 // Acquire 한 인자를 Fire 하지 못하면 풀에 돌아가지 못하므로, 여기서 만들지 않는다.
@@ -295,7 +201,7 @@ namespace ToyBoxNightmare
                 typeof(PlayerSelectLogic),
                 characterKey,
                 PlayerEntityGroup,
-                new CharacterSelectData(id, DefaultEntityTypeId, characterKey) { Position = position });
+                CharacterSelectData.Create(id, DefaultEntityTypeId, characterKey, position));
         }
 
         private void SpawnPlayer(string characterKey)
@@ -313,7 +219,7 @@ namespace ToyBoxNightmare
                 typeof(Player),
                 characterKey,
                 PlayerEntityGroup,
-                new PlayerData(id, DefaultEntityTypeId));
+                PlayerData.Create(id, DefaultEntityTypeId));
         }
 
         // ─── 이벤트 핸들러 ───
@@ -340,8 +246,8 @@ namespace ToyBoxNightmare
         /// <summary>선택 시점부터를 게임 시작으로 본다. 스포너도 여기서 열린다.</summary>
         private void StartRound()
         {
-            mGameTime        = 0f;
-            mSpawningEnabled = true;
+            mGameTime = 0f;
+            mSpawner.Open();
         }
 
         /// <summary>
@@ -368,6 +274,12 @@ namespace ToyBoxNightmare
             {
                 unselected.DisableAndHide();
             }
+
+            // 회수한 뒤에는 참조를 반드시 비운다.
+            // 엔티티는 풀에서 재사용되므로, 남겨 두면 나중에 같은 인스턴스가 다른 용도로
+            // 살아났을 때 그걸 선택 캐릭터로 착각해 건드리게 된다.
+            mGirlSelect = null;
+            mBoySelect  = null;
         }
 
         private void OnEnemyDied(object sender, GameEventArgs e)
@@ -411,7 +323,7 @@ namespace ToyBoxNightmare
 
             if (ne.EntityLogicType == typeof(Enemy))
             {
-                DecrementPendingSpawn(ne.Entity.EntityAssetName);
+                mSpawner.DecrementPendingSpawn(ne.Entity.EntityAssetName);
                 return;
             }
 
@@ -454,6 +366,10 @@ namespace ToyBoxNightmare
             Log.Info("Player spawned: {0}", entity.EntityAssetName);
         }
 
+        /// <summary>
+        /// <b>base.OnShowEntityFailure 를 부르지 않는다.</b> 베이스도 스폰 데이터를 반납하므로
+        /// 같이 부르면 이중 Release 가 되어 코어가 예외를 던진다. 대신 반납만 여기서 직접 한다.
+        /// </summary>
         protected override void OnShowEntityFailure(object sender, GameEventArgs e)
         {
             ShowEntityFailureEventArgs ne = e as ShowEntityFailureEventArgs;
@@ -463,19 +379,63 @@ namespace ToyBoxNightmare
                 return;
             }
 
+            // 스폰이 실패하면 OnShow 가 불리지 않아 아무도 소유권을 잡지 않는다.
+            // 어느 분기로 빠지든 반드시 반납되도록 분기보다 먼저 처리한다.
+            ReleaseSpawnData(ne);
+
+            // 플레이어 실패만 Warning 이 아니라 Error 로 따로 다룬다. 아래 주석 참조.
+            if (ne.EntityLogicType == typeof(Player))
+            {
+                FailRoundOnPlayerSpawnFailure(ne);
+                return;
+            }
+
             // 실패해도 대기 카운트를 빼야 한다. 안 그러면 그 종은 영원히 상한에 걸린 것으로 보인다.
             if (ne.EntityLogicType == typeof(Enemy))
             {
-                DecrementPendingSpawn(ne.EntityAssetName);
+                mSpawner.DecrementPendingSpawn(ne.EntityAssetName);
             }
 
             Log.Warning("Show entity failure: {0} ({1})", ne.ErrorMessage, ne.EntityAssetName);
         }
 
-        /// <summary>EventComponent 조회. 프리팹 구성이 깨졌을 때만 null 이다.</summary>
-        private static EventComponent GetEventComponent()
+        /// <summary>
+        /// 플레이어 스폰 실패 처리. 판을 게임오버로 끝낸다.
+        ///
+        /// <b>이 처리를 빼면 게임이 조용히 영구 정지한다.</b> mPlayer 는 영원히 null 로 남고
+        /// <see cref="Update"/> 가 Player == null 에서 매 프레임 조기 리턴하므로, 시계도
+        /// 스포너도 게임오버도 돌지 않는다. 화면은 멀쩡한데 아무 일도 일어나지 않는 상태다.
+        /// 게임오버로 빠지면 최소한 ProcedureGameOver 가 판을 정리하고 원인이 로그에 남는다.
+        ///
+        /// 원인은 대부분 설정 실수다 — Addressables Address 누락, Play Mode Script 미설정,
+        /// 프리팹 이름과 캐릭터 키 불일치. 그래서 Warning 이 아니라 Error 다.
+        /// </summary>
+        private void FailRoundOnPlayerSpawnFailure(ShowEntityFailureEventArgs ne)
         {
-            EventComponent events = GameEntry.GetComponent<EventComponent>();
+            Log.Error("플레이어 '{0}' 스폰에 실패했다. 판을 진행할 수 없어 게임오버로 끝낸다. 원인: {1}",
+                ne.EntityAssetName, ne.ErrorMessage);
+
+            // 이미 true 여도 그대로 두면 되므로 따로 가드하지 않는다.
+            // ProcedureMain 이 다음 Update 에서 이 값을 보고 ProcedureGameOver 로 전이한다.
+            GameOver = true;
+        }
+
+        /// <summary>
+        /// EventComponent 조회. 없으면 <b>조용히</b> null 을 돌려준다.
+        /// 컴포넌트가 없는 것이 정상일 수 있는 종료 경로에서 쓴다.
+        /// </summary>
+        private static EventComponent FindEventComponent()
+        {
+            return GameEntry.GetComponent<EventComponent>();
+        }
+
+        /// <summary>
+        /// EventComponent 조회. 없으면 원인을 로그로 남긴다.
+        /// 반드시 있어야 하는 경로(초기화·이벤트 발행)에서 쓴다. 프리팹 구성이 깨졌을 때만 null 이다.
+        /// </summary>
+        private static EventComponent RequireEventComponent()
+        {
+            EventComponent events = FindEventComponent();
             if (events == null)
             {
                 Log.Error("EventComponent 를 찾을 수 없다. GameFramework.prefab 구성을 확인할 것.");

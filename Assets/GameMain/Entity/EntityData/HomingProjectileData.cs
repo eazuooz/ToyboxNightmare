@@ -1,13 +1,27 @@
-using System;
+using GameFramework;
+using UnityEngine;
 
 namespace ToyBoxNightmare
 {
     /// <summary>유도 투사체(Slime)용.</summary>
-    [Serializable]
     public class HomingProjectileData : EntityData
     {
-        public HomingProjectileData(int entityId, int typeId) : base(entityId, typeId)
+        public static HomingProjectileData Create(int entityId, int typeId,
+                                                  Vector3 position, Quaternion rotation,
+                                                  int targetEntityId, int attackerEntityId,
+                                                  float speed, float hitRadius)
         {
+            HomingProjectileData data = ReferencePool.Acquire<HomingProjectileData>();
+            data.Fill(entityId, typeId);
+
+            data.Position         = position;
+            data.Rotation         = rotation;
+            data.TargetEntityId   = targetEntityId;
+            data.AttackerEntityId = attackerEntityId;
+            data.Speed            = speed;
+            data.HitRadius        = hitRadius;
+
+            return data;
         }
 
         /// <summary>
@@ -27,5 +41,18 @@ namespace ToyBoxNightmare
         /// 기본값은 Slime 기본 판정 반경과 같은 값이다.
         /// </summary>
         public float HitRadius { get; set; } = WeaponTable.SlimeHitRadius;
+
+        public override void Clear()
+        {
+            base.Clear();
+
+            // Id 를 0 으로 되돌리지 않으면 다음 투사체가 이전 대상을 쫓는다.
+            TargetEntityId   = 0;
+            AttackerEntityId = 0;
+
+            // 필드 초기화식은 첫 new 때만 돈다. 기본값 복원도 여기서 해야 한다.
+            Speed     = WeaponTable.SlimeSpeed;
+            HitRadius = WeaponTable.SlimeHitRadius;
+        }
     }
 }

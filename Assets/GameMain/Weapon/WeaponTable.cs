@@ -18,7 +18,15 @@ namespace ToyBoxNightmare
         public const string SlimeHitAsset        = "SlimeHit";
 
         // ─── Lightning ───
-        // 사거리·데미지·쿨다운은 아직 LightningWeapon.cs 안에 있다. 여기로 모으면 좋다.
+
+        /// <summary>
+        /// 원본 실효값은 20 이었지만 자동 조준으로 바뀌면서 화면 밖의 적까지 때려
+        /// 교전 거리가 사라졌다. 절반으로 줄인다.
+        /// </summary>
+        public const float LightningRange = 10f;
+
+        public const int   LightningDamage   = 50;
+        public const float LightningCooldown = 1f;
 
         /// <summary>착탄 이펙트 수명. 원본 파티클이 0.5~0.75초라 여유를 둔 값.</summary>
         public const float LightningHitLifetime = 1f;
@@ -27,6 +35,7 @@ namespace ToyBoxNightmare
         public const float FrostRetickInterval = 0.2f;  // 발사가 아니라 콘 재판정 주기
         public const float FrostConeRadius     = 6f;
         public const float FrostConeHalfAngle  = 30f;   // 개구각 60°
+        public const float FrostConeTurnSpeed  = 360f;  // deg/s. 콘이 대상 쪽으로 도는 속도
 
         // ─── Stink ───
         public const float StinkCooldown     = 5f;

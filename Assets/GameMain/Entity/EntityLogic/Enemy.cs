@@ -23,16 +23,7 @@ namespace ToyBoxNightmare
 
         // ─── 튜닝 상수 ───
 
-        private const float FrostContactGrace = 0.35f; // 재판정 틱(0.2)보다 커야 빙결이 깜빡이지 않는다
-        private const float FrostFreezeDelay  = 1f;    // 원본 freezeDelay
-        private const float FrostThawDuration = 2f;    // 원본 freezeDuration
-        private const float FleeDistance      = 10f;   // 원본 runAwayDistance
-
-        /// <summary>
-        /// "한 번도 Frost 콘에 닿은 적 없음" 을 뜻하는 접촉 시각.
-        /// Time.time 이 0 에 가까운 스폰 직후에도 grace 밖으로 판정되도록 충분히 과거여야 한다.
-        /// </summary>
-        private const float NoFrostContactTime = -999f;
+        private const float FleeDistance = 10f; // 원본 runAwayDistance
 
         /// <summary>도주 목적지를 NavMesh 폴리곤 위로 스냅할 때 허용하는 탐색 반경.</summary>
         private const float FleeSampleRadius = 4f;
@@ -40,8 +31,8 @@ namespace ToyBoxNightmare
         /// <summary>도주 방향을 정규화하기 전에 요구하는 최소 제곱 길이. 길이 0 벡터 정규화를 막는다.</summary>
         private const float MinFleeDirectionSqrMagnitude = 0.0001f;
 
-        /// <summary>슬라임 틱 간격의 하한. 0 이하가 들어오면 매 프레임 틱이 나가 버린다.</summary>
-        private const float MinSlimeTickInterval = 0.05f;
+        /// <summary>콜라이더를 못 찾았을 때 쓸 조준 높이(발밑 기준). 대략 몸통 중심이다.</summary>
+        private const float FallbackAimHeight = 0.5f;
 
         /// <summary>
         /// StartSinking 애니메이션 이벤트가 없는 종(ZomBear)을 위한 폴백 시점.
@@ -96,50 +87,70 @@ namespace ToyBoxNightmare
         // 플레이어 사망 연출을 한 번만 재생하기 위한 플래그
         private bool mPlayerDeadNotified = false;
 
-        // ─── 디버프 상태 ───
-        // AttachEntity 대신 Enemy 내부 상태로 관리한다. 엔티티가 회수되면 상태도 함께
-        // 사라지므로 "주인 잃은 디버프" 가 원천적으로 생기지 않는다.
+        // ─── 디버프 ───
 
-        // Frost
-        private bool  mFrozen           = false;
-        private float mFrostTimer       = 0f;
-        private float mFrostRefreshTime = NoFrostContactTime;
-
-        // 해동 대기가 시작됐는지. 원본은 콘에서 한 번 벗어나면 재진입해도 해동을 취소하지
-        // 않는다(FrostDebuff.AttachToEnemy 의 `if (target != null) return;` 때문).
-        // 그 동작을 그대로 재현한다 — 없으면 자동조준 특성상 무한 빙결이 된다.
-        private bool mFrostThawing = false;
-
-        // Stink
-        private float mFleeTimer = 0f;
-
-        // Slime. 아래 간격/데미지는 ApplySlime 이 매번 덮어쓰므로 초기값 자체에 의미는 없다.
-        private bool   mAttackSuppressed  = false;
-        private int    mSlimeTicksLeft    = 0;
-        private float  mSlimeTickTimer    = 0f;
-        private float  mSlimeTickInterval = 0.5f;
-        private int    mSlimeTickDamage   = 20;
-        private Entity mSlimeAttacker     = null;
+        /// <summary>
+        /// Frost/Stink/Slime 상태 전부. <see cref="OnInit"/> 에서 만들어 이 인스턴스와 수명을 같이한다
+        /// (필드 초기화자에서는 this 를 넘길 수 없어 거기서 만들 수 없다).
+        ///
+        /// 순수 C# 객체라 엔티티 풀 재사용 사이에 살아남는다 — 이전 판의 상태는
+        /// <see cref="ResetCombatState"/> 가 <c>ClearAll</c> 로 되돌린다.
+        /// </summary>
+        private EnemyDebuffs mDebuffs = null;
 
         // ─── 상태 질의 ───
 
         /// <summary>
         /// 무력화 상태 — 얼었거나, 도주 중이거나, 공격이 봉인됐다.
-        /// 셋 중 하나라도 걸려 있으면 당장 플레이어를 때리지 못한다.
+        /// 판정은 <see cref="EnemyDebuffs.IsNeutralized"/> 에 있다.
         /// </summary>
-        public bool IsNeutralized => mFrozen || IsFleeing || mAttackSuppressed;
+        public bool IsNeutralized => mDebuffs.IsNeutralized;
 
         /// <summary>이 적의 공격 사거리. 데이터가 없으면 0.</summary>
         public float AttackRange => mEnemyData != null ? mEnemyData.Stats.AttackRange : 0f;
 
-        /// <summary>Stink 를 맞고 달아나는 중인지.</summary>
-        private bool IsFleeing => mFleeTimer > 0f;
+        /// <summary>
+        /// 히트스캔·유도탄이 노릴 몸통 지점. 트랜스폼 원점은 발밑이라 그대로 노리면 바닥에 막힌다.
+        ///
+        /// <c>bounds</c> 는 트랜스폼을 따라 움직이므로 <b>캐시할 것은 Collider 참조지 bounds 값이 아니다</b> —
+        /// 값을 캐시하면 적이 움직이는 순간 조준점이 뒤처진다. 대신 콜라이더는 OnInit 에서
+        /// 이미 잡아 두었으므로 매 프레임 GetComponent 를 돌지 않는다.
+        /// </summary>
+        public Vector3 AimPoint
+        {
+            get
+            {
+                Collider collider = AimCollider;
+                return collider != null
+                    ? collider.bounds.center
+                    : CachedTransform.position + Vector3.up * FallbackAimHeight;
+            }
+        }
 
-        /// <summary>사망 연출에 들어갔는지. 쓰러지는 중과 침하 중을 모두 포함한다.</summary>
-        private bool IsDying => mDeathPhase != DeathPhase.Alive;
+        /// <summary>
+        /// 조준 기준이 될 콜라이더. 루트 콜라이더 중 첫 번째이며,
+        /// 이는 <c>GetComponent&lt;Collider&gt;()</c> 가 돌려주던 것과 같다(순서가 같다).
+        /// </summary>
+        private Collider AimCollider
+        {
+            get
+            {
+                if (mColliders == null) return null;
 
-        /// <summary>지금 Frost 콘 안에 있는지. 콘이 grace 안에 접촉을 갱신해 주는 동안만 참이다.</summary>
-        private bool IsInFrostCone => (Time.time - mFrostRefreshTime) <= FrostContactGrace;
+                for (int i = 0; i < mColliders.Length; i++)
+                {
+                    if (mColliders[i] != null) return mColliders[i];
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 사망 연출에 들어갔는지. 쓰러지는 중과 침하 중을 모두 포함한다.
+        /// <see cref="EnemyDebuffs"/> 가 "죽는 중이면 디버프 전량 해제" 판정에 쓰므로 internal 이다.
+        /// </summary>
+        internal bool IsDying => mDeathPhase != DeathPhase.Alive;
 
         /// <summary>
         /// NavMeshAgent 에 명령을 내려도 되는 상태인지.
@@ -154,17 +165,19 @@ namespace ToyBoxNightmare
         }
 
         // ─── 디버프 수신 API ───
+        // 무기 쪽(FrostWeapon / StinkHit / SlimeProjectile)이 부르는 창구다. 시그니처를 바꾸지 말 것.
+        // 상태와 판정은 전부 EnemyDebuffs 에 있고 여기서는 위임만 한다.
 
         /// <summary>Frost 콘 안에 있는 동안 매 재판정 틱마다 호출한다.</summary>
         public void RefreshFrostContact()
         {
-            mFrostRefreshTime = Time.time;
+            mDebuffs.RefreshFrostContact();
         }
 
         /// <summary>Stink 착탄. 도주 지속시간(초). 중첩 시 더 긴 쪽으로 갱신한다.</summary>
         public void ApplyFlee(float duration)
         {
-            mFleeTimer = Mathf.Max(mFleeTimer, duration);
+            mDebuffs.ApplyFlee(duration);
         }
 
         /// <summary>
@@ -173,28 +186,41 @@ namespace ToyBoxNightmare
         /// </summary>
         public void ApplySlime(int ticks, float tickInterval, int damagePerTick, Entity attacker)
         {
-            if (ticks <= 0) return;
-
-            GameAssert.IsTrue(tickInterval > 0f, "Slime 의 tickInterval 은 양수여야 한다.");
-            GameAssert.IsTrue(damagePerTick >= 0, "Slime 의 damagePerTick 이 음수면 적을 회복시킨다.");
-
-            mSlimeTicksLeft    = ticks;
-            mSlimeTickInterval = Mathf.Max(MinSlimeTickInterval, tickInterval);
-            mSlimeTickDamage   = damagePerTick;
-            mSlimeTickTimer    = 0f;
-            mAttackSuppressed  = true;
-
-            mSlimeAttacker = IsUsableAttacker(attacker) ? attacker : null;
-
-            SetFxActive(mSlimeFx, true);
+            mDebuffs.ApplySlime(ticks, tickInterval, damagePerTick, attacker);
         }
 
+        // ─── 디버프 지원 (EnemyDebuffs 전용) ───
+        // 디버프가 몸에 반영해야 하는 것만 연다. 상태 필드 자체는 열지 않는다.
+
         /// <summary>
-        /// 회수된 엔티티를 들고 있지 않는다. Available 은 Entity 가 아니라 Logic 쪽에 있다.
+        /// Animator 를 켜고 끈다. 빙결이 끄고 해동이 되돌린다.
+        /// Animator 가 없는 프리팹도 있어(OnInit 이 경고만 남긴다) null 검사를 여기서 한다.
         /// </summary>
-        private static bool IsUsableAttacker(Entity attacker)
+        internal void SetAnimatorEnabled(bool isEnabled)
         {
-            return attacker != null && attacker.Logic != null && attacker.Logic.Available;
+            if (mAnimator == null) return;
+
+            mAnimator.enabled = isEnabled;
+        }
+
+        /// <summary>빙결 VFX 토글. 프리팹에 FreezeFx 자식이 없으면 조용히 무시된다.</summary>
+        internal void SetFreezeFxActive(bool active)
+        {
+            SetFxActive(mFreezeFx, active);
+        }
+
+        /// <summary>슬라임 VFX 토글. 프리팹에 SlimeFx 자식이 없으면 조용히 무시된다.</summary>
+        internal void SetSlimeFxActive(bool active)
+        {
+            SetFxActive(mSlimeFx, active);
+        }
+
+        private static void SetFxActive(GameObject fx, bool active)
+        {
+            if (fx != null && fx.activeSelf != active)
+            {
+                fx.SetActive(active);
+            }
         }
 
         // ─── 생명주기 ───
@@ -202,6 +228,9 @@ namespace ToyBoxNightmare
         protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
+
+            // 인스턴스당 1회. OnShow/OnUpdate 보다 반드시 먼저 도므로 이후 경로에서는 항상 유효하다.
+            mDebuffs = new EnemyDebuffs(this);
 
             mAgent     = GetComponent<NavMeshAgent>();
             // includeInactive: true 가 필수다. EntityLogic.OnHide 가 SetActive(false) 로 회수하는데
@@ -318,7 +347,7 @@ namespace ToyBoxNightmare
 
             // 디버프 전량 리셋. 하나라도 빠지면 재사용된 적이 얼어붙은 채 또는
             // 공격 불능인 채로 부활한다.
-            ClearAllDebuffs();
+            mDebuffs.ClearAll();
 
             // 임계값으로 채워 둔다. 0 으로 두면 첫 SetDestination 이 0.5초 뒤에나
             // 나가서 스폰 직후 반 초 동안 제자리 달리기를 한다.
@@ -351,6 +380,12 @@ namespace ToyBoxNightmare
         protected internal override void OnHide(bool isShutdown, object userData)
         {
             DisableAgent();
+
+            // 데이터는 base 체인 끝(EntityLogicBase)에서 ReferencePool 로 반납된다.
+            // 반납이 참조를 지워 주지 않으므로 여기서 놓지 않으면 AttackRange 같은 프로퍼티가
+            // 풀에 들어간 객체를 계속 읽고, 그 인스턴스가 다음 적에게 재사용되면 남의 스탯을 돌려준다.
+            mEnemyData = null;
+
             base.OnHide(isShutdown, userData);
         }
 
@@ -364,7 +399,7 @@ namespace ToyBoxNightmare
 
             // 사망 연출 중에도, 플레이어가 죽은 뒤에도 디버프 타이머는 돌아야 한다.
             // 아래 early-return 뒤에 두면 플레이어 사망 순간 빙결이 영구화된다.
-            UpdateDebuffs(elapseSeconds);
+            mDebuffs.OnUpdate(elapseSeconds);
 
             if (IsDying)
             {
@@ -430,7 +465,7 @@ namespace ToyBoxNightmare
 
             // 슬라임에 걸리면 데미지만 막는다. 타이머는 계속 돌려야 한다 —
             // 멈추면 봉인 해제 직후 확정 타격이 나가 원본보다 가혹해진다.
-            if (mAttackSuppressed) return;
+            if (mDebuffs.IsAttackSuppressed) return;
 
             // 공격 판정은 콜라이더 중심 기준이다.
             bool isPlayerInAttackRange = GetPlanarDistance(player.CenterPosition) <= stats.AttackRange;
@@ -447,7 +482,7 @@ namespace ToyBoxNightmare
         /// </summary>
         private Vector3 GetDestination(Vector3 playerPosition)
         {
-            if (!IsFleeing) return playerPosition;
+            if (!mDebuffs.IsFleeing) return playerPosition;
 
             return GetFleeDestination(playerPosition);
         }
@@ -486,172 +521,6 @@ namespace ToyBoxNightmare
             Vector3 delta = target - CachedTransform.position;
             delta.y = 0f;
             return delta.magnitude;
-        }
-
-        // ─── 디버프 ───
-
-        private void UpdateDebuffs(float elapseSeconds)
-        {
-            if (IsDying)
-            {
-                ClearAllDebuffs();
-                return;
-            }
-
-            UpdateFrost(elapseSeconds);
-            UpdateFlee(elapseSeconds);
-            UpdateSlime(elapseSeconds);
-        }
-
-        private void UpdateFrost(float elapseSeconds)
-        {
-            bool inCone = IsInFrostCone;
-
-            if (!mFrozen)
-            {
-                UpdateFreezeCharge(inCone, elapseSeconds);
-                return;
-            }
-
-            UpdateThaw(inCone, elapseSeconds);
-        }
-
-        /// <summary>빙결 전. 콘 안에 <b>연속으로</b> 머문 시간이 freezeDelay 를 넘어야 언다.</summary>
-        private void UpdateFreezeCharge(bool inCone, float elapseSeconds)
-        {
-            if (!inCone)
-            {
-                // 벗어나면 누적이 0 으로 돌아간다 — 끊긴 노출은 합산하지 않는다.
-                mFrostTimer = 0f;
-                return;
-            }
-
-            mFrostTimer += elapseSeconds;
-            if (mFrostTimer >= FrostFreezeDelay)
-            {
-                Freeze();
-            }
-        }
-
-        /// <summary>
-        /// 빙결 후. 콘 안에 머무는 동안은 계속 얼어 있고, 한 번 벗어나면 해동이 확정된다.
-        /// 해동이 시작된 뒤로는 inCone 을 보지 않는다 — 재진입해도 예정대로 진행된다.
-        /// (자세한 근거는 mFrostThawing 필드 주석 참고)
-        /// </summary>
-        private void UpdateThaw(bool inCone, float elapseSeconds)
-        {
-            if (!mFrostThawing)
-            {
-                // 콘 안에 머무는 동안은 계속 얼어 있다.
-                if (inCone) return;
-
-                // 벗어나는 순간 해동이 확정된다.
-                mFrostThawing = true;
-                mFrostTimer   = 0f;
-            }
-
-            mFrostTimer += elapseSeconds;
-            if (mFrostTimer >= FrostThawDuration)
-            {
-                Unfreeze();
-            }
-        }
-
-        private void Freeze()
-        {
-            mFrozen       = true;
-            mFrostThawing = false;
-            mFrostTimer   = 0f;
-
-            SetSpeedMultiplier(0f);
-            if (mAnimator != null)
-            {
-                mAnimator.enabled = false;
-            }
-
-            SetFxActive(mFreezeFx, true);
-        }
-
-        private void Unfreeze()
-        {
-            mFrozen       = false;
-            mFrostThawing = false;
-            mFrostTimer   = 0f;
-
-            SetSpeedMultiplier(1f);
-            if (mAnimator != null)
-            {
-                mAnimator.enabled = true;
-            }
-
-            SetFxActive(mFreezeFx, false);
-        }
-
-        /// <summary>Stink 도주 지속시간 소진. 0 이하로 내려가면 IsFleeing 이 자연히 꺼진다.</summary>
-        private void UpdateFlee(float elapseSeconds)
-        {
-            if (!IsFleeing) return;
-
-            mFleeTimer -= elapseSeconds;
-        }
-
-        private void UpdateSlime(float elapseSeconds)
-        {
-            if (mSlimeTicksLeft <= 0) return;
-
-            mSlimeTickTimer -= elapseSeconds;
-            if (mSlimeTickTimer > 0f) return;
-
-            mSlimeTicksLeft--;
-            mSlimeTickTimer = mSlimeTickInterval;
-
-            // 이미 죽었으면 TargetableObject.ApplyDamage 의 IsDead 가드가 무시한다.
-            // 이 한 방이 치명타면 OnDead → ClearAllDebuffs → ClearSlime 으로 재진입해
-            // mSlimeTicksLeft 를 0 으로 만든다. 아래 마무리는 그래도 안전하도록 멱등이다.
-            ApplyDamage(mSlimeAttacker, mSlimeTickDamage);
-
-            if (mSlimeTicksLeft <= 0)
-            {
-                ClearSlime();
-            }
-        }
-
-        private void ClearSlime()
-        {
-            mSlimeTicksLeft = 0;
-            mSlimeTickTimer = 0f;
-            mSlimeAttacker  = null;
-
-            // 이걸 빼먹으면 한 번 걸린 적이 죽을 때까지 공격 불능이 된다(원본 버그).
-            mAttackSuppressed = false;
-
-            SetFxActive(mSlimeFx, false);
-        }
-
-        private void ClearAllDebuffs()
-        {
-            mFrozen           = false;
-            mFrostThawing     = false;
-            mFrostTimer       = 0f;
-            mFrostRefreshTime = NoFrostContactTime;
-            mFleeTimer        = 0f;
-            mSpeedMultiplier  = 1f;
-
-            if (mAnimator != null)
-            {
-                mAnimator.enabled = true;
-            }
-
-            SetFxActive(mFreezeFx, false);
-            ClearSlime();
-        }
-
-        private static void SetFxActive(GameObject fx, bool active)
-        {
-            if (fx != null && fx.activeSelf != active)
-            {
-                fx.SetActive(active);
-            }
         }
 
         // ─── 피격 / 통지 ───
@@ -695,7 +564,7 @@ namespace ToyBoxNightmare
             SetCollidersEnabled(false);
 
             // 빙결 중에 죽으면 Animator 가 꺼져 있어 사망 애니메이션이 통째로 안 나온다.
-            ClearAllDebuffs();
+            mDebuffs.ClearAll();
 
             if (mAnimator != null)
             {

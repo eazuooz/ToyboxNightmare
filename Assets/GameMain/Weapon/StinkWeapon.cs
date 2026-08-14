@@ -10,8 +10,6 @@ namespace ToyBoxNightmare
     /// </summary>
     public class StinkWeapon : WeaponBase
     {
-        private const string MuzzlePath = "Antenna";
-
         /// <summary>
         /// 사거리 안에 아무도 없었을 때 다시 시도하기까지의 시간.
         /// 쿨다운을 통째로 소모하지 않고 짧게 되돌려, 적이 들어오는 즉시 던지게 한다.
@@ -26,25 +24,13 @@ namespace ToyBoxNightmare
         /// <summary>단일 대상 — 착탄점을 잡을 최근접 적 하나.</summary>
         protected override float AttackRadius => WeaponTable.StinkDetectRadius;
 
-        private Transform mMuzzle = null;
-
+        /// <summary>
+        /// 총구("Antenna") 해석과 폴백은 베이스의 <see cref="WeaponBase.MuzzleOrigin"/> 이 맡는다.
+        /// Root null 가드도 <see cref="WeaponBase.Initialize"/> 가 처리하므로 여기엔 없다.
+        /// </summary>
         protected override void OnInitialize()
         {
             AttackInterval = WeaponTable.StinkCooldown;
-
-            // Root 는 Initialize 가 넘겨준 Player 의 트랜스폼이다. 없으면 Find 가 NRE 다.
-            GameAssert.IsTrue(Root != null,
-                "StinkWeapon: Root 가 없다. Initialize 에 유효한 Player 를 넘겨야 한다.");
-            if (Root == null) return;
-
-            if (mMuzzle == null)
-            {
-                mMuzzle = Root.Find(MuzzlePath);
-                if (mMuzzle == null)
-                {
-                    Log.Warning("StinkWeapon: '{0}' 을 찾지 못했다. 캐릭터 원점에서 던진다.", MuzzlePath);
-                }
-            }
         }
 
         protected override void Attack()
@@ -63,7 +49,7 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            Vector3 origin = GetMuzzleOrigin();
+            Vector3 origin = MuzzleOrigin;
 
             // 착탄점은 발사 시점에 확정한다. 매 프레임 재조준하면 아치가 깨진다.
             Vector3 impact = target.CachedTransform.position;
@@ -75,20 +61,7 @@ namespace ToyBoxNightmare
                 typeof(StinkProjectile),
                 WeaponTable.StinkProjectileAsset,
                 WeaponTable.ProjectileGroup,
-                new ArcProjectileData(id, 1)
-                {
-                    Position    = origin,
-                    ImpactPoint = impact,
-                    Speed       = WeaponTable.StinkSpeed,
-                });
-        }
-
-        /// <summary>던지는 시작점. 안테나를 못 찾았으면 캐릭터 원점에서 한 칸 띄운다.</summary>
-        private Vector3 GetMuzzleOrigin()
-        {
-            return mMuzzle != null
-                ? mMuzzle.position
-                : Owner.CachedTransform.position + Vector3.up;
+                ArcProjectileData.Create(id, 1, origin, impact, WeaponTable.StinkSpeed));
         }
     }
 }

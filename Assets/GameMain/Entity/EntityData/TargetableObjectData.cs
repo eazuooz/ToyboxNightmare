@@ -1,6 +1,3 @@
-using System;
-using UnityEngine;
-
 namespace ToyBoxNightmare
 {
     /// <summary>
@@ -8,34 +5,13 @@ namespace ToyBoxNightmare
     /// <see cref="TargetableObject"/> 가 OnShow 에서 이걸 받아 들고 있으며,
     /// 피격/사망 판정은 전부 여기 담긴 <see cref="HitPoints"/> 로 이뤄진다.
     /// </summary>
-    [Serializable]
     public abstract class TargetableObjectData : EntityData
     {
-        // 진영(CampType) 시스템은 아직 복원되지 않았다. 타입 자체가 존재하지 않으므로
-        // 아래 주석을 그냥 풀면 컴파일이 깨진다 — 복원한다면 CampType 부터 만들 것.
-        //[SerializeField]
-        //private CampType mCamp = CampType.Unknown;
-
-        [SerializeField]
+        /// <summary>
+        /// 취득 직후에는 0 이다. <b>파생 클래스의 <c>Create</c> 가 자신의 MaxHitPoints 로
+        /// 반드시 채워야 한다</b> — 빠뜨리면 스폰 직후 IsDead 가 true 가 된다.
+        /// </summary>
         private int mHitPoints = 0;
-
-        protected TargetableObjectData(int entityId, int typeId/*, CampType camp*/)
-            : base(entityId, typeId)
-        {
-            //mCamp = camp;
-
-            // 여기서는 0 으로만 둔다. 파생 클래스가 자신의 MaxHitPoints 로 반드시 채워야 한다 —
-            // 빠뜨리면 스폰 직후 IsDead 가 true 가 된다(EnemyData 생성자 주석 참조).
-            mHitPoints = 0;
-        }
-
-        //public CampType Camp
-        //{
-        //    get
-        //    {
-        //        return mCamp;
-        //    }
-        //}
 
         /// <summary>
         /// 현재 체력. 0 이하면 죽은 것으로 본다.
@@ -71,6 +47,13 @@ namespace ToyBoxNightmare
             {
                 return MaxHitPoints > 0 ? (float)HitPoints / MaxHitPoints : 0.0f;
             }
+        }
+
+        public override void Clear()
+        {
+            base.Clear();
+
+            mHitPoints = 0;
         }
     }
 }

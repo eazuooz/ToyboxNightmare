@@ -1,3 +1,6 @@
+using GameFramework;
+using UnityEngine;
+
 namespace ToyBoxNightmare
 {
     /// <summary>
@@ -10,17 +13,31 @@ namespace ToyBoxNightmare
         /// 이 문자열이 그대로 ShowEntity 의 assetName 이 되므로
         /// Groups 창의 Address 와 정확히 같아야 한다.
         /// </summary>
-        public string CharacterKey { get; }
+        public string CharacterKey { get; private set; }
 
-        public CharacterSelectData(int entityId, int typeId, string characterKey)
-            : base(entityId, typeId)
+        public static CharacterSelectData Create(int entityId, int typeId,
+                                                 string characterKey, Vector3 position)
         {
             // 비어 있으면 PlayerSelectLogic 이 프리팹 기본값을 빈 문자열로 덮어써서
             // 선택 후 SpawnPlayer 가 주소를 못 찾고 조용히 실패한다.
             GameAssert.IsTrue(!string.IsNullOrEmpty(characterKey),
                 "CharacterSelectData 의 characterKey 가 비어 있다.");
 
-            CharacterKey = characterKey;
+            CharacterSelectData data = ReferencePool.Acquire<CharacterSelectData>();
+            data.Fill(entityId, typeId);
+
+            data.CharacterKey = characterKey;
+            data.Position     = position;
+
+            return data;
+        }
+
+        public override void Clear()
+        {
+            base.Clear();
+
+            // 남겨 두면 다음 선택 캐릭터가 이전 판의 키를 물고 나와 두 캐릭터가 겹친다.
+            CharacterKey = null;
         }
     }
 }

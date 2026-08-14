@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityGameFramework.Runtime;
@@ -37,16 +36,8 @@ namespace ToyBoxNightmare
         private Vector3 mMoveDirection = Vector3.zero;
         private Vector3 mLookDirection = Vector3.forward;
 
-        // 장착된 무기. 각자 자기 쿨다운을 돌린다.
-        private readonly List<WeaponBase> mWeapons = new List<WeaponBase>();
-
-        /// <summary>
-        /// true 면 한 번에 하나만 쓰고 Tab 으로 전환한다(무기별 확인용).
-        /// false 면 장착한 무기가 전부 동시에 나간다(뱀서라이크 본래 형태).
-        /// </summary>
-        private const bool SingleWeaponMode = true;
-
-        private int mActiveWeaponIndex = 0;
+        /// <summary>장착 무기 묶음. 수명은 이 로직 인스턴스와 같다 — <see cref="OnInit"/> 에서 만든다.</summary>
+        private WeaponLoadout mWeaponLoadout = null;
 
         // 사망 연출
         private bool  mDying         = false;
@@ -76,6 +67,12 @@ namespace ToyBoxNightmare
         protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
+
+            // 로드아웃 수명은 이 로직 인스턴스와 같다. 필드 초기화식에서는 this 를 넘길 수 없어
+            // 여기서 만든다 — <c>Entity.cs:86-96</c> 이 "풀에서 꺼낸 로직 타입이 같으면 OnInit 없이
+            // 재사용" 이라 OnInit 은 로직 인스턴스당 정확히 한 번만 돈다.
+            mWeaponLoadout = new WeaponLoadout(this);
+
             mRigidbody = GetComponent<Rigidbody>();
             // includeInactive: true 가 필수다. 이 캐릭터 GameObject 는 선택화면
             // (PlayerSelectLogic)으로 먼저 쓰인 뒤 회수됐다가 Player 로 재사용되는데,
@@ -113,6 +110,13 @@ namespace ToyBoxNightmare
         {
             base.OnShow(userData);
 
+            // 상태 리셋과 Instance 갱신은 userData 검사보다 <b>먼저</b> 한다.
+            // 이 인스턴스는 풀에서 재사용되므로, 데이터가 없다고 여기서 그냥 빠져나가면
+            // 이전 판의 mDying/mDeathTimer/mDeathNotified 와 꺼진 콜라이더를 그대로 물고
+            // 등장해 1초 뒤 스스로 사라진다. 데이터가 없어도 인스턴스는 깨끗해야 한다.
+            ResetRuntimeState();
+            Instance = this;
+
             mPlayerData = userData as PlayerData;
             if (mPlayerData == null)
             {
@@ -120,12 +124,14 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            Instance = this;
             CachedTransform.position = mPlayerData.Position;
             CachedTransform.rotation = mPlayerData.Rotation;
 
-            ResetRuntimeState();
-            EquipWeapons();
+            // 회전을 적용한 뒤에 다시 잡아야 스폰 자세를 그대로 바라본다.
+            // 리셋 시점의 forward 는 아직 이전 판의 자세다.
+            mLookDirection = CachedTransform.forward;
+
+            mWeaponLoadout.Equip();
         }
 
         /// <summary>
@@ -152,113 +158,26 @@ namespace ToyBoxNightmare
             }
         }
 
-        // ─── 무기 ───
-
-        /// <summary>
-        /// 이 캐릭터가 들고 시작하는 무기. 레벨업 시스템이 붙으면 여기에 추가하는 형태가 된다.
-        ///
-        /// 무기는 MonoBehaviour 가 아니라 이 로직이 소유하는 순수 객체다. 로직 인스턴스가
-        /// 살아남는 재사용 경로에서는 무기도 그대로 재활용한다.
-        ///
-        /// 단, 그 경로에 기대면 안 된다 — <c>Entity.cs:86-96</c> 은 풀에서 꺼낸 인스턴스의
-        /// 로직 타입이 다르면 컴포넌트를 파괴하고 새로 붙인다. 선택화면은
-        /// <see cref="PlayerSelectLogic"/>, 플레이는 <see cref="Player"/> 라 <b>판마다
-        /// 이 로직이 통째로 재생성되는 것이 정상 경로</b>다. 무기가 캐릭터에 남긴 것은
-        /// <see cref="DisposeWeapons"/> 가 치운다.
-        /// </summary>
-        private void EquipWeapons()
-        {
-            if (mWeapons.Count == 0)
-            {
-                mWeapons.Add(new LightningWeapon());
-                mWeapons.Add(new FrostWeapon());
-                mWeapons.Add(new StinkWeapon());
-                mWeapons.Add(new SlimeWeapon());
-            }
-
-            for (int i = 0; i < mWeapons.Count; i++)
-            {
-                mWeapons[i].Initialize(this);
-            }
-
-            // 재스폰 때마다 첫 무기부터 시작한다.
-            mActiveWeaponIndex = 0;
-            ApplyWeaponSelection();
-
-            if (SingleWeaponMode && mWeapons.Count > 0)
-            {
-                Log.Info("무기 {0}종 장착. Tab 으로 전환. 현재 → {1}",
-                    mWeapons.Count, mWeapons[mActiveWeaponIndex].GetType().Name);
-            }
-        }
-
-        /// <summary>
-        /// 활성 무기만 켠다. 꺼진 무기는 OnUpdate 를 받지 못하고 총구 VFX·타겟 마커도 함께 꺼진다.
-        /// </summary>
-        private void ApplyWeaponSelection()
-        {
-            if (mWeapons.Count > 0)
-            {
-                GameAssert.InRange(mActiveWeaponIndex, mWeapons.Count, "mActiveWeaponIndex");
-            }
-
-            for (int i = 0; i < mWeapons.Count; i++)
-            {
-                bool isSelectedWeapon = !SingleWeaponMode || i == mActiveWeaponIndex;
-                mWeapons[i].SetActive(isSelectedWeapon);
-
-                if (isSelectedWeapon)
-                {
-                    // 전환 즉시 쏠 수 있게 쿨다운을 채워 준다.
-                    mWeapons[i].ResetCooldown();
-                }
-            }
-        }
-
-        /// <summary>
-        /// 무기를 굴린다. 입력 처리 뒤에 부르므로 조준이 한 프레임 밀리지 않는다 —
-        /// MonoBehaviour 였을 때는 이 순서가 보장되지 않았다.
-        /// </summary>
-        private void UpdateWeapons(float elapseSeconds)
-        {
-            for (int i = 0; i < mWeapons.Count; i++)
-            {
-                mWeapons[i].OnUpdate(elapseSeconds);
-            }
-        }
-
-        /// <summary>
-        /// 무기를 전부 끈다. 총구 VFX·타겟 마커·Frost 콘이 여기서 정리된다.
-        /// 사망과 회수 양쪽에서 부른다 — 죽으면 OnUpdate 가 멈춰 무기 스스로는 못 끈다.
-        /// </summary>
-        private void ShutdownWeapons()
-        {
-            for (int i = 0; i < mWeapons.Count; i++)
-            {
-                mWeapons[i].SetActive(false);
-            }
-        }
-
-        /// <summary>
-        /// 무기가 캐릭터에 남긴 것을 전부 지운다(복제한 마커 링, 꺼 놓은 VFX 루트).
-        ///
-        /// 이 캐릭터 GameObject 는 풀에 돌아가 <see cref="PlayerSelectLogic"/> 으로도 재사용된다.
-        /// 정리를 안 하면 재시작마다 링이 쌓이고, 선택화면 캐릭터의 안테나 이펙트가 꺼진다.
-        /// </summary>
-        private void DisposeWeapons()
-        {
-            for (int i = 0; i < mWeapons.Count; i++)
-            {
-                mWeapons[i].Dispose();
-            }
-        }
-
         protected internal override void OnHide(bool isShutdown, object userData)
         {
-            ShutdownWeapons();
-            DisposeWeapons();
+            mWeaponLoadout.Shutdown();
+            mWeaponLoadout.Dispose();
 
-            Instance = null;
+            // 데이터는 base 체인 끝(EntityLogicBase)에서 ReferencePool 로 반납된다.
+            // 반납이 참조를 지워 주지 않으므로 여기서 놓아야 FixedUpdate 의 mPlayerData null
+            // 가드가 실제 방어가 된다. 안 지우면 그 가드는 "GameObject 가 꺼져 있다" 는
+            // 암묵 전제에만 기대게 되고, 재스폰이 같은 인스턴스를 꺼내면 남의 이동속도를 읽는다.
+            mPlayerData = null;
+
+            // 무조건 지우면 안 된다. 재시작 경로에서는 새 Player 가 먼저 OnShow 되고
+            // 이전 인스턴스가 그 뒤에 회수되므로, 그때 "새" Instance 를 지워 버리면
+            // PlayerCameraFollow 가 타겟을 잃고 선택 앵글로 돌아간다.
+            // UnityEngine.Object 라 ReferenceEquals 가 아니라 == 를 쓴다(파괴된 객체 비교).
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
             base.OnHide(isShutdown, userData);
         }
 
@@ -275,8 +194,8 @@ namespace ToyBoxNightmare
             if (IsDead) return;
 
             ReadMoveInput();
-            ReadWeaponSwitchInput();
-            UpdateWeapons(elapseSeconds);
+            mWeaponLoadout.ReadSwitchInput();
+            mWeaponLoadout.OnUpdate(elapseSeconds);
         }
 
         /// <summary>
@@ -290,21 +209,6 @@ namespace ToyBoxNightmare
 
             NotifyDied();
             SafeHide();
-        }
-
-        private void ReadWeaponSwitchInput()
-        {
-            if (!SingleWeaponMode || mWeapons.Count <= 1) return;
-
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || !keyboard.tabKey.wasPressedThisFrame) return;
-
-            mActiveWeaponIndex = (mActiveWeaponIndex + 1) % mWeapons.Count;
-            ApplyWeaponSelection();
-
-            Log.Info("무기 전환 → {0} ({1}/{2})",
-                mWeapons[mActiveWeaponIndex].GetType().Name,
-                mActiveWeaponIndex + 1, mWeapons.Count);
         }
 
         // ─── 물리 이동 (FixedUpdate) ───
@@ -429,7 +333,7 @@ namespace ToyBoxNightmare
 
             // 사망 후에는 OnUpdate 가 무기를 굴리지 않으므로 여기서 확실히 끈다.
             // 안 그러면 총구 VFX 와 타겟 마커가 시체 위에 남는다.
-            ShutdownWeapons();
+            mWeaponLoadout.Shutdown();
             StopMovementAndCollision();
             PlayDeathAnimation();
 

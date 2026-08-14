@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using UnityEngine;
 
 namespace ToyBoxNightmare
@@ -123,6 +124,45 @@ namespace ToyBoxNightmare
 
             stats = default;
             return false;
+        }
+
+        /// <summary>
+        /// 테이블 정합성 검사. 두 가지를 본다.
+        ///
+        /// 1. 모든 <see cref="SpawnPoints"/> 의 주소가 <see cref="Table"/> 에 있는가.
+        ///    없으면 그 지점은 스폰 틱마다 "Enemy stats not found" 만 찍고 영원히 아무것도 못 낸다.
+        ///    스폰 간격이 5~15초라 로그가 드문드문 나와 알아채기까지 오래 걸린다.
+        ///
+        /// 2. 같은 주소를 쓰는 스폰 지점이 둘 이상인가.
+        ///    SurvivalGame 의 대기 카운트 처리(DecrementPendingSpawn / IsSpawnLimitReached)가
+        ///    "한 주소 = 한 지점" 을 전제로 짜여 있다. 중복이 생기면 뒤쪽 지점의 대기 카운트가
+        ///    영원히 안 줄어 그 지점이 상한에 고착된다. 자세한 근거는 두 함수의 주석 참조.
+        ///
+        /// 에디터와 개발 빌드에서만 돈다. 릴리스에서는 <see cref="ConditionalAttribute"/> 가
+        /// 호출부를 통째로 제거하므로 부담이 없다. 값이 코드 상수라 런타임에 바뀔 일이 없어
+        /// 판마다 한 번만 부르면 충분하다.
+        /// </summary>
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        public static void Validate()
+        {
+            for (int i = 0; i < SpawnPoints.Length; i++)
+            {
+                string assetName = SpawnPoints[i].AssetName;
+
+                // 스탯 값 자체는 필요 없다. 존재 여부만 본다.
+                GameAssert.IsTrue(TryGetStats(assetName, out _), string.Format(
+                    "EnemyTable.SpawnPoints[{0}] 의 주소 '{1}' 가 Table 에 없다. 이 지점은 영원히 스폰하지 못한다.",
+                    i, assetName));
+
+                for (int j = i + 1; j < SpawnPoints.Length; j++)
+                {
+                    GameAssert.IsTrue(SpawnPoints[j].AssetName != assetName, string.Format(
+                        "EnemyTable.SpawnPoints 의 주소 '{0}' 가 [{1}] 과 [{2}] 에 중복이다. " +
+                        "SurvivalGame 의 대기 카운트가 '한 주소 = 한 지점' 전제라 뒤쪽 지점이 상한에 고착된다.",
+                        assetName, i, j));
+                }
+            }
         }
     }
 }

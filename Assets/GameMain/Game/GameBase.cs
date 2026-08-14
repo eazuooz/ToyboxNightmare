@@ -6,6 +6,7 @@
 // Feedback: mailto:eazuooz@gmail.com
 //------------------------------------------------------------
 
+using GameFramework;
 using GameFramework.Event;
 using UnityGameFramework.Runtime;
 
@@ -67,7 +68,39 @@ namespace ToyBoxNightmare
                 return;
             }
 
+            ReleaseSpawnData(ne);
+
             Log.Warning("Show entity failure with error message '{0}'.", ne.ErrorMessage);
+        }
+
+        /// <summary>
+        /// 스폰이 실패했을 때 <see cref="EntityData"/> 를 풀에 돌려준다.
+        ///
+        /// 실패하면 OnShow 가 아예 불리지 않아 <see cref="EntityLogicBase"/> 가 소유권을
+        /// 잡지 못한다. 여기서 놓치면 그 데이터는 영영 풀로 돌아가지 않는다.
+        ///
+        /// <b>한 실패 이벤트당 정확히 1회만 불러야 한다.</b> 이중 Release 는 코어에서 즉시
+        /// 예외다 — 파생이 이 핸들러를 오버라이드하면 base 를 부르거나 직접 이걸 부르거나
+        /// 둘 중 하나만 해야 한다.
+        /// </summary>
+        protected static void ReleaseSpawnData(ShowEntityFailureEventArgs ne)
+        {
+            EntityData data = ne.UserData as EntityData;
+            if (data == null) return;
+
+            // 이미 소유자가 생긴 데이터는 건드리지 않는다.
+            //
+            // 코어는 엔티티를 등록(EntityManager.InternalShowEntity 의 mEntityInfos.Add)한 **뒤에**
+            // OnShow 를 부르고, 그 이후 구간에서 난 예외도 같은 userData 로 실패 이벤트를 낸다.
+            // 그 경우 EntityLogicBase 가 이미 소유권을 잡았으므로 회수 시 거기서 반납된다 —
+            // 여기서 또 반납하면 이중 Release 다.
+            //
+            // 애셋 로드 실패는 등록 이전이라 이 검사에 걸리지 않는다. 즉 진짜 주인 없는
+            // 데이터만 여기서 반납된다.
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+            if (entityComponent != null && entityComponent.HasEntity(ne.EntityId)) return;
+
+            ReferencePool.Release(data);
         }
     }
 }

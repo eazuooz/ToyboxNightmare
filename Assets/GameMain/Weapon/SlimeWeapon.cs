@@ -11,8 +11,6 @@ namespace ToyBoxNightmare
     /// </summary>
     public class SlimeWeapon : WeaponBase
     {
-        private const string MuzzlePath = "Antenna";
-
         /// <summary>
         /// 사거리 안에 아무도 없었을 때 다시 시도하기까지의 시간.
         /// 원본의 "헛방이면 쿨다운을 소모하지 않는다" 규약을 계승한다.
@@ -33,25 +31,13 @@ namespace ToyBoxNightmare
         /// <summary>단일 대상 — 유도탄이 쫓아갈 최근접 적 하나.</summary>
         protected override float AttackRadius => WeaponTable.SlimeDetectRadius;
 
-        private Transform mMuzzle = null;
-
+        /// <summary>
+        /// 총구("Antenna") 해석과 폴백은 베이스의 <see cref="WeaponBase.MuzzleOrigin"/> 이 맡는다.
+        /// Root null 가드도 <see cref="WeaponBase.Initialize"/> 가 처리하므로 여기엔 없다.
+        /// </summary>
         protected override void OnInitialize()
         {
             AttackInterval = WeaponTable.SlimeCooldown;
-
-            // Root 는 Initialize 가 넘겨준 Player 의 트랜스폼이다. 없으면 Find 가 NRE 다.
-            GameAssert.IsTrue(Root != null,
-                "SlimeWeapon: Root 가 없다. Initialize 에 유효한 Player 를 넘겨야 한다.");
-            if (Root == null) return;
-
-            if (mMuzzle == null)
-            {
-                mMuzzle = Root.Find(MuzzlePath);
-                if (mMuzzle == null)
-                {
-                    Log.Warning("SlimeWeapon: '{0}' 을 찾지 못했다. 캐릭터 원점에서 발사한다.", MuzzlePath);
-                }
-            }
         }
 
         protected override void Attack()
@@ -79,7 +65,7 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            Vector3 origin = GetMuzzleOrigin();
+            Vector3 origin = MuzzleOrigin;
 
             int id = EntitySerialId.Next();
             entityComponent.ShowEntity(
@@ -87,23 +73,14 @@ namespace ToyBoxNightmare
                 typeof(SlimeProjectile),
                 WeaponTable.SlimeProjectileAsset,
                 WeaponTable.ProjectileGroup,
-                new HomingProjectileData(id, 1)
-                {
-                    Position         = origin,
-                    Rotation         = GetLaunchRotation(origin, target),
-                    TargetEntityId   = target.Entity.Id,
-                    AttackerEntityId = Owner.Entity != null ? Owner.Entity.Id : 0,
-                    Speed            = WeaponTable.SlimeSpeed,
-                    HitRadius        = WeaponTable.SlimeHitRadius,
-                });
-        }
-
-        /// <summary>발사 원점. 안테나를 못 찾았으면 캐릭터 원점에서 한 칸 띄운다.</summary>
-        private Vector3 GetMuzzleOrigin()
-        {
-            return mMuzzle != null
-                ? mMuzzle.position
-                : Owner.CachedTransform.position + Vector3.up;
+                HomingProjectileData.Create(
+                    id, 1,
+                    origin,
+                    GetLaunchRotation(origin, target),
+                    target.Entity.Id,
+                    Owner.Entity != null ? Owner.Entity.Id : 0,
+                    WeaponTable.SlimeSpeed,
+                    WeaponTable.SlimeHitRadius));
         }
 
         /// <summary>

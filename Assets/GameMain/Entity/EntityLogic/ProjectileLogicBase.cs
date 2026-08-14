@@ -12,7 +12,13 @@ namespace ToyBoxNightmare
         /// <summary>파생 클래스가 따로 잡지 않았을 때 쓰는 수명 상한.</summary>
         private const float DefaultMaxLifetime = 3f;
 
-        /// <summary>이 시간이 지나면 무조건 회수된다. 유실 투사체 방지.</summary>
+        /// <summary>
+        /// 이 시간이 지나면 무조건 회수된다. 유실 투사체 방지.
+        ///
+        /// 아래 이니셜라이저는 컴포넌트 생성 시 1회뿐이라 풀 재사용에는 통하지 않는다.
+        /// 그래서 <see cref="OnShow"/> 에서 매번 기본값으로 되돌린다 —
+        /// 빼면 이전 인스턴스가 마지막으로 잡은 수명을 물고 나온다.
+        /// </summary>
         protected float MaxLifetime = DefaultMaxLifetime;
 
         private float mElapsed = 0f;
@@ -34,6 +40,10 @@ namespace ToyBoxNightmare
             base.OnShow(userData);
 
             mElapsed = 0f;
+
+            // 파생 클래스(Stink/Slime)는 base.OnShow 를 먼저 부르고 그 뒤에 자기 수명을
+            // 덮어쓰므로, 여기서 기본값으로 되돌려도 파생 값이 그대로 살아 있다.
+            MaxLifetime = DefaultMaxLifetime;
 
             // 배치 전에 반드시 멈춘다. 순서를 지키지 않으면 재사용 시
             // 이전 위치에서 현재 위치까지 연기 줄기가 그어진다.

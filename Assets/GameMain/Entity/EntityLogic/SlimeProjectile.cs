@@ -107,7 +107,9 @@ namespace ToyBoxNightmare
             if (entity == null) return null;
 
             Enemy enemy = entity.Logic as Enemy;
-            if (enemy == null || enemy.IsDead || !enemy.Available) return null;
+            // Available 을 IsDead 보다 먼저 본다. IsDead 는 스폰 데이터를 읽는데,
+            // 회수된 엔티티의 데이터는 이미 풀로 반납된 뒤라 답을 신뢰할 수 없다.
+            if (enemy == null || !enemy.Available || enemy.IsDead) return null;
 
             return enemy;
         }

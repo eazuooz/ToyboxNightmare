@@ -74,6 +74,15 @@ namespace ToyBoxNightmare
             Root  = owner != null ? owner.CachedTransform : null;
 
             ResetCooldown();
+
+            // 소유자가 없으면 OnInitialize 를 아예 건너뛴다. 이 한 줄이 실제 방어다 —
+            // 위 GameAssert 는 [Conditional] 이라 릴리스에서 통째로 사라진다.
+            //
+            // 예전에는 owner 가 null 이어도 OnInitialize 를 불렀기 때문에 파생 무기 4종이
+            // 전부 첫 줄에 똑같은 Root null 가드를 복붙해 두고 있었다. 그 중복의 근원이 여기다.
+            // 이 가드를 되돌리면 그 복붙도 함께 되살려야 한다.
+            if (owner == null) return;
+
             OnInitialize();
         }
 
@@ -132,8 +141,13 @@ namespace ToyBoxNightmare
         /// </summary>
         public void Dispose()
         {
+            // 파생 캐시를 먼저 버린다. 아래 정리는 베이스가 들고 있는 참조만 쓰므로 순서에 영향이 없고,
+            // 파생 쪽은 Root 가 아직 살아 있는 편이 다루기 쉽다.
+            OnDispose();
+
             DestroyClonedRings();
             RestoreVfxRootToPrefabState();
+            ClearMuzzleCache();
 
             // 다음 Initialize 뒤의 첫 SetActive 가 무조건 적용되게 한다.
             mActiveApplied = false;
@@ -142,6 +156,15 @@ namespace ToyBoxNightmare
             Owner = null;
             Root  = null;
         }
+
+        /// <summary>
+        /// 파생 무기가 캐릭터 밑에서 찾아 둔 캐시를 버릴 훅. <see cref="Dispose"/> 가 부른다.
+        ///
+        /// 파생은 대개 <c>if (mX == null)</c> 로만 다시 찾는다. 여기서 안 버리면 <b>다음
+        /// Initialize 가 다른 캐릭터를 넘겨받아도 옛 트랜스폼을 그대로 물고 있는다</b> —
+        /// Girl/Boy 를 바꿔 고르거나 선택화면 ↔ 플레이를 오갈 때 실제로 일어나는 경로다.
+        /// </summary>
+        protected virtual void OnDispose() { }
 
         /// <summary>
         /// 무기를 굴릴 수 있는 상태인가. 소유자가 회수됐거나 죽었으면 거짓이다.
@@ -203,6 +226,68 @@ namespace ToyBoxNightmare
         protected void RetryAfter(float seconds)
         {
             mAttackTimer = mAttackInterval - Mathf.Max(0f, seconds);
+        }
+
+        // ─── 총구(발사 원점) ───
+
+        /// <summary>
+        /// 발사점으로 쓸 자식 트랜스폼의 경로(캐릭터 기준). null 이면 총구를 쓰지 않는다.
+        ///
+        /// 기본값 "Antenna" 는 Girl/Boy 프리팹에서 A6 때 보존해 둔 발사점이다
+        /// (로컬 <c>(0.123, 0.948, 1.019)</c>). 무기 4종이 전부 여기서 쏘므로 베이스 기본값으로 둔다.
+        /// </summary>
+        protected virtual string MuzzlePath => "Antenna";
+
+        private Transform mMuzzle         = null;
+        private bool      mMuzzleResolved = false;
+
+        /// <summary>
+        /// 발사 원점. 총구를 못 찾았으면 캐릭터 원점에서 한 칸 띄운다 —
+        /// 발밑에서 쏘면 레이도 투사체도 바로 바닥에 막힌다.
+        /// </summary>
+        protected Vector3 MuzzleOrigin
+        {
+            get
+            {
+                ResolveMuzzle();
+
+                if (mMuzzle != null) return mMuzzle.position;
+
+                // Owner 는 호출 경로(OnUpdate → Attack/EvaluateTarget)상 항상 살아 있다.
+                // 그래도 좌표 계산이 NRE 로 터지지는 않게 원점을 돌려준다.
+                return Owner != null ? Owner.CachedTransform.position + Vector3.up : Vector3.zero;
+            }
+        }
+
+        /// <summary>
+        /// 총구를 딱 한 번 찾아 캐시한다. 못 찾아도 <see cref="mMuzzleResolved"/> 는 세워 둔다 —
+        /// 매 발사마다 Find 를 반복하고 경고를 도배하지 않기 위해서다.
+        /// </summary>
+        private void ResolveMuzzle()
+        {
+            if (mMuzzleResolved) return;
+
+            mMuzzleResolved = true;
+
+            string path = MuzzlePath;
+            if (string.IsNullOrEmpty(path) || Root == null)
+            {
+                // 총구를 쓰지 않는 무기이거나 아직 소유자가 없다. 정상 경로라 로그를 남기지 않는다.
+                return;
+            }
+
+            mMuzzle = Root.Find(path);
+            if (mMuzzle == null)
+            {
+                Log.Warning("{0}: 총구 '{1}' 을 찾지 못했다. 캐릭터 원점에서 발사한다.", GetType().Name, path);
+            }
+        }
+
+        /// <summary>총구 캐시를 버린다. 다음 <see cref="Initialize"/> 가 새 캐릭터에서 다시 찾는다.</summary>
+        private void ClearMuzzleCache()
+        {
+            mMuzzle         = null;
+            mMuzzleResolved = false;
         }
 
         // ─── 총구 VFX ───
@@ -330,11 +415,7 @@ namespace ToyBoxNightmare
             float distance = WeaponUtil.PlanarDistance(
                 enemy.CachedTransform.position, Owner.CachedTransform.position);
 
-            if (distance <= AttackRadius) return TargetState.InRange;
-
-            return distance <= AttackRadius * WeaponUtil.NearRangeScale
-                ? TargetState.Near
-                : TargetState.OutOfRange;
+            return WeaponUtil.ClassifyByRange(distance, AttackRadius);
         }
 
         /// <summary>지면과 겹쳐 z-fighting 나지 않게 살짝 띄운다.</summary>

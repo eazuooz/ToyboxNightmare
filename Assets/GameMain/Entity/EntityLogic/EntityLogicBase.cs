@@ -1,3 +1,4 @@
+using GameFramework;
 using UnityGameFramework.Runtime;
 
 namespace ToyBoxNightmare
@@ -11,10 +12,20 @@ namespace ToyBoxNightmare
     /// 들어오는 상황이 실제로 발생하므로 모든 Hide 는 SafeHide() 를 거치게 한다.
     ///
     /// 엔티티는 풀에서 재사용되므로 mHidden 은 반드시 OnShow 에서 리셋한다.
+    ///
+    /// <b><see cref="EntityData"/> 의 풀 반납도 여기서 한다.</b> 스폰 데이터는
+    /// ReferencePool 에서 나오므로 정확히 한 번 돌려줘야 한다. 소유권은 OnShow 가 잡고
+    /// OnHide 가 놓는다 — 자세한 순서는 <see cref="OnHide"/> 주석 참조.
     /// </summary>
     public abstract class EntityLogicBase : EntityLogic
     {
         private bool mHidden = false;
+
+        /// <summary>
+        /// 이 엔티티가 스폰될 때 받은 데이터. 풀에 돌려줄 책임이 이 인스턴스에 있다.
+        /// null 이면 소유한 것이 없다는 뜻이고, 그 자체가 이중 반납 가드다.
+        /// </summary>
+        private EntityData mOwnedData = null;
 
         /// <summary>
         /// 이미 Hide 요청이 나갔는지. HideEntity 는 즉시 처리되지 않고 다음 Update 의
@@ -30,13 +41,38 @@ namespace ToyBoxNightmare
             base.OnShow(userData);
 
             mHidden = false;
+
+            // 스폰 데이터의 소유권을 여기서 잡는다. EntityData 가 아닌 userData(또는 null)로
+            // 뜬 인스턴스는 애초에 반납할 것이 없으므로 그대로 null 로 남는다.
+            mOwnedData = userData as EntityData;
         }
 
+        /// <summary>
+        /// 파생 로직들은 자기 정리를 먼저 하고 <c>base.OnHide</c> 를 <b>마지막에</b> 부른다
+        /// (Player, Enemy 둘 다 그렇다). 그래서 데이터 반납은 이 메서드의 맨 끝이어야
+        /// 파생이 아직 데이터를 읽고 있는 시점을 앞지르지 않는다.
+        /// </summary>
         protected internal override void OnHide(bool isShutdown, object userData)
         {
             mHidden = true;
 
             base.OnHide(isShutdown, userData);
+
+            ReleaseOwnedData();
+        }
+
+        /// <summary>
+        /// 스폰 데이터를 풀에 돌려준다. 이중 Release 는 코어에서 즉시 예외이므로
+        /// 참조를 먼저 비우고 나서 반납한다.
+        /// </summary>
+        private void ReleaseOwnedData()
+        {
+            if (mOwnedData == null) return;
+
+            EntityData data = mOwnedData;
+            mOwnedData = null;
+
+            ReferencePool.Release(data);
         }
 
         /// <summary>

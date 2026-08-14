@@ -83,12 +83,49 @@ namespace ToyBoxNightmare
             }
         }
 
+        /// <summary>
+        /// <b><see cref="mTargetableObjectData"/> 를 반드시 여기서 놓아야 한다.</b>
+        ///
+        /// 데이터는 <see cref="EntityLogicBase.OnHide"/> 가 맨 끝에서 ReferencePool 로 반납한다.
+        /// 반납은 참조를 null 로 만들어 주지 않으므로, 여기서 안 지우면 이 필드는 <b>풀에 들어간
+        /// 객체</b>를 계속 가리킨다. 그러면 <see cref="IsDead"/> 와 <see cref="ApplyDamage"/> 의
+        /// null 검사가 "유효한 데이터인가" 라는 원래 뜻을 잃고, 그 인스턴스를 다른 엔티티가
+        /// 다시 꺼내는 순간 <b>남의 체력</b>을 읽게 된다.
+        ///
+        /// base 보다 <b>먼저</b> 지운다 — 반납이 base 체인 끝에서 일어나기 때문이다.
+        /// </summary>
+        protected internal override void OnHide(bool isShutdown, object userData)
+        {
+            mTargetableObjectData = null;
+
+            base.OnHide(isShutdown, userData);
+        }
+
         protected virtual void OnDead(Entity attacker)
         {
             SafeHide();
         }
 
+        /// <summary>
+        /// 전투 시스템이 복원될 때까지 아무 일도 하지 않는다.
+        ///
+        /// 아래 <see cref="HandleTriggerEnter"/> 는 가드를 세 개 통과할 때까지 결국
+        /// 아무것도 하지 않으면서 매 트리거 접촉마다 GetComponent&lt;Entity&gt;() 비용만 낸다.
+        /// 그래서 여기서 즉시 끊는다. 판정 코드는 지우지 않고 아래에 그대로 남겨 두었으니,
+        /// 복원할 때 이 return 을 지우고 HandleTriggerEnter(other) 호출을 되살리면 된다.
+        ///
+        /// (본문을 지우는 대신 별도 메서드로 내린 이유: 이 메서드 안에 그대로 두면
+        ///  return 뒤 코드가 전부 도달 불가가 되어 CS0162 경고가 쌓인다.)
+        /// </summary>
         private void OnTriggerEnter(Collider other)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// 충돌 판정 본체. 지금은 호출되지 않는다 — <see cref="OnTriggerEnter"/> 주석 참고.
+        /// </summary>
+        private void HandleTriggerEnter(Collider other)
         {
             // OnTriggerEnter 는 GameObject 에 붙은 모든 컴포넌트에 전달된다.
             // 프리팹에 EntityLogic 이 baked 되어 있으면 그 인스턴스는 OnInit 을 거치지

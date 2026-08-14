@@ -1060,11 +1060,6 @@ MonoBehaviour:
     mInstanceCapacity: 64
     mInstanceExpireTime: 60
     mInstancePriority: 0
-  - mName: ExpGem
-    mInstanceAutoReleaseInterval: 60
-    mInstanceCapacity: 100
-    mInstanceExpireTime: 60
-    mInstancePriority: 0
   - mName: Projectile
     mInstanceAutoReleaseInterval: 60
     mInstanceCapacity: 64
