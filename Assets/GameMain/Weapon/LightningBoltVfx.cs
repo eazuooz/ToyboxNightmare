@@ -95,6 +95,25 @@ namespace ToyBoxNightmare
 
             // 이 GameObject 는 프리팹에서 비활성이었다가 무기 장착 시 켜진다.
             // Play On Awake 파티클이 그대로 돌면 안테나에서 계속 스파크가 튄다.
+            //
+            // 한 번 멈추는 것만으로는 부족하다. 이 GameObject 의 부모(Antenna/LightningAttack)가
+            // 무기 전환 때마다 껐다 켜지는데, playOnAwake 파티클은 **재활성될 때마다** 다시
+            // 재생을 시작한다(프리팹 실측: playOnAwake=True, loop=True). 그러면 발사와 무관하게
+            // 안테나 끝에서 착탄 스파크가 영구히 루프한다. 자동 재생 자체를 끈다.
+            if (mParticles != null)
+            {
+                foreach (var ps in mParticles)
+                {
+                    if (ps == null)
+                    {
+                        continue;
+                    }
+
+                    ParticleSystem.MainModule main = ps.main;
+                    main.playOnAwake = false;
+                }
+            }
+
             StopParticles();
 
             if (mAudio != null)
@@ -132,6 +151,29 @@ namespace ToyBoxNightmare
             if (mAudio != null && mAudio.clip != null)
             {
                 mAudio.Play();
+            }
+        }
+
+        /// <summary>
+        /// 빔을 즉시 끈다.
+        ///
+        /// <b>반드시 무기를 내려놓는 쪽에서 불러야 한다.</b> 이 GameObject 는 무기 VFX 루트
+        /// (<c>Antenna/LightningAttack</c>)의 자식이라, 무기를 끄면 계층상 비활성이 되어
+        /// <see cref="Update"/> 가 멈춘다. 그러면 <c>mRemaining &gt; 0</c> / LineRenderer 켜짐 /
+        /// 마지막 월드 좌표 폴리라인이 그대로 얼어붙고, 다음에 무기를 다시 켜는 순간
+        /// <b>이전 발사의 표적 지점으로 향하는 유령 빔</b>이 잔여 시간만큼 그어진다.
+        /// </summary>
+        public void StopImmediate()
+        {
+            mRemaining  = 0f;
+            mPhaseTimer = 0f;
+
+            SetVisible(false);
+            StopParticles();
+
+            if (mAudio != null)
+            {
+                mAudio.Stop();
             }
         }
 

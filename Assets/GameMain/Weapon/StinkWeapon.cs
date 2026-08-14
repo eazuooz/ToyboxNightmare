@@ -15,8 +15,10 @@ namespace ToyBoxNightmare
         protected override string VfxRootPath => "Antenna/StinkAttack";
 
         // 마우스 조준 링을 "지금 노리는 적" 마커로 전용한다.
-        protected override string TargetRingPath   => "Antenna/StinkAttack/TargetRing";
-        protected override float  TargetRingRadius => WeaponTable.StinkDetectRadius;
+        protected override string TargetRingPath => "Antenna/StinkAttack/TargetRing";
+
+        /// <summary>단일 대상 — 착탄점을 잡을 최근접 적 하나.</summary>
+        protected override float AttackRadius => WeaponTable.StinkDetectRadius;
 
         private Transform mMuzzle = null;
 
@@ -26,7 +28,7 @@ namespace ToyBoxNightmare
 
             if (mMuzzle == null)
             {
-                mMuzzle = transform.Find(MuzzlePath);
+                mMuzzle = Root.Find(MuzzlePath);
             }
         }
 

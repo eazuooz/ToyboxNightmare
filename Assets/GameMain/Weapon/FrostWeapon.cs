@@ -21,6 +21,90 @@ namespace ToyBoxNightmare
         /// <summary>총구 스파클. 무기를 바꾸면 베이스가 꺼 준다.</summary>
         protected override string VfxRootPath => FrostAttackPath;
 
+        /// <summary>Frost 는 자기 링이 없어 Stink 쪽 링을 템플릿으로 빌려 쓴다.</summary>
+        protected override string TargetRingPath => "Antenna/StinkAttack/TargetRing";
+
+        /// <summary><b>범위 무기다.</b> 반경 안 전원에게 마커를 띄운다.</summary>
+        protected override bool MarkAllTargets => true;
+
+        protected override float AttackRadius => WeaponTable.FrostConeRadius;
+
+        /// <summary>
+        /// 반경 <b>과</b> 각도를 둘 다 봐야 한다. 반경 안이지만 부채꼴 밖이면 노랑 —
+        /// "콘을 돌리면 닿는다" 는 뜻이다.
+        /// </summary>
+        protected override TargetState EvaluateTarget(Enemy enemy)
+        {
+            Vector3 apex, axis;
+            if (!TryGetCone(out apex, out axis))
+            {
+                return TargetState.OutOfRange;
+            }
+
+            float distance = WeaponUtil.PlanarDistance(enemy.CachedTransform.position, apex);
+            if (distance > WeaponTable.FrostConeRadius)
+            {
+                return distance <= WeaponTable.FrostConeRadius * WeaponUtil.NearRangeScale
+                    ? TargetState.Near
+                    : TargetState.OutOfRange;
+            }
+
+            return IsInCone(enemy, apex, axis) ? TargetState.InRange : TargetState.Near;
+        }
+
+        /// <summary>지금 실제로 얼릴 적들. 마커 후보(반경)와 달리 각도까지 통과한 집합이다.</summary>
+        private int CollectCone(System.Collections.Generic.List<Enemy> results)
+        {
+            results.Clear();
+
+            Vector3 apex, axis;
+            if (!TryGetCone(out apex, out axis))
+            {
+                return 0;
+            }
+
+            int count = WeaponUtil.FindEnemiesInSphere(apex, WeaponTable.FrostConeRadius, Candidates);
+            for (int i = 0; i < count; i++)
+            {
+                if (IsInCone(Candidates[i], apex, axis))
+                {
+                    results.Add(Candidates[i]);
+                }
+            }
+
+            return results.Count;
+        }
+
+        private bool TryGetCone(out Vector3 apex, out Vector3 axis)
+        {
+            apex = Vector3.zero;
+            axis = Vector3.forward;
+
+            if (mFrostAttack == null || Owner == null)
+            {
+                return false;
+            }
+
+            apex = mFrostAttack.TransformPoint(ApexLocal);
+
+            axis = mFrostAttack.forward;
+            axis.y = 0f;
+            if (axis.sqrMagnitude < 0.0001f)
+            {
+                axis = Owner.CachedTransform.forward;
+            }
+
+            return true;
+        }
+
+        private static bool IsInCone(Enemy enemy, Vector3 apex, Vector3 axis)
+        {
+            Vector3 to = enemy.CachedTransform.position - apex;
+            to.y = 0f;
+
+            return Vector3.Angle(axis, to) <= WeaponTable.FrostConeHalfAngle;
+        }
+
         /// <summary>콘 꼭짓점의 FrostAttack 로컬 좌표. 원본 Arc 메시 정점에서 역산했다.</summary>
         private static readonly Vector3 ApexLocal = new Vector3(-0.015296f, 0.044137f, 0.342790f);
 
@@ -36,7 +120,7 @@ namespace ToyBoxNightmare
 
             if (mFrostAttack == null)
             {
-                mFrostAttack = transform.Find(FrostAttackPath);
+                mFrostAttack = Root.Find(FrostAttackPath);
                 if (mFrostAttack == null)
                 {
                     Log.Warning("FrostWeapon: '{0}' 을 찾지 못했다.", FrostAttackPath);
@@ -47,7 +131,7 @@ namespace ToyBoxNightmare
                     // 다른 무기로 바꿔도 총구 파티클이 남는다.
 
                     // 코드 판정으로 갈았으므로 원본 판정용 콜라이더는 꺼 둔다(이중 판정 방지).
-                    Transform arc = transform.Find(FrostArcPath);
+                    Transform arc = Root.Find(FrostArcPath);
                     if (arc != null)
                     {
                         var meshCollider = arc.GetComponent<MeshCollider>();
@@ -61,7 +145,7 @@ namespace ToyBoxNightmare
 
             if (mFrostCone == null && mFrostAttack != null)
             {
-                Transform cone = transform.Find(FrostConePath);
+                Transform cone = Root.Find(FrostConePath);
                 mFrostCone = cone != null ? cone.gameObject : null;
             }
 
@@ -70,54 +154,32 @@ namespace ToyBoxNightmare
 
         protected override void Attack()
         {
-            if (mFrostAttack == null)
-            {
-                return;
-            }
+            // 판정은 EvaluateTarget 의 InRange 조건과 완전히 같다 — 초록 링이 뜬 적이 곧 얼 적이다.
+            //
+            // 원본은 y 슬래브(±0.25)도 봤지만, 그건 적의 캡슐 콜라이더가 그 높이를
+            // 관통했기 때문에 성립했다. 우리는 중심점 거리로 판정하므로 그대로 옮기면
+            // 거의 아무도 안 맞는다. 의도적으로 생략한다.
+            int count = CollectCone(mConeTargets);
 
-            Vector3 apex = mFrostAttack.TransformPoint(ApexLocal);
-
-            Vector3 axis = mFrostAttack.forward;
-            axis.y = 0f;
-            if (axis.sqrMagnitude < 0.0001f)
-            {
-                axis = Owner.CachedTransform.forward;
-            }
-
-            int count = WeaponUtil.FindEnemiesInSphere(apex, WeaponTable.FrostConeRadius, Candidates);
-
-            int hitCount = 0;
             for (int i = 0; i < count; i++)
             {
-                Vector3 to = Candidates[i].CachedTransform.position - apex;
-                to.y = 0f;
-
-                // 원본은 y 슬래브(±0.25)도 봤지만, 그건 적의 캡슐 콜라이더가 그 높이를
-                // 관통했기 때문에 성립했다. 우리는 중심점 거리로 판정하므로 그대로 옮기면
-                // 거의 아무도 안 맞는다. 의도적으로 생략한다.
-                if (Vector3.Angle(axis, to) > WeaponTable.FrostConeHalfAngle)
-                {
-                    continue;
-                }
-
-                Candidates[i].RefreshFrostContact();
-                hitCount++;
+                mConeTargets[i].RefreshFrostContact();
             }
 
             // 미스트와 루프 사운드는 대상이 있을 때만. 상시 켜두면 루프음이 게임 내내 울린다.
-            SetConeActive(hitCount > 0);
+            SetConeActive(count > 0);
         }
 
-        private void LateUpdate()
-        {
-            if (Owner == null || !Owner.Available || Owner.IsDead)
-            {
-                // WeaponBase.Update 가 여기서 return 하므로 Attack() 이 안 돈다.
-                // 정리를 안 하면 콘이 켜진 채로 남는다.
-                SetConeActive(false);
-                return;
-            }
+        private readonly System.Collections.Generic.List<Enemy> mConeTargets =
+            new System.Collections.Generic.List<Enemy>(16);
 
+        /// <summary>
+        /// 콘 조준. 예전에는 <c>LateUpdate</c> 였지만, 이제 플레이어의 입력 처리가 끝난 뒤
+        /// <see cref="WeaponBase.OnUpdate"/> 가 불러 준다. 플레이어 회전은 FixedUpdate 에서
+        /// 일어나고 그 포즈가 Update 시점에 이미 반영돼 있으므로 결과는 같다.
+        /// </summary>
+        protected override void OnAim(float elapseSeconds)
+        {
             if (mFrostAttack == null)
             {
                 return;
@@ -140,7 +202,7 @@ namespace ToyBoxNightmare
 
             Quaternion want = Quaternion.LookRotation(to);
             mFrostAttack.rotation = Quaternion.RotateTowards(
-                mFrostAttack.rotation, want, TurnSpeed * Time.deltaTime);
+                mFrostAttack.rotation, want, TurnSpeed * elapseSeconds);
         }
 
         /// <summary>다른 무기로 전환되면 콘과 루프 사운드를 반드시 끈다.</summary>

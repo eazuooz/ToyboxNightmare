@@ -11,7 +11,9 @@ namespace ToyBoxNightmare
     /// </summary>
     public class LightningWeapon : WeaponBase
     {
-        private const float Range    = 20f;
+        // 원본 실효값은 20 이었지만 자동 조준으로 바뀌면서 화면 밖의 적까지 때려
+        // 교전 거리가 사라졌다. 절반으로 줄인다.
+        private const float Range    = 10f;
         private const int   Damage   = 50;
         private const float Cooldown = 1f;
 
@@ -22,6 +24,59 @@ namespace ToyBoxNightmare
         /// <summary>총구 스파클. 무기를 바꾸면 베이스가 꺼 준다.</summary>
         protected override string VfxRootPath => "Antenna/LightningAttack";
 
+        /// <summary>Lightning 은 자기 링이 없어 Stink 쪽 링을 템플릿으로 빌려 쓴다.</summary>
+        protected override string TargetRingPath => "Antenna/StinkAttack/TargetRing";
+
+        protected override float AttackRadius => Range;
+
+        /// <summary>
+        /// 거리로 먼저 거른 뒤, 사거리 안이라도 <b>벽에 가려 있으면 초록을 주지 않는다</b> —
+        /// 못 때리는데 초록이면 마커가 거짓말을 하게 된다.
+        /// </summary>
+        protected override TargetState EvaluateTarget(Enemy enemy)
+        {
+            float distance = WeaponUtil.PlanarDistance(
+                enemy.CachedTransform.position, Owner.CachedTransform.position);
+
+            if (distance > Range * WeaponUtil.NearRangeScale)
+            {
+                return TargetState.OutOfRange;
+            }
+
+            if (distance > Range)
+            {
+                return TargetState.Near;
+            }
+
+            return HasLineOfSight(enemy) ? TargetState.InRange : TargetState.Near;
+        }
+
+        private bool HasLineOfSight(Enemy target)
+        {
+            Vector3 origin = mMuzzle != null
+                ? mMuzzle.position
+                : Owner.CachedTransform.position + Vector3.up;
+
+            Vector3 aim = GetAimPoint(target);
+            Vector3 direction = aim - origin;
+            float distance = direction.magnitude;
+            if (distance <= 0.001f)
+            {
+                return true;
+            }
+
+            direction /= distance;
+
+            RaycastHit hit;
+            if (!Physics.Raycast(origin, direction, out hit, distance, HitscanMask))
+            {
+                return true; // 사이에 아무것도 없다
+            }
+
+            Entity entity = hit.collider.GetComponentInParent<Entity>();
+            return entity != null && ReferenceEquals(entity.Logic, target);
+        }
+
         private Transform        mMuzzle = null;
         private LightningBoltVfx mBolt   = null;
 
@@ -31,7 +86,7 @@ namespace ToyBoxNightmare
 
             if (mMuzzle == null)
             {
-                mMuzzle = transform.Find(MuzzlePath);
+                mMuzzle = Root.Find(MuzzlePath);
                 if (mMuzzle == null)
                 {
                     Log.Warning("LightningWeapon: '{0}' 을 찾지 못했다. 캐릭터 원점에서 발사한다.", MuzzlePath);
@@ -40,7 +95,7 @@ namespace ToyBoxNightmare
 
             if (mBolt == null)
             {
-                Transform boltTransform = transform.Find(BoltPath);
+                Transform boltTransform = Root.Find(BoltPath);
                 if (boltTransform == null)
                 {
                     Log.Warning("LightningWeapon: '{0}' 을 찾지 못했다. 빔 연출 없이 동작한다.", BoltPath);
@@ -57,6 +112,18 @@ namespace ToyBoxNightmare
                         mBolt = boltTransform.gameObject.AddComponent<LightningBoltVfx>();
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// 빔은 스스로 꺼지지 못한다 — 무기를 끄면 빔 GameObject 가 VFX 루트와 함께 비활성이
+        /// 되어 Update 가 멈추기 때문이다. 여기서 확실히 끊는다.
+        /// </summary>
+        protected override void OnWeaponDisabled()
+        {
+            if (mBolt != null)
+            {
+                mBolt.StopImmediate();
             }
         }
 

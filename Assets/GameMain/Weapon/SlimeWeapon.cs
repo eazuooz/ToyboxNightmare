@@ -16,8 +16,10 @@ namespace ToyBoxNightmare
         protected override string VfxRootPath => "Antenna/SlimeAttack";
 
         // 스티키 타겟 선택 링을 "지금 노리는 적" 마커로 전용한다.
-        protected override string TargetRingPath   => "Antenna/SlimeAttack/SlimeSelectRing";
-        protected override float  TargetRingRadius => WeaponTable.SlimeDetectRadius;
+        protected override string TargetRingPath => "Antenna/SlimeAttack/SlimeSelectRing";
+
+        /// <summary>단일 대상 — 유도탄이 쫓아갈 최근접 적 하나.</summary>
+        protected override float AttackRadius => WeaponTable.SlimeDetectRadius;
 
         private Transform mMuzzle = null;
 
@@ -27,7 +29,7 @@ namespace ToyBoxNightmare
 
             if (mMuzzle == null)
             {
-                mMuzzle = transform.Find(MuzzlePath);
+                mMuzzle = Root.Find(MuzzlePath);
             }
         }
 

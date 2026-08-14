@@ -13,7 +13,11 @@ namespace ToyBoxNightmare
         private EnemyData       mEnemyData    = null;
         private NavMeshAgent    mAgent        = null;
         private Animator        mAnimator     = null;
-        private CapsuleCollider mBodyCollider = null;
+        /// <summary>
+        /// 루트의 콜라이더 전부. 적 프리팹은 CapsuleCollider(몸통)와 SphereCollider(트리거)를
+        /// 둘 다 레이어 9(Shootable)로 달고 있어, 몸통만 꺼서는 시체가 히트스캔을 계속 막는다.
+        /// </summary>
+        private Collider[] mColliders = null;
 
         // 프리팹의 HitParticles 자식(흰 솜뭉치). 원본과 값까지 동일하게 보존돼 있다.
         private ParticleSystem  mHitParticles = null;
@@ -70,6 +74,15 @@ namespace ToyBoxNightmare
         private GameObject mFreezeFx = null;
         private GameObject mSlimeFx  = null;
 
+        /// <summary>
+        /// 무력화 상태 — 얼었거나, 도주 중이거나, 공격이 봉인됐다.
+        /// 셋 중 하나라도 걸려 있으면 당장 플레이어를 때리지 못한다.
+        /// </summary>
+        public bool IsNeutralized => mFrozen || mFleeTimer > 0f || mAttackSuppressed;
+
+        /// <summary>이 적의 공격 사거리. 데이터가 없으면 0.</summary>
+        public float AttackRange => mEnemyData != null ? mEnemyData.Stats.AttackRange : 0f;
+
         /// <summary>이동 속도 배율. 빙결이 0 으로 만든다.</summary>
         public void SetSpeedMultiplier(float multiplier)
         {
@@ -122,7 +135,7 @@ namespace ToyBoxNightmare
 
             mAgent        = GetComponent<NavMeshAgent>();
             mAnimator     = GetComponentInChildren<Animator>();
-            mBodyCollider = GetComponent<CapsuleCollider>();
+            mColliders    = GetComponents<Collider>();
 
             // 이름으로 찾는다. GetComponentInChildren<ParticleSystem> 로 잡으면
             // 디버프 VFX 자식을 추가하는 순간 계층 순서에 따라 엉뚱한 것이 잡힌다.
@@ -207,10 +220,7 @@ namespace ToyBoxNightmare
                 mHitParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
-            if (mBodyCollider != null)
-            {
-                mBodyCollider.enabled = true;
-            }
+            SetCollidersEnabled(true);
 
             if (mAnimator != null)
             {
@@ -537,10 +547,9 @@ namespace ToyBoxNightmare
             // 침하 중에 에이전트가 Y 를 NavMesh 높이로 되끌어올리므로 먼저 끈다.
             DisableAgent();
 
-            if (mBodyCollider != null)
-            {
-                mBodyCollider.enabled = false;
-            }
+            // 트리거 구까지 전부 끈다. 몸통만 끄면 시체가 가라앉는 1.3~1.7초 동안
+            // 트리거 구가 Lightning 레이를 계속 가로채, 뒤에 있는 적에게 한 발도 안 들어간다.
+            SetCollidersEnabled(false);
 
             // 빙결 중에 죽으면 Animator 가 꺼져 있어 사망 애니메이션이 통째로 안 나온다.
             ClearAllDebuffs();
@@ -619,6 +628,22 @@ namespace ToyBoxNightmare
             if (mAgent != null && mAgent.enabled && mAgent.isOnNavMesh)
             {
                 mAgent.isStopped = true;
+            }
+        }
+
+        private void SetCollidersEnabled(bool enabled)
+        {
+            if (mColliders == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < mColliders.Length; i++)
+            {
+                if (mColliders[i] != null)
+                {
+                    mColliders[i].enabled = enabled;
+                }
             }
         }
 

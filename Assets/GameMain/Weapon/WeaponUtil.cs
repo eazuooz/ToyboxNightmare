@@ -4,9 +4,48 @@ using UnityGameFramework.Runtime;
 
 namespace ToyBoxNightmare
 {
+    /// <summary>타겟 마커 색이 뜻하는 것 — "내 무기로 지금 때릴 수 있나".</summary>
+    public enum TargetState
+    {
+        /// <summary>사거리 밖. 빨강.</summary>
+        OutOfRange,
+
+        /// <summary>사거리 근처 — 조금만 다가가면 닿는다. 노랑.</summary>
+        Near,
+
+        /// <summary>사거리 안. 지금 때리고 있다. 초록.</summary>
+        InRange,
+    }
+
     /// <summary>무기와 착탄 이펙트가 함께 쓰는 적 탐색 유틸.</summary>
     public static class WeaponUtil
     {
+        /// <summary>사거리 안은 아니지만 "곧 닿는" 것으로 볼 배율.</summary>
+        public const float NearRangeScale = 1.4f;
+
+        /// <summary>원본 레티클 3색. 그대로 쓴다.</summary>
+        public static readonly Color ColorOutOfRange = new Color(1f, 0f, 0f, 1f);
+        public static readonly Color ColorNear       = new Color(1f, 0.922f, 0.016f, 1f);
+        public static readonly Color ColorInRange    = new Color(0f, 1f, 0f, 1f);
+
+        public static Color GetTargetColor(TargetState state)
+        {
+            switch (state)
+            {
+                case TargetState.InRange: return ColorInRange;
+                case TargetState.Near:    return ColorNear;
+                default:                  return ColorOutOfRange;
+            }
+        }
+
+        /// <summary>XZ 평면 거리.</summary>
+        public static float PlanarDistance(Vector3 a, Vector3 b)
+        {
+            Vector3 delta = a - b;
+            delta.y = 0f;
+            return delta.magnitude;
+        }
+
         /// <summary>Shootable(9). 적 탐색용.</summary>
         public const int ShootableMask = 1 << 9;
 
@@ -37,6 +76,16 @@ namespace ToyBoxNightmare
 
                 Enemy enemy = entity.Logic as Enemy;
                 if (enemy == null || enemy.IsDead || !enemy.Available)
+                {
+                    continue;
+                }
+
+                // OverlapSphere 는 **콜라이더 겹침**으로 잡는다. 적의 Shootable 트리거 구가
+                // 반지름 0.8~1.63 이라 중심이 반경 밖에 있어도 걸린다. 반면 타겟 마커 색은
+                // 중심의 평면 거리로 판정하므로(WeaponBase.EvaluateTarget) 그대로 두면
+                // "노란 링(사거리 밖)이 뜬 적이 실제로는 맞고 죽는" 불일치가 난다.
+                // 최종 집합을 마커와 같은 기준으로 맞춘다.
+                if (PlanarDistance(enemy.CachedTransform.position, origin) > radius)
                 {
                     continue;
                 }
