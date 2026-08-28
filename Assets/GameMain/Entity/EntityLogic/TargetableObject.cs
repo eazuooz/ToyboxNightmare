@@ -19,6 +19,18 @@ namespace ToyBoxNightmare
             }
         }
 
+        /// <summary>
+        /// 현재 체력 비율(0~1). 데이터가 없으면 0.
+        /// 스폰 직후 HUD 에 만피를 알릴 때처럼 "피해 없이 현재 값을 읽어야" 할 때 쓴다.
+        /// </summary>
+        protected float HitPointRatio
+        {
+            get
+            {
+                return mTargetableObjectData != null ? mTargetableObjectData.HitPointRatio : 0f;
+            }
+        }
+
         public void ApplyDamage(Entity attacker, int damageHitPoints)
         {
             // 아직 OnShow 를 거치지 않았거나 잘못된 userData 로 뜬 인스턴스.

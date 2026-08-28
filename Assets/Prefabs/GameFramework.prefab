@@ -152,7 +152,9 @@ MonoBehaviour:
   mCustomUIFormHelper: {fileID: 0}
   mUIGroupHelperTypeName: UnityGameFramework.Runtime.DefaultUIGroupHelper
   mCustomUIGroupHelper: {fileID: 0}
-  mUIGroups: []
+  mUIGroups:
+  - mName: Default
+    mDepth: 0
 --- !u!1 &560897799551230169
 GameObject:
   m_ObjectHideFlags: 0

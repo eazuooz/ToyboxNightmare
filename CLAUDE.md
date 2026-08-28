@@ -100,7 +100,7 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 
 **미해결**
 1. **Addressables Play Mode Script** — `Library/`에 저장되어 **git 공유가 안 된다.** 클론한 사람이 각자 Groups 창에서 `Use Asset Database (fastest)`로 설정해야 한다.
-2. **NavMesh 미베이크** — `MainScene.unity`의 `m_NavMeshData: {fileID: 0}`. 적 이동을 NavMesh로 갈 거면 베이크 필요(agentRadius 0.5 / height 1.2 / slope 45). 현재는 NavMeshAgent를 꺼둬서 에러는 안 난다.
+2. ~~NavMesh 미베이크~~ — **해결됨.** `Assets/Scenes/MainScene/NavMesh.asset` 로 베이크 완료(agentRadius 0.5 / height 1.2 / slope 45). 적이 NavMeshAgent 로 추적한다.
 3. **카메라 추종 없음** — MainCamera에 Transform/Camera/AudioListener/URP데이터 4개뿐. 걸어가면 화면 밖으로 나간다. `PlayerCameraFollow` 신규 작성 필요(ARCHITECTURE §4-9).
 4. **카메라가 선택 앵글에 고정** — pos `(0,4,6)` / rot ≈`(30,180,0)`, orthographic size 4.5. 원본은 게임 앵글 `(0,15,-22)`로 1초 전환한다(M6).
 5. **`Assets/_Recovery/0.unity`** — 크래시 복구 산출물. 빌드/로드 경로 밖이라 무해하지만 삭제 권장.

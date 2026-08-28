@@ -186,6 +186,15 @@ namespace ToyBoxNightmare
             // 과거로 밀려 다른 무기의 쿨다운까지 건너뛴다.
             mAttackCooldown   = Mathf.Max(0f, cooldown);
             mTimeOfLastAttack = Time.time;
+
+            // 쿨다운이 0 인 무기(Frost)는 게이지를 건드리지 않는다 — 0 을 넘기면
+            // HUD 게이지가 가득 찼다가 즉시 비는 깜빡임이 된다.
+            if (mAttackCooldown <= 0f) return;
+
+            EventComponent events = GameEntry.GetComponent<EventComponent>();
+            if (events == null) return;
+
+            events.Fire(this, WeaponCooldownStartedEventArgs.Create(mAttackCooldown));
         }
 
         /// <summary>전역 쿨다운을 지워 즉시 쏠 수 있게 한다. 장착(재스폰) 시점에만 쓴다.</summary>

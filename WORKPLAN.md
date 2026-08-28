@@ -209,10 +209,90 @@ M1·M2가 전부 이 위에 올라간다. **A4·A5 완료가 선행 조건**이�
 | **M2** | 플레이어 피격 + 게임오버 + 재시작 | — | ProcedureGameOver 등록(D4 후속) |
 | **M3** | 공격 1종 (Lightning) | 0개 ← 그래서 첫 무기 | 볼트 머티리얼 URP 재작성 |
 | **M4** | 나머지 공격 3종 + 디버프 | 투사체 2종 | 투사체 프리팹 + Addressables |
-| **M5** | 아군(양) | `Ally` | **NavMesh 베이크** |
-| **M6** | UI / 연출 / 사운드 | — | Canvas·EventSystem, UIForm 프리팹 2개 |
+| **M6** | UI 기반 — HUD / 점수 / 체력 / 쿨다운 게이지 | — | UI 그룹 배선, EventSystem, UIForm 프리팹 |
+| **M5** | 아군(양) | `Ally` | Addressables 이미 등록됨(Sheep/Dog) |
+| **M7** | 연출 — 카메라 인트로 / 스포트라이트 / 사운드 | — | 스포트라이트 프리팹 배치 |
+| **M8** | 일시정지 / 옵션 | — | UIForm 프리팹 1개, UI 그룹 2개 |
+
+> **실행 순서는 M6 → M5 → M7 → M8 이다.** 번호는 원래 계획의 것을 유지한다.
+> M6 을 먼저 하는 이유: 남은 92건 중 약 25건이 UI 계층 부재 하나에 막혀 있고,
+> 전역 쿨다운을 되돌린 뒤로 "5초 동안 왜 안 나가는지" 를 화면에서 알 방법이 없다.
 
 **M3에서 Lightning을 먼저 하는 이유**: 즉발 히트스캔이라 투사체 엔티티·디버프·적 수신 API가 전부 불필요하다. 신규 EntityLogic 0개로 "무기가 작동한다"를 검증할 수 있다.
+
+---
+
+## M5–M8 상세 — 원본 전수 대조 결과 (2026-08-14)
+
+원본 좀비토이 스크립트 28개를 전부 우리 것과 대조했다. **197개 항목 중 92개가 남았다**
+(미구현 75 / 부분구현 17). 나머지 105개는 구현 완료이거나 GameFramework 로 대체됐다.
+
+**대전제: 전부 GameFramework 경로로 만든다.** UI 는 `UIComponent`/`UIFormLogic`,
+사운드는 `SoundComponent`, 통신은 `EventComponent`, 스폰은 `EntityComponent` 를 쓴다.
+씬에 캔버스를 직접 배치하거나 `AudioSource.Play()` 를 흩뿌리는 축소판 경로는 쓰지 않는다.
+
+### 남은 92건이 걸려 있는 병목
+
+| | 병목 | 막힌 항목 |
+|---|---|---|
+| ① | **UI 계층 부재** — `mUIGroups: []`, 씬에 EventSystem 없음, `UIFormLogic` 0개, UI Addressables 0건 | ~25 |
+| ② | **적 추격 대상이 `Player.Instance` 고정** — 원본은 `GameManager.EnemyTarget` 간접 참조 | ~12 |
+
+②는 아군을 소환해도 적이 그쪽으로 안 몰린다는 뜻이다. `SurvivalGame.ChaseTarget` 하나로 풀린다.
+
+### 이미 준비된 자산 (착수 비용이 낮은 이유)
+
+- `HUDCanvas.prefab` / `PauseMenuCanvas.prefab` 이 `Assets/Art/Prefabs/UI/` 에 **원본과 byte-identical** 로 있다(guid 동일).
+- `FlashFade.cs` 가 `Assets/Sample/Scripts/UI/` 에 그대로 있다(Assembly-CSharp 이라 이미 컴파일된다).
+- `ScoreChangedEventArgs` / `PlayerDiedEventArgs` 는 이미 발행되고 있다. 전자의 주석이 "HUD 가 구독한다(M6)" 라고 예고해 뒀다.
+- `TargetableObject.OnHitPointChanged` 훅이 이미 있다 — **오버라이드가 0건**일 뿐이다.
+- Sheep / Dog 가 Addressables 에 이미 등록돼 있다.
+- NavMesh 는 베이크돼 있다(`Assets/Scenes/MainScene/NavMesh.asset`). M5 의 선행이 아니다.
+
+### M6 — UI 기반 (약 25건 해제)
+
+1. 씬에 UI 루트 Canvas(Screen Space Overlay) + EventSystem(`InputSystemUIInputModule`) 추가
+2. `GameFramework.prefab` 의 `UIComponent`: `mInstanceRoot` = 그 Canvas, `mUIGroups` 에 `Default`(depth 0) 추가
+3. `Assets/GameMain/UI/HUDForm.cs` — `UIFormLogic` 파생. **프리팹에 직접 부착**(엔티티와 정반대 규약) ✅
+4. `HUDCanvas` 를 `Assets/GameMain/UI/` 로 복제 + `HUDForm` 부착 + Addressables 등록
+5. 신규 이벤트 2종: `PlayerHealthChangedEventArgs`, `WeaponCooldownStartedEventArgs`
+6. `Player` 가 `OnHitPointChanged` 오버라이드 → 발행. `WeaponLoadout.BeginCooldown` → Player 경유 발행
+7. HUD 가 구독: 점수 / 체력 슬라이더 / **쿨다운 게이지** / 게임오버 텍스트 / 피격 붉은 플래시
+
+**EventSystem 은 M6 에서 넣지 않았다.** HUD 는 표시 전용이라 필요가 없고, 넣는 순간 아래 함정이
+발동한다. 버튼이 실제로 필요해지는 M8 에서 함께 넣고 그때 선택 클릭을 재검증한다.
+
+**함정 2개**
+- EventSystem 을 넣는 순간 `PlayerSelectLogic` 의 `IsPointerOverGameObject()` 가드가 **처음으로 살아난다.**
+  지금은 EventSystem 이 없어 항상 통과하고 있었다. 넣은 뒤 캐릭터 선택이 되는지 반드시 재검증할 것.
+- `DefaultUIGroupHelper.SetDepth` 가 **빈 구현**이다. UI 그룹을 2개 이상 겹쳐 쓰려면(M8) 커스텀 헬퍼가 필요하다.
+
+### M5 — 아군(양)
+
+1. **추격 대상 추상화** — `SurvivalGame.ChaseTarget` 을 두고 `Enemy.UpdateChase` 가 폴링.
+   원본의 폴링 지연이 게임 느낌의 일부라 이벤트로 바꾸지 말 것.
+2. `Ally : EntityLogicBase` + `AllyData`(ReferencePool). 이동은 `Enemy.PlaceOnNavMesh` 패턴을 그대로 복제.
+3. 점수 → 소환 포인트(비용 30) / 동시 1마리 / 지속 10초 후 자동 회수 / 회수 시 포인트 몰수
+4. 소환 입력(1키) + HUD 아이콘(M6 선행)
+5. 스폰 좌표 `(29.93, 0, 4.61)` — 원본 값
+
+### M7 — 연출 / 사운드
+
+- 카메라 인트로 전환: 선택 앵글 → 게임 앵글 1초 (최종 pitch 30°)
+- 캐릭터 선택 스포트라이트 — 원본 `CharacterSpotlight`/`LookAtMouse` 는 `GameManager`/`MouseLocation` 에
+  의존해 그대로 넣으면 NRE 다. `Player.AimPoint` 를 쓰는 GameMain 대체 스크립트로 다시 쓴다.
+- 사운드: **`SoundComponent` 경로로 통일한다.** `mSoundGroups`(Music/SFX) 등록 + `mAudioMixer` 지정 +
+  오디오 클립 Addressables 등록. 클립 6종은 `Assets/Audio/` 에 있으나 Addressables 에는 0건이다.
+
+### M8 — 일시정지 / 옵션
+
+- `PauseMenuForm`(UIFormLogic) + Esc(Input System) + 볼륨 슬라이더 2종 + 음소거 스냅샷 + Quit
+- HUD 위에 띄우므로 **UI 그룹 2개** → `DefaultUIGroupHelper.SetDepth` 커스텀 필요
+
+### 대상 외로 분류
+
+- 모바일 터치 입력(`PlayerInputTouch` / `Touchpad` / `MobileInterface`) — 원본에도 터치 UI 프리팹이 없어
+  참고 자산이 0이다. PC 전용으로 확정하면 세 파일은 삭제 대상.
 
 ---
 
@@ -223,6 +303,9 @@ M1·M2가 전부 이 위에 올라간다. **A4·A5 완료가 선행 조건**이�
 | ① | 무기 UX | **(b) 뱀서라이크 — 자동 발사 + 다중 장착** | `WeaponBase` 재작성(입력 훅 제거), `PORTING.md` §0 에 무효화된 서술 표기 |
 | ② | NavMesh 시점 | **지금 베이크 + M1 부터 NavMesh** | 베이크 완료(radius 0.5 / height 1.2 / slope 45). 스폰 좌표 6곳 전부 NavMesh 위 확인 |
 | ③ | `88408fd` 폐기/초기화 | **미정** | M5(아군) 전까지 필요. 점수 = 아군 화폐 vs 경험치 통합 |
+| ④ | 무기 UX 재결정 | **원본 수동 조준으로 복귀** | 자동조준이 재미없다는 플레이 판정. 마커 링 풀 등 자동조준 인프라 전량 삭제 |
+| ⑤ | 오디오 경로 | **GameFramework `SoundComponent`** | "전부 프레임워크로" 지시. `AudioSource` 직접 재생 경로는 정리 대상 |
+| ⑥ | 모바일 지원 | **미정** | 안 할 거면 터치 입력 3파일 삭제 |
 
 ## 진행 현황
 
@@ -236,9 +319,14 @@ M1·M2가 전부 이 위에 올라간다. **A4·A5 완료가 선행 조건**이�
 | 4. M1 — 적 스폰·추적·사망·점수 | ✅ 완료 (리뷰 4건 반영) |
 | 5. M2 — 피격·게임오버·재시작 | ✅ 완료 (사망 연출 + PlayerDead 승리 연출) |
 | 6. M3 — 공격 1종 (Lightning) | ✅ 코드 완료, 플레이 검증 대기 |
-| 7. M4 — 나머지 공격 3종 + 디버프 | ⬜ |
-| 8. M5 — 아군(양) | ⬜ 결정 ③ 필요 |
-| 9. M6 — UI / 인트로 / 사운드 | ⬜ |
+| 7. M4 — 나머지 공격 3종 + 디버프 | ✅ 완료 |
+| 8. 원본 수동 조준 복원 | ✅ 완료 (자동조준 폐기, 전역 쿨다운) |
+| 9. 가독성 리팩터 + 예외 보강 | ✅ 완료 (189항목 / 방어 81건) |
+| 10. `EntityData` → `ReferencePool` | ✅ 완료 (strict check 통과) |
+| 11. **M6 — UI 기반** | ✅ 코드·배선 완료, 플레이 검증 통과 (점수/체력/쿨다운/게임오버) |
+| 12. M5 — 아군(양) | ⬜ 결정 ③ 필요 |
+| 13. M7 — 연출 / 사운드 | ⬜ |
+| 14. M8 — 일시정지 / 옵션 | ⬜ |
 
 ## 남은 결정
 

@@ -143,6 +143,10 @@ namespace ToyBoxNightmare
             ResetAim();
 
             mWeaponLoadout.Equip();
+
+            // 스폰 통보. OnHitPointChanged 는 비율이 **줄어들 때만** 오므로
+            // 이것 없이는 HUD 가 새 판의 만피를 알 방법이 없다(이전 판 값을 물고 있게 된다).
+            FireHealthChanged(HitPointRatio, HitPointRatio);
         }
 
         /// <summary>
@@ -363,6 +367,27 @@ namespace ToyBoxNightmare
         /// 사망 연출이 통째로 생략되고, 연출 종료 시점의 Hide 와 겹쳐 중복이 된다.
         /// 회수는 <see cref="OnUpdate"/> 의 사망 타이머가 담당한다.
         /// </summary>
+        /// <summary>
+        /// 체력이 줄어들 때마다 HUD 에 알린다. 피격 플래시도 HUD 가 이 값으로 판단한다.
+        /// </summary>
+        protected override void OnHitPointChanged(float fromRatio, float toRatio)
+        {
+            base.OnHitPointChanged(fromRatio, toRatio);
+
+            FireHealthChanged(fromRatio, toRatio);
+        }
+
+        /// <summary>
+        /// 체력 변화를 발행한다. HUD 가 없어도 게임이 돌아야 하므로 실패해도 조용히 넘어간다.
+        /// </summary>
+        private void FireHealthChanged(float fromRatio, float toRatio)
+        {
+            EventComponent events = GameEntry.GetComponent<EventComponent>();
+            if (events == null) return;
+
+            events.Fire(this, PlayerHealthChangedEventArgs.Create(fromRatio, toRatio));
+        }
+
         protected override void OnDead(Entity attacker)
         {
             GameAssert.IsTrue(IsDead, "OnDead 는 체력이 0 이하가 된 뒤에만 호출되어야 한다.");

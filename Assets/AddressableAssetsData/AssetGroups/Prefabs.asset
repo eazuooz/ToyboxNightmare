@@ -94,6 +94,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de39ac2a4a30ced46a867212f1f870c7
+    m_Address: HUDForm
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f813aca6ad702f340b886ebe71be64cf
     m_Address: Dog
     m_ReadOnly: 0

@@ -27,6 +27,28 @@ namespace ToyBoxNightmare
             Log.Info("ProcedureGameOver: Enter. 잔존 엔티티 {0}개. R 키로 재시작.", remainingEntityCount);
         }
 
+        protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
+        {
+            CloseHud();
+
+            base.OnLeave(procedureOwner, isShutdown);
+        }
+
+        /// <summary>
+        /// HUD 를 닫는다. <see cref="ProcedureMain"/> 이 진입에서 열고 여기서 닫아 짝이 맞는다.
+        /// Main 쪽 OnLeave 에서 닫으면 게임오버 문구가 보이기도 전에 사라진다.
+        /// </summary>
+        private static void CloseHud()
+        {
+            UIComponent ui = GameEntry.GetComponent<UIComponent>();
+            if (ui == null) return;
+
+            UIForm form = ui.GetUIForm(UITable.HudForm);
+            if (form == null) return;
+
+            ui.CloseUIForm(form);
+        }
+
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
