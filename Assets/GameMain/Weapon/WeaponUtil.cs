@@ -4,65 +4,48 @@ using UnityGameFramework.Runtime;
 
 namespace ToyBoxNightmare
 {
-    /// <summary>타겟 마커 색이 뜻하는 것 — "내 무기로 지금 때릴 수 있나".</summary>
+    /// <summary>
+    /// 레티클 3색이 뜻하는 것. 원본 <c>StinkAttack</c>/<c>SlimeAttack</c> 의
+    /// <c>invalidTargetTint</c>/<c>notReadyTint</c>/<c>readyTint</c> 와 1:1이다.
+    ///
+    /// 사거리 3단계(멀다/가깝다/닿는다)가 아니다 — 자동조준 시절의 타겟 마커가 그랬고,
+    /// 수동 조준으로 돌아오면서 "지금 이 지점에 쏠 수 있나" 하나만 남았다.
+    /// </summary>
     public enum TargetState
     {
-        /// <summary>사거리 밖. 빨강.</summary>
-        OutOfRange,
+        /// <summary>조준 지점이 무효다. 빨강. (Stink: 사거리 밖 / Slime: 대상 없음)</summary>
+        Invalid,
 
-        /// <summary>사거리 근처 — 조금만 다가가면 닿는다. 노랑.</summary>
-        Near,
+        /// <summary>조준은 유효한데 전역 쿨다운이 안 끝났다. 노랑.</summary>
+        NotReady,
 
-        /// <summary>사거리 안. 지금 때리고 있다. 초록.</summary>
-        InRange,
+        /// <summary>지금 쏠 수 있다. 초록.</summary>
+        Ready,
     }
 
     /// <summary>무기와 착탄 이펙트가 함께 쓰는 적 탐색 유틸.</summary>
     public static class WeaponUtil
     {
-        // ─── 타겟 마커 색 ───
+        // ─── 레티클 색 ───
 
-        /// <summary>사거리 안은 아니지만 "곧 닿는" 것으로 볼 배율.</summary>
-        public const float NearRangeScale = 1.4f;
-
-        /// <summary>원본 레티클 3색. 그대로 쓴다.</summary>
-        public static readonly Color ColorOutOfRange = new Color(1f, 0f, 0f, 1f);
-        public static readonly Color ColorNear       = new Color(1f, 0.922f, 0.016f, 1f);
-        public static readonly Color ColorInRange    = new Color(0f, 1f, 0f, 1f);
+        /// <summary>원본 레티클 3색. 프리팹 직렬화값 그대로다.</summary>
+        public static readonly Color ColorInvalid  = new Color(1f, 0f, 0f, 1f);
+        public static readonly Color ColorNotReady = new Color(1f, 0.922f, 0.016f, 1f);
+        public static readonly Color ColorReady    = new Color(0f, 1f, 0f, 1f);
 
         public static Color GetTargetColor(TargetState state)
         {
             switch (state)
             {
-                case TargetState.InRange:    return ColorInRange;
-                case TargetState.Near:       return ColorNear;
-                case TargetState.OutOfRange: return ColorOutOfRange;
+                case TargetState.Ready:    return ColorReady;
+                case TargetState.NotReady: return ColorNotReady;
+                case TargetState.Invalid:  return ColorInvalid;
 
                 default:
                     // TargetState 에 값을 추가하고 여기를 안 고치면 조용히 빨강이 된다.
                     GameAssert.Unreachable("GetTargetColor: 처리되지 않은 TargetState");
-                    return ColorOutOfRange;
+                    return ColorInvalid;
             }
-        }
-
-        /// <summary>
-        /// 거리 하나로 매기는 사거리 상태. 마커 색 판정의 <b>공통 1층</b>이다.
-        ///
-        /// 시야·각도 같은 추가 조건이 있는 무기는 이 결과가 <see cref="TargetState.InRange"/> 일 때만
-        /// 자기 조건을 얹는다(Lightning=시야, Frost=부채꼴 각도). 통과 못 하면 노랑으로 낮춘다 —
-        /// "거리는 됐는데 조건이 안 맞는다" 를 뜻한다.
-        ///
-        /// <b>두 경계 모두 닫힌 구간이다.</b> distance == attackRadius 는 InRange,
-        /// distance == attackRadius * <see cref="NearRangeScale"/> 은 Near.
-        /// 무기 3종이 같은 자리에서 같은 색을 내려면 이 부등호를 바꾸면 안 된다.
-        /// </summary>
-        public static TargetState ClassifyByRange(float distance, float attackRadius)
-        {
-            if (distance <= attackRadius) return TargetState.InRange;
-
-            return distance <= attackRadius * NearRangeScale
-                ? TargetState.Near
-                : TargetState.OutOfRange;
         }
 
         // ─── 거리 ───
@@ -90,8 +73,8 @@ namespace ToyBoxNightmare
         /// OverlapSphere 결과 스크래치의 길이.
         ///
         /// 적 1기당 콜라이더가 2개(CapsuleCollider + Shootable 트리거 구)라 <b>실효 상한은 절반</b>인
-        /// 128기다. 64였을 때는 32기가 상한이라 몰리는 구간에서 반경 안의 적이 탐색에서 빠졌고,
-        /// 물리 반환 순서가 거리순이 아니라 <see cref="FindNearestEnemy"/> 가 최근접을 놓쳤다.
+        /// 128기다. 64였을 때는 32기가 상한이라 몰리는 구간에서 반경 안의 적이 탐색에서 빠졌다 —
+        /// Frost 콘 안의 적이 안 얼고 Stink 폭발이 일부를 그냥 지나쳤다.
         /// </summary>
         private const int OverlapBufferSize = 256;
 
@@ -132,10 +115,9 @@ namespace ToyBoxNightmare
                 if (enemy == null) continue;
 
                 // OverlapSphere 는 **콜라이더 겹침**으로 잡는다. 적의 Shootable 트리거 구가
-                // 반지름 0.8~1.63 이라 중심이 반경 밖에 있어도 걸린다. 반면 타겟 마커 색은
-                // 중심의 평면 거리로 판정하므로(WeaponBase.EvaluateTarget) 그대로 두면
-                // "노란 링(사거리 밖)이 뜬 적이 실제로는 맞고 죽는" 불일치가 난다.
-                // 최종 집합을 마커와 같은 기준으로 맞춘다.
+                // 반지름 0.8~1.63 이라 중심이 반경 밖에 있어도 걸린다. 그대로 두면 Frost 콘과
+                // Stink 폭발의 실효 반경이 적 콜라이더 크기만큼 제멋대로 부풀어, 표기 사거리와
+                // 실제로 맞는 범위가 어긋난다. 최종 집합을 중심 거리 기준으로 맞춘다.
                 if (PlanarDistance(enemy.CachedTransform.position, origin) > radius) continue;
 
                 // 적 1기가 콜라이더 2개로 잡히므로 중복 제거가 필수다(위 주석 참조).
@@ -151,15 +133,15 @@ namespace ToyBoxNightmare
         /// 버퍼가 가득 찼으면 <b>딱 한 번</b> 알린다.
         ///
         /// <c>OverlapSphereNonAlloc</c> 은 초과분을 조용히 버린다 — 반경 안의 적이 탐색에서
-        /// 통째로 빠지고, 물리 반환 순서가 거리순이 아니라 최근접 판정까지 틀어진다.
-        /// 증상만 보면 "가끔 적을 안 때린다" 라서 원인을 못 찾는다. 여기서 이름을 붙여 준다.
+        /// 통째로 빠진다. 증상만 보면 "가끔 적을 안 때린다" 라서 원인을 못 찾는다.
+        /// 여기서 이름을 붙여 준다.
         /// </summary>
         private static void WarnOnBufferSaturation(int hitCount)
         {
             if (hitCount < sOverlapBuffer.Length || sOverlapOverflowReported) return;
 
             sOverlapOverflowReported = true;
-            Log.Warning("WeaponUtil: 적 탐색 버퍼({0})가 가득 찼다. 초과분이 잘려 최근접 판정이 틀어질 수 있다. "
+            Log.Warning("WeaponUtil: 적 탐색 버퍼({0})가 가득 찼다. 초과분이 잘려 반경 안의 적이 빠질 수 있다. "
                         + "OverlapBufferSize 를 키울 것. (이 경고는 한 번만 나온다)", OverlapBufferSize);
         }
 
@@ -183,31 +165,8 @@ namespace ToyBoxNightmare
             return enemy;
         }
 
-        /// <summary>
-        /// origin 에서 가장 가까운 살아있는 적. 없으면 null.
-        ///
-        /// 거리 비교만 3D(sqrMagnitude)다. 후보를 고르는 <see cref="FindEnemiesInSphere"/> 는
-        /// 평면 거리로 걸렀으므로 집합은 같고, 그 안에서의 순위만 정하는 계산이라 문제가 없다.
-        /// </summary>
-        public static Enemy FindNearestEnemy(Vector3 origin, float radius, List<Enemy> scratch)
-        {
-            int count = FindEnemiesInSphere(origin, radius, scratch);
-
-            Enemy nearest = null;
-            float nearestDistanceSqr = float.MaxValue;
-
-            for (int i = 0; i < count; i++)
-            {
-                float distanceSqr = (scratch[i].CachedTransform.position - origin).sqrMagnitude;
-                if (distanceSqr < nearestDistanceSqr)
-                {
-                    nearestDistanceSqr = distanceSqr;
-                    nearest            = scratch[i];
-                }
-            }
-
-            return nearest;
-        }
+        // FindNearestEnemy 는 자동조준 전용이라 삭제했다. 조준은 이제 플레이어가 마우스로 한다.
+        // 최근접 탐색이 다시 필요해지면 FindEnemiesInSphere 위에 얹으면 된다.
 
         // ─── 이펙트 스폰 ───
 

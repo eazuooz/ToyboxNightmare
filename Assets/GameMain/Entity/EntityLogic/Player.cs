@@ -62,6 +62,17 @@ namespace ToyBoxNightmare
             }
         }
 
+        // ─── 마우스 조준점 ───
+        // 무기가 조준에 쓰는 유일한 좌표다. 프레임당 한 번 계산해 여기 담아 두고,
+        // 캐릭터 회전(mLookDirection)도 같은 값에서 나온다 — 같은 프레임에 지면
+        // 레이캐스트를 두 번 할 이유가 없고, 두 번 하면 보는 방향과 쏘는 방향이 갈릴 수 있다.
+
+        /// <summary>마우스가 가리키는 지면 위 월드 좌표. 지면에 안 닿으면 캐릭터 전방 한 칸으로 대체된다.</summary>
+        public Vector3 AimPoint { get; private set; }
+
+        /// <summary>이번 프레임 지면 레이캐스트가 실제로 성공했는지. false 면 AimPoint 는 대체값이다.</summary>
+        public bool HasAimPoint { get; private set; }
+
         // ─── EntityLogic 생명주기 ───
 
         protected internal override void OnInit(object userData)
@@ -129,7 +140,7 @@ namespace ToyBoxNightmare
 
             // 회전을 적용한 뒤에 다시 잡아야 스폰 자세를 그대로 바라본다.
             // 리셋 시점의 forward 는 아직 이전 판의 자세다.
-            mLookDirection = CachedTransform.forward;
+            ResetAim();
 
             mWeaponLoadout.Equip();
         }
@@ -141,10 +152,11 @@ namespace ToyBoxNightmare
         private void ResetRuntimeState()
         {
             mMoveDirection = Vector3.zero;
-            mLookDirection = CachedTransform.forward;
             mDying         = false;
             mDeathTimer    = 0f;
             mDeathNotified = false;
+
+            ResetAim();
 
             if (mCollider != null)
             {
@@ -193,9 +205,10 @@ namespace ToyBoxNightmare
 
             if (IsDead) return;
 
-            ReadMoveInput();
+            // 조준점 → 이동 입력 → 무기 순서다. 무기가 이번 프레임의 조준점을 그대로 쓴다.
+            ReadInput();
             mWeaponLoadout.ReadSwitchInput();
-            mWeaponLoadout.OnUpdate(elapseSeconds);
+            mWeaponLoadout.OnUpdate();
         }
 
         /// <summary>
@@ -249,16 +262,20 @@ namespace ToyBoxNightmare
         // ─── 입력 처리 ───
 
         /// <summary>
-        /// 키보드가 없으면 조준까지 통째로 건너뛴다. 이동을 못 하는 상황에서
-        /// 캐릭터만 마우스를 따라 도는 것이 더 어색하기 때문이다.
+        /// 이번 프레임의 조준점과 이동 방향을 잡는다.
+        ///
+        /// 조준을 이동보다 먼저, 그리고 키보드 유무와 <b>무관하게</b> 갱신한다.
+        /// 수동 발사에서는 조준점이 곧 발사 방향이라(무기가 <see cref="AimPoint"/> 를 읽고,
+        /// Lightning 은 캐릭터 forward 로 쏜다) 키보드가 없다고 조준까지 멈추면
+        /// 그 프레임의 발사가 통째로 엉뚱한 곳으로 나간다.
         /// </summary>
-        private void ReadMoveInput()
+        private void ReadInput()
         {
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null) return;
-
-            mMoveDirection = ReadMoveDirection(keyboard);
+            UpdateAimPoint();
             UpdateLookDirection();
+
+            Keyboard keyboard = Keyboard.current;
+            mMoveDirection = keyboard != null ? ReadMoveDirection(keyboard) : Vector3.zero;
         }
 
         /// <summary>WASD 와 방향키를 같은 축으로 합친다.</summary>
@@ -281,17 +298,34 @@ namespace ToyBoxNightmare
             return (positivePressed ? 1f : 0f) - (negativePressed ? 1f : 0f);
         }
 
-        /// <summary>마우스가 가리키는 지면 쪽으로 바라볼 방향을 갱신한다.</summary>
+        /// <summary>
+        /// 프레임당 딱 한 번 도는 지면 레이캐스트. 결과가 <see cref="AimPoint"/> /
+        /// <see cref="HasAimPoint"/> 로 나가고, 캐릭터 회전도 여기서 나온 값을 쓴다.
+        /// </summary>
+        private void UpdateAimPoint()
+        {
+            HasAimPoint = TryGetMouseGroundPoint(out Vector3 groundPoint);
+            AimPoint    = HasAimPoint ? groundPoint : ForwardAimPoint;
+        }
+
+        /// <summary>스폰 시점의 조준 상태. 아직 입력을 읽기 전이므로 지금 보는 방향으로 채운다.</summary>
+        private void ResetAim()
+        {
+            mLookDirection = CachedTransform.forward;
+            HasAimPoint    = false;
+            AimPoint       = ForwardAimPoint;
+        }
+
+        /// <summary>조준점 쪽으로 바라볼 방향을 갱신한다.</summary>
         private void UpdateLookDirection()
         {
-            Vector3 toMouse = GetMouseWorldPosition() - CachedTransform.position;
-            toMouse.y = 0f;
+            Vector3 toAim = AimPoint - CachedTransform.position;
+            toAim.y = 0f;
 
             // 커서가 캐릭터와 겹치면 방향이 0 에 수렴한다. 그때는 직전 방향을 유지한다.
-            if (toMouse.sqrMagnitude > MinLookSqrMagnitude)
-            {
-                mLookDirection = toMouse;
-            }
+            if (toAim.sqrMagnitude <= MinLookSqrMagnitude) return;
+
+            mLookDirection = toAim;
         }
 
         /// <summary>마우스 지면 조준점을 못 구할 때 쓰는 대체 조준점. 지금 보는 방향을 유지한다.</summary>
@@ -300,19 +334,26 @@ namespace ToyBoxNightmare
             get { return CachedTransform.position + CachedTransform.forward; }
         }
 
-        private Vector3 GetMouseWorldPosition()
+        /// <summary>
+        /// 마우스 커서 아래의 지면 좌표. 원본 <c>PlayerInputPC.MouseLocation</c> 에 해당한다.
+        /// 못 구하면 false — 호출부가 대체값을 정한다.
+        /// </summary>
+        private static bool TryGetMouseGroundPoint(out Vector3 point)
         {
+            point = Vector3.zero;
+
             Camera mainCamera = Camera.main;
-            if (mainCamera == null || Mouse.current == null) return ForwardAimPoint;
+            if (mainCamera == null || Mouse.current == null) return false;
 
             Vector2 screenPosition = Mouse.current.position.ReadValue();
             Ray     ray            = mainCamera.ScreenPointToRay(screenPosition);
             Plane   groundPlane    = new Plane(Vector3.up, Vector3.zero);
 
-            // 카메라가 지면과 평행하면 교차점이 없다. 정상적으로 일어날 수 있으므로 로그 없이 대체값.
-            if (!groundPlane.Raycast(ray, out float distance)) return ForwardAimPoint;
+            // 카메라가 지면과 평행하면 교차점이 없다. 정상적으로 일어날 수 있으므로 로그 없이 실패로 둔다.
+            if (!groundPlane.Raycast(ray, out float distance)) return false;
 
-            return ray.GetPoint(distance);
+            point = ray.GetPoint(distance);
+            return true;
         }
 
         // ─── 사망 ───
