@@ -445,7 +445,8 @@ namespace ToyBoxNightmare
             mRetargetTimer = 0f;
 
             // 추적 목적지는 발밑(트랜스폼 원점)이다. 공격 판정만 콜라이더 중심을 쓴다.
-            mAgent.SetDestination(GetDestination(player.CachedTransform.position));
+            Vector3 playerPosition = player.CachedTransform.position;
+            mAgent.SetDestination(GetDestination(playerPosition, ResolveChasePosition(playerPosition)));
         }
 
         /// <summary>
@@ -480,11 +481,28 @@ namespace ToyBoxNightmare
         /// 원본 EnemyMovement 는 정규화된 방향 벡터를 그대로 월드 목적지로 써서
         /// 모든 적이 월드 원점 근처로 몰려가는 버그가 있었다. 그건 옮기지 않는다.
         /// </summary>
-        private Vector3 GetDestination(Vector3 playerPosition)
+        private Vector3 GetDestination(Vector3 playerPosition, Vector3 chasePosition)
         {
-            if (!mDebuffs.IsFleeing) return playerPosition;
+            // 도주는 언제나 플레이어 기준이다. 냄새를 뿌린 것이 플레이어이기 때문에
+            // 아군이 소환돼 있어도 아군 쪽으로 달아나지는 않는다.
+            if (!mDebuffs.IsFleeing) return chasePosition;
 
             return GetFleeDestination(playerPosition);
+        }
+
+        /// <summary>
+        /// 지금 쫓을 좌표. 아군이 소환돼 있으면 아군이고, 아니면 플레이어다.
+        ///
+        /// 원본 EnemyMovement 도 <c>GameManager.EnemyTarget</c> 을 0.5초마다 <b>폴링</b>했다.
+        /// 이벤트로 바꾸지 않는다 — 소환 직후 적이 한 박자 늦게 방향을 트는 그 지연이
+        /// 원본의 손맛이다.
+        /// </summary>
+        private static Vector3 ResolveChasePosition(Vector3 playerPosition)
+        {
+            SurvivalGame game = SurvivalGame.Instance;
+            if (game == null) return playerPosition;
+
+            return game.GetChaseTargetPosition(playerPosition);
         }
 
         /// <summary>플레이어 반대편으로 FleeDistance 만큼 떨어진, NavMesh 위의 지점.</summary>

@@ -1072,3 +1072,8 @@ MonoBehaviour:
     mInstanceCapacity: 32
     mInstanceExpireTime: 60
     mInstancePriority: 0
+  - mName: Ally
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 2
+    mInstanceExpireTime: 60
+    mInstancePriority: 0

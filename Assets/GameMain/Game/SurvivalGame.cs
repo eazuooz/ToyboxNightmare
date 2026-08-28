@@ -1,5 +1,6 @@
 using GameFramework.Event;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityGameFramework.Runtime;
 
 namespace ToyBoxNightmare
@@ -31,6 +32,9 @@ namespace ToyBoxNightmare
 
         // ─── 런타임 상태 ───
         private Player            mPlayer     = null;
+
+        /// <summary>아군 소환 경제. 판 단위 상태라 게임 객체가 소유한다.</summary>
+        private readonly AllySquad mAllySquad = new AllySquad();
         private PlayerSelectLogic mGirlSelect = null;
         private PlayerSelectLogic mBoySelect  = null;
 
@@ -95,6 +99,19 @@ namespace ToyBoxNightmare
             mBoySelect  = null;
 
             mSpawner.Reset();
+            mAllySquad.Reset();
+        }
+
+        /// <summary>
+        /// 적이 쫓아야 할 좌표. 아군이 소환돼 있으면 아군, 아니면 넘겨받은 기본값(플레이어)이다.
+        ///
+        /// 원본 <c>GameManager.EnemyTarget</c> 을 대신한다. Transform 을 그대로 넘기지 않는 이유는
+        /// 엔티티가 풀에서 재사용되기 때문이다 — 회수된 아군의 Transform 을 적이 계속 물고 있으면
+        /// 다음에 그 인스턴스가 다른 용도로 살아났을 때 엉뚱한 곳으로 몰려간다.
+        /// </summary>
+        public Vector3 GetChaseTargetPosition(Vector3 fallback)
+        {
+            return mAllySquad.GetLurePosition(fallback);
         }
 
         private void SubscribeEvents()
@@ -152,17 +169,40 @@ namespace ToyBoxNightmare
 
             mGameTime += elapseSeconds;
 
+            ReadAllySummonInput();
+
+            mAllySquad.OnUpdate(elapseSeconds);
             mSpawner.OnUpdate(elapseSeconds);
         }
 
         // ─── 점수 ───
 
-        /// <summary>점수를 더하고 ScoreChanged 를 발행한다.</summary>
+        /// <summary>
+        /// 아군 소환 입력. 원본 InputManager 의 SummonAlly 축이 숫자 1 이다.
+        /// 무기 전환(Tab)·발사(좌클릭)와 겹치지 않는다.
+        /// </summary>
+        private void ReadAllySummonInput()
+        {
+            // 키보드가 없을 수 있다(패드만 연결된 경우 등).
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null || !keyboard.digit1Key.wasPressedThisFrame) return;
+
+            Player player = Player;
+            if (player == null) return;
+
+            // 원본은 소환 시점의 플레이어 위치를 목적지로 준다. 아군은 그리로 한 번 걸어갈 뿐이다.
+            mAllySquad.TrySummon(player.CachedTransform.position);
+        }
+
+        /// <summary>점수를 더하고 ScoreChanged 를 발행한다. 같은 양이 아군 소환 포인트로도 쌓인다.</summary>
         public void AddScore(int delta)
         {
             if (delta == 0) return;
 
             Score += delta;
+
+            // 점수는 곧 소환 포인트다(원본 GameManager.AddScore 가 allyManager.AddPoints 를 부른다).
+            mAllySquad.AddPoints(delta);
 
             EventComponent events = RequireEventComponent();
             if (events == null)
@@ -318,6 +358,12 @@ namespace ToyBoxNightmare
             if (ne.EntityLogicType == typeof(PlayerSelectLogic))
             {
                 CacheSelectCharacter(ne.Entity);
+                return;
+            }
+
+            if (ne.EntityLogicType == typeof(Ally))
+            {
+                mAllySquad.CacheAlly(ne.Entity);
                 return;
             }
 

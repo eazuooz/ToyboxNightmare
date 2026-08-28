@@ -113,11 +113,8 @@ namespace ToyBoxNightmare
                 mHealthSlider.value = mHealthSlider.maxValue;
             }
 
-            // 아군 시스템은 M5 다. 그때까지 아이콘을 숨겨 둔다.
-            if (mAllyButton != null)
-            {
-                mAllyButton.SetActive(false);
-            }
+            // 아이콘은 소환 가능해질 때만 켠다. 판 시작 시점에는 포인트가 0 이라 항상 꺼진 상태다.
+            SetAllyButtonVisible(false);
         }
 
         // ─── 이벤트 구독 ───
@@ -140,6 +137,7 @@ namespace ToyBoxNightmare
             events.Subscribe(PlayerHealthChangedEventArgs.EventId,   OnPlayerHealthChanged);
             events.Subscribe(WeaponCooldownStartedEventArgs.EventId, OnWeaponCooldownStarted);
             events.Subscribe(PlayerDiedEventArgs.EventId,            OnPlayerDied);
+            events.Subscribe(AllyAvailabilityChangedEventArgs.EventId, OnAllyAvailabilityChanged);
 
             mSubscribed = true;
         }
@@ -159,6 +157,7 @@ namespace ToyBoxNightmare
             events.Unsubscribe(PlayerHealthChangedEventArgs.EventId,   OnPlayerHealthChanged);
             events.Unsubscribe(WeaponCooldownStartedEventArgs.EventId, OnWeaponCooldownStarted);
             events.Unsubscribe(PlayerDiedEventArgs.EventId,            OnPlayerDied);
+            events.Unsubscribe(AllyAvailabilityChangedEventArgs.EventId, OnAllyAvailabilityChanged);
         }
 
         // ─── 핸들러 ───
@@ -221,6 +220,27 @@ namespace ToyBoxNightmare
             if (mCountdown == null) return;
 
             mCountdown.BeginCountdown(ne.Cooldown);
+        }
+
+        /// <summary>소환 가부가 뒤집힐 때만 온다. 매 점수마다 오지 않는다.</summary>
+        private void OnAllyAvailabilityChanged(object sender, GameEventArgs e)
+        {
+            AllyAvailabilityChangedEventArgs ne = e as AllyAvailabilityChangedEventArgs;
+            if (ne == null)
+            {
+                GameAssert.Unreachable("HUDForm: AllyAvailabilityChanged 핸들러에 다른 타입이 들어왔다.");
+                return;
+            }
+
+            SetAllyButtonVisible(ne.CanSummon);
+        }
+
+        private void SetAllyButtonVisible(bool visible)
+        {
+            if (mAllyButton == null) return;
+            if (mAllyButton.activeSelf == visible) return;
+
+            mAllyButton.SetActive(visible);
         }
 
         private void OnPlayerDied(object sender, GameEventArgs e)
