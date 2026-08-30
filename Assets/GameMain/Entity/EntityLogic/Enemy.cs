@@ -550,7 +550,15 @@ namespace ToyBoxNightmare
             {
                 mHitParticles.Play();
             }
+
+            GameSound.PlaySfx(SoundTable.GetEnemyHurtSound(AssetName), CachedTransform.position);
         }
+
+        /// <summary>
+        /// 사운드 주소를 고르는 데 쓰는 종 이름. Addressables 주소와 같다("Zombunny" 등).
+        /// 프리팹에 EntityLogic 이 baked 된 인스턴스는 Entity 가 null 이므로 빈 문자열이 된다.
+        /// </summary>
+        private string AssetName => Entity != null ? Entity.EntityAssetName : string.Empty;
 
         /// <summary>플레이어가 죽으면 승리 연출로 전환한다. 적 애니메이터의 PlayerDead 트리거.</summary>
         private void NotifyPlayerDead()
@@ -573,6 +581,8 @@ namespace ToyBoxNightmare
 
             mDeathPhase = DeathPhase.Dying;
             mDeathTimer = 0f;
+
+            GameSound.PlaySfx(SoundTable.GetEnemyDeathSound(AssetName), CachedTransform.position);
 
             // 침하 중에 에이전트가 Y 를 NavMesh 높이로 되끌어올리므로 먼저 끈다.
             DisableAgent();

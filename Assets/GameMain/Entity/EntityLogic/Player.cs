@@ -308,7 +308,7 @@ namespace ToyBoxNightmare
         /// </summary>
         private void UpdateAimPoint()
         {
-            HasAimPoint = TryGetMouseGroundPoint(out Vector3 groundPoint);
+            HasAimPoint = MouseGround.TryGetGroundPoint(out Vector3 groundPoint);
             AimPoint    = HasAimPoint ? groundPoint : ForwardAimPoint;
         }
 
@@ -338,35 +338,16 @@ namespace ToyBoxNightmare
             get { return CachedTransform.position + CachedTransform.forward; }
         }
 
-        /// <summary>
-        /// 마우스 커서 아래의 지면 좌표. 원본 <c>PlayerInputPC.MouseLocation</c> 에 해당한다.
-        /// 못 구하면 false — 호출부가 대체값을 정한다.
-        /// </summary>
-        private static bool TryGetMouseGroundPoint(out Vector3 point)
-        {
-            point = Vector3.zero;
-
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null || Mouse.current == null) return false;
-
-            Vector2 screenPosition = Mouse.current.position.ReadValue();
-            Ray     ray            = mainCamera.ScreenPointToRay(screenPosition);
-            Plane   groundPlane    = new Plane(Vector3.up, Vector3.zero);
-
-            // 카메라가 지면과 평행하면 교차점이 없다. 정상적으로 일어날 수 있으므로 로그 없이 실패로 둔다.
-            if (!groundPlane.Raycast(ray, out float distance)) return false;
-
-            point = ray.GetPoint(distance);
-            return true;
-        }
-
         // ─── 사망 ───
 
-        /// <summary>
-        /// 주의: <c>base.OnDead</c> 를 부르지 않는다. base 는 즉시 SafeHide 하므로
-        /// 사망 연출이 통째로 생략되고, 연출 종료 시점의 Hide 와 겹쳐 중복이 된다.
-        /// 회수는 <see cref="OnUpdate"/> 의 사망 타이머가 담당한다.
-        /// </summary>
+        /// <summary>피격음. 사망 여부와 무관하게 매 피격 울린다(원본 PlayerHealth 와 같다).</summary>
+        protected override void OnDamaged(Entity attacker, int damageHitPoints)
+        {
+            base.OnDamaged(attacker, damageHitPoints);
+
+            GameSound.PlaySfx(SoundTable.PlayerHurt, CenterPosition);
+        }
+
         /// <summary>
         /// 체력이 줄어들 때마다 HUD 에 알린다. 피격 플래시도 HUD 가 이 값으로 판단한다.
         /// </summary>
@@ -388,6 +369,11 @@ namespace ToyBoxNightmare
             events.Fire(this, PlayerHealthChangedEventArgs.Create(fromRatio, toRatio));
         }
 
+        /// <summary>
+        /// 주의: <c>base.OnDead</c> 를 부르지 않는다. base 는 즉시 SafeHide 하므로
+        /// 사망 연출이 통째로 생략되고, 연출 종료 시점의 Hide 와 겹쳐 중복이 된다.
+        /// 회수는 <see cref="OnUpdate"/> 의 사망 타이머가 담당한다.
+        /// </summary>
         protected override void OnDead(Entity attacker)
         {
             GameAssert.IsTrue(IsDead, "OnDead 는 체력이 0 이하가 된 뒤에만 호출되어야 한다.");
@@ -396,6 +382,8 @@ namespace ToyBoxNightmare
 
             mDying      = true;
             mDeathTimer = 0f;
+
+            GameSound.PlaySfx(SoundTable.PlayerDeath, CenterPosition);
 
             // 사망 후에는 OnUpdate 가 무기를 굴리지 않으므로 여기서 확실히 끈다.
             // 안 그러면 총구 VFX 와 타겟 마커가 시체 위에 남는다.

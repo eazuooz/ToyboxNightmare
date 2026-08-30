@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Prefabs
   m_GUID: 25ee535a9b27ca448be584bd3f479a0b
   m_SerializeEntries:
+  - m_GUID: 02e6208ec76314158a9f548f51fe9f11
+    m_Address: ZomBunnyHurt
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 08e54000e23d1461a96002c851a10746
     m_Address: Clown
     m_ReadOnly: 0
@@ -38,6 +43,16 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d3bfb9269f136947bf8ac164cace1ff
+    m_Address: ZomBunnyDeath
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d4840678e677424b8921716c72397ea
+    m_Address: ZomBearHurt
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1fb0e090cfb7b8446b85723a386f35fc
     m_Address: Zombunny
     m_ReadOnly: 0
@@ -60,17 +75,32 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62366b8d2c37a49dca550841c741317f
+    m_Address: ZomBearDeath
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 66a5b91494d6fee428652fa1e1e92808
     m_Address: Sheep
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c615fd0429f34edf85539d70279360d
+    m_Address: HellephantDeath
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 92ded722f3c255941bf29330e44bd9a8
     m_Address: Girl
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9922a12f34d0a084aab32de985459723
+    m_Address: PlayerHurt
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b55565c8cc274484980c4f9ef6c83573
     m_Address: ZombieDuck
@@ -89,6 +119,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d36a393bca4582043982db9089e1694f
+    m_Address: PlayerDeath
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: da206bf54c0714d40b528c133f3168b7
     m_Address: LightningHit
     m_ReadOnly: 0
@@ -104,6 +139,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fce027b40770a44298a6f5a4233bfb04
+    m_Address: HellephantHurt
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 8a881bbf8abeb2c4eb397cdf894d98c1, type: 2}
