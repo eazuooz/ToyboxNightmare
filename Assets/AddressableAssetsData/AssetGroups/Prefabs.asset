@@ -86,6 +86,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 68a1b944c2b6bcb48bc38a12bf276a76
+    m_Address: PauseMenuForm
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8c615fd0429f34edf85539d70279360d
     m_Address: HellephantDeath
     m_ReadOnly: 0

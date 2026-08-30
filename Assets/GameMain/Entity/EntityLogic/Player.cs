@@ -209,6 +209,15 @@ namespace ToyBoxNightmare
 
             if (IsDead) return;
 
+            // 일시정지 중에는 입력을 읽지 않는다. timeScale 0 이어도 OnUpdate 자체는 계속
+            // 불리므로(elapseSeconds 만 0 이 된다) 이 검사가 없으면 메뉴를 띄운 채 사격이 나간다.
+            // 이동 방향도 비워야 재개 순간 직전 입력으로 튀어나가지 않는다.
+            if (GamePause.IsPaused)
+            {
+                mMoveDirection = Vector3.zero;
+                return;
+            }
+
             // 조준점 → 이동 입력 → 무기 순서다. 무기가 이번 프레임의 조준점을 그대로 쓴다.
             ReadInput();
             mWeaponLoadout.ReadSwitchInput();

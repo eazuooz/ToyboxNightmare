@@ -183,6 +183,8 @@ namespace ToyBoxNightmare
         /// </summary>
         private void ReadAllySummonInput()
         {
+            if (GamePause.IsPaused) return;
+
             // 키보드가 없을 수 있다(패드만 연결된 경우 등).
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.digit1Key.wasPressedThisFrame) return;

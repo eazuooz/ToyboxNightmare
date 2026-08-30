@@ -15,7 +15,7 @@ namespace ToyBoxNightmare
 
             Log.Info("ProcedureMain: Enter");
 
-            OpenHud();
+            OpenForms();
 
             mGame = new SurvivalGame();
             mGame.Initialize();
@@ -26,19 +26,25 @@ namespace ToyBoxNightmare
         /// 여기서 OnLeave 에 닫으면 게임오버로 전이하는 순간 "Game Over!" 문구가 함께 사라진다.
         /// 한 판마다 Main 진입에서 열고 GameOver 이탈에서 닫아 짝이 맞는다.
         /// </summary>
-        private void OpenHud()
+        private void OpenForms()
         {
             UIComponent ui = GameEntry.GetComponent<UIComponent>();
             if (ui == null)
             {
-                Log.Error("ProcedureMain: UIComponent 가 없다. HUD 없이 진행한다.");
+                Log.Error("ProcedureMain: UIComponent 가 없다. UI 없이 진행한다.");
                 return;
             }
 
-            // 재진입 방어. 이미 떠 있으면 두 번 열지 않는다.
-            if (ui.HasUIForm(UITable.HudForm)) return;
+            OpenOnce(ui, UITable.HudForm);
+            OpenOnce(ui, UITable.PauseMenuForm);
+        }
 
-            ui.OpenUIForm(UITable.HudForm, UITable.DefaultGroup);
+        /// <summary>이미 떠 있으면 두 번 열지 않는다(프로시저 재진입 방어).</summary>
+        private static void OpenOnce(UIComponent ui, string assetName)
+        {
+            if (ui.HasUIForm(assetName)) return;
+
+            ui.OpenUIForm(assetName, UITable.DefaultGroup);
         }
 
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)

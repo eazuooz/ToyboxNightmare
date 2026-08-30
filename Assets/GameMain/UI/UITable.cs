@@ -18,5 +18,15 @@ namespace ToyBoxNightmare
         /// (CLAUDE.md 의 Addressables 규약 — 주소와 코드 문자열이 정확히 같아야 한다).
         /// </summary>
         public const string HudForm = "HUDForm";
+
+        /// <summary>
+        /// 일시정지 폼의 Addressables 주소.
+        ///
+        /// HUD 와 <b>같은 그룹</b>에 넣는다. 겹치는 순서는 UI 그룹 depth 가 아니라
+        /// 각 폼 Canvas 의 sortingOrder 로 정한다 — 두 폼 모두 자기 Canvas(Screen Space Overlay)를
+        /// 들고 있어서 그쪽이 실제로 렌더 순서를 결정하기 때문이다.
+        /// (게다가 <c>DefaultUIGroupHelper.SetDepth</c> 는 빈 구현이라 그룹 depth 가 아무 일도 하지 않는다.)
+        /// </summary>
+        public const string PauseMenuForm = "PauseMenuForm";
     }
 }

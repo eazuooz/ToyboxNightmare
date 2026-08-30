@@ -43,7 +43,13 @@ namespace ToyBoxNightmare
             UIComponent ui = GameEntry.GetComponent<UIComponent>();
             if (ui == null) return;
 
-            UIForm form = ui.GetUIForm(UITable.HudForm);
+            CloseIfOpen(ui, UITable.HudForm);
+            CloseIfOpen(ui, UITable.PauseMenuForm);
+        }
+
+        private static void CloseIfOpen(UIComponent ui, string assetName)
+        {
+            UIForm form = ui.GetUIForm(assetName);
             if (form == null) return;
 
             ui.CloseUIForm(form);
@@ -61,6 +67,10 @@ namespace ToyBoxNightmare
         /// <summary>재시작 키(R)가 이번 프레임에 눌렸는가.</summary>
         private static bool IsRestartRequested()
         {
+            // 일시정지 중에는 재시작을 받지 않는다. 메뉴를 띄운 채 R 이 눌리면
+            // timeScale 0 인 상태로 새 판이 시작된다.
+            if (GamePause.IsPaused) return false;
+
             // 키보드가 연결돼 있지 않으면 Keyboard.current 가 null 이다(패드만 꽂힌 경우 등).
             Keyboard keyboard = Keyboard.current;
 
