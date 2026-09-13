@@ -7,6 +7,9 @@ namespace ToyBoxNightmare
     {
         private SurvivalGame mGame = null;
 
+        /// <summary>UI 실패 이벤트를 구독 중인가. 구독/해지 짝을 보장한다.</summary>
+        private bool mSubscribedUIFailure = false;
+
         public override bool UseNativeDialog => false;
 
         protected override void OnEnter(ProcedureOwner procedureOwner)
@@ -15,6 +18,8 @@ namespace ToyBoxNightmare
 
             Log.Info("ProcedureMain: Enter");
 
+            // 구독이 먼저다. OpenUIForm 은 비동기라 실패 통지가 이 아래 호출 도중에도 올 수 있다.
+            SubscribeUIFailure();
             OpenForms();
 
             mGame = new SurvivalGame();
@@ -47,6 +52,51 @@ namespace ToyBoxNightmare
             ui.OpenUIForm(assetName, UITable.DefaultGroup);
         }
 
+        /// <summary>
+        /// UI 열기 실패를 잡는다. <c>OpenUIForm</c> 은 비동기 fire-and-forget 이라
+        /// Addressables 주소가 어긋나면 <b>아무 로그도 없이 폼이 영영 뜨지 않는다.</b>
+        /// 엔티티 쪽(<c>ShowEntityFailure</c>)과 같은 대비를 UI 에도 둔다.
+        /// </summary>
+        private void SubscribeUIFailure()
+        {
+            EventComponent events = GameEntry.GetComponent<EventComponent>();
+            if (events == null)
+            {
+                Log.Error("ProcedureMain: EventComponent 가 없다. UI 열기 실패를 감지하지 못한다.");
+                return;
+            }
+
+            events.Subscribe(OpenUIFormFailureEventArgs.EventId, OnOpenUIFormFailure);
+            mSubscribedUIFailure = true;
+        }
+
+        /// <summary>구독한 적이 있을 때만 해지한다. 미등록 핸들러 해지는 코어에서 즉시 예외다.</summary>
+        private void UnsubscribeUIFailure()
+        {
+            if (!mSubscribedUIFailure) return;
+
+            mSubscribedUIFailure = false;
+
+            // 종료 순서에 따라 EventComponent 가 먼저 파괴돼 있을 수 있다.
+            EventComponent events = GameEntry.GetComponent<EventComponent>();
+            if (events == null) return;
+
+            events.Unsubscribe(OpenUIFormFailureEventArgs.EventId, OnOpenUIFormFailure);
+        }
+
+        private void OnOpenUIFormFailure(object sender, GameFramework.Event.GameEventArgs e)
+        {
+            OpenUIFormFailureEventArgs ne = e as OpenUIFormFailureEventArgs;
+            if (ne == null)
+            {
+                GameAssert.Unreachable("ProcedureMain: OpenUIFormFailure 핸들러에 다른 타입이 들어왔다.");
+                return;
+            }
+
+            Log.Error("UI 폼 '{0}'(그룹 {1}) 열기 실패: {2} — Addressables 주소와 UITable 문자열이 같은지 확인할 것.",
+                ne.UIFormAssetName, ne.UIGroupName, ne.ErrorMessage);
+        }
+
         protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
@@ -74,6 +124,8 @@ namespace ToyBoxNightmare
 
             mGame?.Shutdown();
             mGame = null;
+
+            UnsubscribeUIFailure();
 
             base.OnLeave(procedureOwner, isShutdown);
         }

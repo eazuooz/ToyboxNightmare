@@ -1,3 +1,4 @@
+using GameFramework.Fsm;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityGameFramework.Runtime;
@@ -38,6 +39,14 @@ namespace ToyBoxNightmare
 
         /// <summary>장착 무기 묶음. 수명은 이 로직 인스턴스와 같다 — <see cref="OnInit"/> 에서 만든다.</summary>
         private WeaponLoadout mWeaponLoadout = null;
+
+        // ─── 상태 기계 ───
+        // 살아있음 / 일시정지 / 사망연출 세 상태를 GameFramework FSM 으로 돌린다.
+        // 상태는 무상태라 인스턴스를 풀 재사용 사이에 그대로 돌려쓴다(OnInit 에서 1회 생성).
+        // FSM 자체는 스폰마다 만들고 회수마다 부순다 — 회수된 엔티티의 상태가 계속 돌면 안 된다.
+
+        private IFsm<Player>       mFsm    = null;
+        private FsmState<Player>[] mStates = null;
 
         // 사망 연출
         private bool  mDying         = false;
@@ -83,6 +92,15 @@ namespace ToyBoxNightmare
             // 여기서 만든다 — <c>Entity.cs:86-96</c> 이 "풀에서 꺼낸 로직 타입이 같으면 OnInit 없이
             // 재사용" 이라 OnInit 은 로직 인스턴스당 정확히 한 번만 돈다.
             mWeaponLoadout = new WeaponLoadout(this);
+
+            // 상태 인스턴스도 여기서 한 번만 만든다. 상태가 값을 전부 fsm.Owner 에서 읽으므로
+            // 스폰마다 다시 만들 이유가 없고, 그만큼 스폰당 할당이 줄어든다.
+            mStates = new FsmState<Player>[]
+            {
+                new PlayerAliveState(),
+                new PlayerPausedState(),
+                new PlayerDyingState(),
+            };
 
             mRigidbody = GetComponent<Rigidbody>();
             // includeInactive: true 가 필수다. 이 캐릭터 GameObject 는 선택화면
@@ -147,6 +165,45 @@ namespace ToyBoxNightmare
             // 스폰 통보. OnHitPointChanged 는 비율이 **줄어들 때만** 오므로
             // 이것 없이는 HUD 가 새 판의 만피를 알 방법이 없다(이전 판 값을 물고 있게 된다).
             FireHealthChanged(HitPointRatio, HitPointRatio);
+
+            // 상태 기계는 **맨 마지막**에 세운다. 상태가 OnEnter 에서 소유자 값을 읽기 때문이다.
+            CreateStateMachine();
+        }
+
+        /// <summary>
+        /// FSM 이름. 코어는 (소유자 타입, 이름) 으로 FSM 을 식별하므로
+        /// 인스턴스마다 달라야 한다. 엔티티 Id 가 그 조건을 만족한다.
+        /// </summary>
+        private string FsmName
+        {
+            get { return Entity != null ? Entity.Id.ToString() : GetInstanceID().ToString(); }
+        }
+
+        private void CreateStateMachine()
+        {
+            FsmComponent fsmComponent = GameEntry.GetComponent<FsmComponent>();
+            if (fsmComponent == null)
+            {
+                Log.Error("Player: FsmComponent 가 없다. 입력도 사망 연출도 돌지 않는다.");
+                return;
+            }
+
+            mFsm = fsmComponent.CreateFsm(FsmName, this, mStates);
+            mFsm.Start<PlayerAliveState>();
+        }
+
+        /// <summary>멱등하다. 이미 부쉈거나 프레임워크가 먼저 내려갔으면 조용히 넘어간다.</summary>
+        private void DestroyStateMachine()
+        {
+            if (mFsm == null) return;
+
+            FsmComponent fsmComponent = GameEntry.GetComponent<FsmComponent>();
+            if (fsmComponent != null)
+            {
+                fsmComponent.DestroyFsm(mFsm);
+            }
+
+            mFsm = null;
         }
 
         /// <summary>
@@ -176,6 +233,9 @@ namespace ToyBoxNightmare
 
         protected internal override void OnHide(bool isShutdown, object userData)
         {
+            // 가장 먼저 부순다. 회수된 엔티티의 상태가 계속 도는 것을 막는다.
+            DestroyStateMachine();
+
             mWeaponLoadout.Shutdown();
             mWeaponLoadout.Dispose();
 
@@ -197,38 +257,44 @@ namespace ToyBoxNightmare
             base.OnHide(isShutdown, userData);
         }
 
+        /// <summary>
+        /// 프레임 갱신은 전부 FSM 상태가 한다(FsmManager 가 이것보다 먼저 돈다).
+        /// 여기에 로직을 다시 넣으면 상태 밖에 숨은 분기가 생기므로 그러지 말 것.
+        /// </summary>
         protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
+        }
 
-            if (mDying)
-            {
-                UpdateDeathSequence(elapseSeconds);
-                return;
-            }
+        // ─── 상태가 쓰는 창구 ───
+        // 상태는 소유자의 private 필드를 볼 수 없다. 필요한 것만 여기로 연다.
 
-            if (IsDead) return;
+        /// <summary>사망 연출이 시작됐는가. 모든 상태가 이것을 보고 사망 상태로 넘어간다.</summary>
+        internal bool IsDeathSequenceRunning
+        {
+            get { return mDying; }
+        }
 
-            // 일시정지 중에는 입력을 읽지 않는다. timeScale 0 이어도 OnUpdate 자체는 계속
-            // 불리므로(elapseSeconds 만 0 이 된다) 이 검사가 없으면 메뉴를 띄운 채 사격이 나간다.
-            // 이동 방향도 비워야 재개 순간 직전 입력으로 튀어나가지 않는다.
-            if (GamePause.IsPaused)
-            {
-                mMoveDirection = Vector3.zero;
-                return;
-            }
-
-            // 조준점 → 이동 입력 → 무기 순서다. 무기가 이번 프레임의 조준점을 그대로 쓴다.
+        /// <summary>살아있는 동안의 한 프레임. 조준점 → 이동 입력 → 무기 순서다.</summary>
+        internal void TickAliveInput()
+        {
+            // 무기가 이번 프레임의 조준점을 그대로 쓰므로 순서를 바꾸지 말 것.
             ReadInput();
             mWeaponLoadout.ReadSwitchInput();
             mWeaponLoadout.OnUpdate();
         }
 
+        /// <summary>이동 입력을 비운다. FixedUpdate 는 계속 돌기 때문에 정지 진입 시 필요하다.</summary>
+        internal void ClearMoveInput()
+        {
+            mMoveDirection = Vector3.zero;
+        }
+
         /// <summary>
-        /// 즉시 사라지지 않고 사망 애니메이션이 보일 시간을 준다.
+        /// 사망 연출 한 프레임. 즉시 사라지지 않고 사망 애니메이션이 보일 시간을 준다.
         /// 이 타이머가 <see cref="OnDead"/> 대신 회수(Hide)를 담당한다.
         /// </summary>
-        private void UpdateDeathSequence(float elapseSeconds)
+        internal void TickDeathSequence(float elapseSeconds)
         {
             mDeathTimer += elapseSeconds;
             if (mDeathTimer < DeathDelay) return;

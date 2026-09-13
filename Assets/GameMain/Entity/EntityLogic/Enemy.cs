@@ -1,3 +1,4 @@
+using GameFramework.Fsm;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityGameFramework.Runtime;
@@ -10,17 +11,6 @@ namespace ToyBoxNightmare
     /// </summary>
     public class Enemy : TargetableObject
     {
-        /// <summary>
-        /// 사망 연출 단계. Alive → Dying(쓰러지는 중) → Sinking(바닥으로 침하 중) 한 방향으로만 간다.
-        /// bool 두 개(죽는 중/가라앉는 중)로 두면 "가라앉는데 죽지는 않은" 불가능한 조합이 표현된다.
-        /// </summary>
-        private enum DeathPhase
-        {
-            Alive,
-            Dying,
-            Sinking,
-        }
-
         // ─── 튜닝 상수 ───
 
         private const float FleeDistance = 10f; // 원본 runAwayDistance
@@ -80,9 +70,17 @@ namespace ToyBoxNightmare
         private float mRetargetTimer   = 0f;
         private float mSpeedMultiplier = 1f;
 
-        // 사망 연출 상태
-        private DeathPhase mDeathPhase = DeathPhase.Alive;
-        private float      mDeathTimer = 0f;
+        // 사망 연출 상태.
+        // 단계(쓰러짐 → 침하) 자체는 FSM 상태가 들고, 여기에는 상태가 폴링할 조건만 남는다.
+        private bool  mDeathRequested = false;
+        private bool  mSinkRequested  = false;
+        private float mDeathTimer     = 0f;
+
+        // ─── 상태 기계 ───
+        // 추격 / 대기 / 쓰러짐 / 침하 네 상태를 GameFramework FSM 으로 돌린다.
+        // 상태는 무상태라 인스턴스를 풀 재사용 사이에 그대로 돌려쓴다(OnInit 에서 1회 생성).
+        private IFsm<Enemy>       mFsm    = null;
+        private FsmState<Enemy>[] mStates = null;
 
         // 플레이어 사망 연출을 한 번만 재생하기 위한 플래그
         private bool mPlayerDeadNotified = false;
@@ -150,7 +148,7 @@ namespace ToyBoxNightmare
         /// 사망 연출에 들어갔는지. 쓰러지는 중과 침하 중을 모두 포함한다.
         /// <see cref="EnemyDebuffs"/> 가 "죽는 중이면 디버프 전량 해제" 판정에 쓰므로 internal 이다.
         /// </summary>
-        internal bool IsDying => mDeathPhase != DeathPhase.Alive;
+        internal bool IsDying => mDeathRequested;
 
         /// <summary>
         /// NavMeshAgent 에 명령을 내려도 되는 상태인지.
@@ -231,6 +229,16 @@ namespace ToyBoxNightmare
 
             // 인스턴스당 1회. OnShow/OnUpdate 보다 반드시 먼저 도므로 이후 경로에서는 항상 유효하다.
             mDebuffs = new EnemyDebuffs(this);
+
+            // 상태 인스턴스도 여기서 한 번만 만든다. 상태가 값을 전부 fsm.Owner 에서 읽으므로
+            // 스폰마다 다시 만들 이유가 없다 — 적은 계속 스폰되므로 그만큼 할당이 줄어든다.
+            mStates = new FsmState<Enemy>[]
+            {
+                new EnemyChaseState(),
+                new EnemyIdleState(),
+                new EnemyDyingState(),
+                new EnemySinkingState(),
+            };
 
             mAgent     = GetComponent<NavMeshAgent>();
             // includeInactive: true 가 필수다. EntityLogic.OnHide 가 SetActive(false) 로 회수하는데
@@ -334,6 +342,44 @@ namespace ToyBoxNightmare
 
             CachedTransform.rotation = mEnemyData.Rotation;
             PlaceOnNavMesh(mEnemyData.Position, mEnemyData.Stats);
+
+            // 상태 기계는 **맨 마지막**에 세운다. 상태가 소유자 값을 바로 읽기 때문이다.
+            CreateStateMachine();
+        }
+
+        /// <summary>
+        /// FSM 이름. 코어는 (소유자 타입, 이름) 으로 식별하므로 인스턴스마다 달라야 한다.
+        /// </summary>
+        private string FsmName
+        {
+            get { return Entity != null ? Entity.Id.ToString() : GetInstanceID().ToString(); }
+        }
+
+        private void CreateStateMachine()
+        {
+            FsmComponent fsmComponent = GameEntry.GetComponent<FsmComponent>();
+            if (fsmComponent == null)
+            {
+                Log.Error("Enemy: FsmComponent 가 없다. 추격도 사망 연출도 돌지 않는다.");
+                return;
+            }
+
+            mFsm = fsmComponent.CreateFsm(FsmName, this, mStates);
+            mFsm.Start<EnemyChaseState>();
+        }
+
+        /// <summary>멱등하다. 이미 부쉈거나 프레임워크가 먼저 내려갔으면 조용히 넘어간다.</summary>
+        private void DestroyStateMachine()
+        {
+            if (mFsm == null) return;
+
+            FsmComponent fsmComponent = GameEntry.GetComponent<FsmComponent>();
+            if (fsmComponent != null)
+            {
+                fsmComponent.DestroyFsm(mFsm);
+            }
+
+            mFsm = null;
         }
 
         /// <summary>풀에서 재사용되므로 이전 판의 상태를 전부 되돌린다.</summary>
@@ -341,7 +387,8 @@ namespace ToyBoxNightmare
         {
             mAttackTimer        = 0f;
             mSpeedMultiplier    = 1f;
-            mDeathPhase         = DeathPhase.Alive;
+            mDeathRequested     = false;
+            mSinkRequested      = false;
             mDeathTimer         = 0f;
             mPlayerDeadNotified = false;
 
@@ -379,6 +426,9 @@ namespace ToyBoxNightmare
 
         protected internal override void OnHide(bool isShutdown, object userData)
         {
+            // 가장 먼저 부순다. 회수된 엔티티의 상태가 계속 도는 것을 막는다.
+            DestroyStateMachine();
+
             DisableAgent();
 
             // 데이터는 base 체인 끝(EntityLogicBase)에서 ReferencePool 로 반납된다.
@@ -391,40 +441,31 @@ namespace ToyBoxNightmare
 
         // ─── 이동 / 공격 ───
 
+        /// <summary>
+        /// 프레임 갱신은 전부 FSM 상태가 한다(FsmManager 가 이것보다 먼저 돈다).
+        /// 여기에 로직을 다시 넣으면 상태 밖에 숨은 분기가 생기므로 그러지 말 것.
+        /// </summary>
         protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
+        }
 
-            if (mEnemyData == null || IsHiding) return;
+        // ─── 상태가 쓰는 창구 ───
 
-            // 사망 연출 중에도, 플레이어가 죽은 뒤에도 디버프 타이머는 돌아야 한다.
-            // 아래 early-return 뒤에 두면 플레이어 사망 순간 빙결이 영구화된다.
+        /// <summary>상태를 굴려도 되는가. 데이터 없이 떴거나 회수 요청이 나갔으면 아니다.</summary>
+        internal bool CanRunStates
+        {
+            get { return mEnemyData != null && !IsHiding; }
+        }
+
+        /// <summary>
+        /// 디버프 타이머. <b>모든 상태에서 먼저 돌아야 한다</b> —
+        /// 사망 연출 중에도, 플레이어가 죽은 뒤에도. 상태별 분기 뒤로 미루면
+        /// 플레이어 사망 순간 빙결이 영구화된다.
+        /// </summary>
+        internal void TickDebuffs(float elapseSeconds)
+        {
             mDebuffs.OnUpdate(elapseSeconds);
-
-            if (IsDying)
-            {
-                UpdateDeath(elapseSeconds);
-                return;
-            }
-
-            Player player = Player.Instance;
-
-            bool isPlayerSpawned = player != null && player.Available;
-            if (!isPlayerSpawned)
-            {
-                StopMoving();
-                return;
-            }
-
-            if (player.IsDead)
-            {
-                StopMoving();
-                NotifyPlayerDead();
-                return;
-            }
-
-            UpdateChase(player, elapseSeconds);
-            UpdateAttack(player, elapseSeconds);
         }
 
         /// <summary>
@@ -432,7 +473,7 @@ namespace ToyBoxNightmare
         /// 원본 EnemyMovement 는 코루틴으로 같은 주기를 돌되 첫 SetDestination 은
         /// 즉시 나가므로, OnShow 에서 타이머를 임계값으로 채워 그 의미를 맞췄다.
         /// </summary>
-        private void UpdateChase(Player player, float elapseSeconds)
+        internal void TickChase(Player player, float elapseSeconds)
         {
             if (!IsAgentReady) return;
 
@@ -455,7 +496,7 @@ namespace ToyBoxNightmare
         /// 그래서 첫 타격은 접촉 후 0~간격 사이의 임의 시점에 나간다.
         /// (타이머를 0 으로 리셋하면 접촉 즉시 확정 타격이 되어 원본보다 가혹해진다.)
         /// </summary>
-        private void UpdateAttack(Player player, float elapseSeconds)
+        internal void TickAttack(Player player, float elapseSeconds)
         {
             EnemyStats stats = mEnemyData.Stats;
 
@@ -561,7 +602,7 @@ namespace ToyBoxNightmare
         private string AssetName => Entity != null ? Entity.EntityAssetName : string.Empty;
 
         /// <summary>플레이어가 죽으면 승리 연출로 전환한다. 적 애니메이터의 PlayerDead 트리거.</summary>
-        private void NotifyPlayerDead()
+        internal void NotifyPlayerDead()
         {
             if (mPlayerDeadNotified || mAnimator == null) return;
 
@@ -579,8 +620,9 @@ namespace ToyBoxNightmare
         {
             if (IsDying) return;
 
-            mDeathPhase = DeathPhase.Dying;
-            mDeathTimer = 0f;
+            mDeathRequested = true;
+            mSinkRequested  = false;
+            mDeathTimer     = 0f;
 
             GameSound.PlaySfx(SoundTable.GetEnemyDeathSound(AssetName), CachedTransform.position);
 
@@ -628,32 +670,43 @@ namespace ToyBoxNightmare
         {
             // 사망 연출 중이 아닐 때 들어온 이벤트는 무시한다. 살아 있는 적을 바닥으로
             // 꺼뜨리지 않기 위한 방어이며, 정상 경로에서는 도달하지 않는다.
-            if (mDeathPhase != DeathPhase.Dying) return;
+            if (!mDeathRequested) return;
 
-            mDeathPhase = DeathPhase.Sinking;
+            // 상태를 밖에서 바꿀 수 없으므로(IFsm 에 ChangeState 가 없다) 요청만 세우고
+            // EnemyDyingState 가 폴링해서 침하로 넘어간다.
+            mSinkRequested = true;
         }
 
-        private void UpdateDeath(float elapseSeconds)
+        /// <summary>사망 연출 타이머를 진행시킨다. 쓰러짐·침하 두 상태가 공통으로 부른다.</summary>
+        internal void TickDeathTimer(float elapseSeconds)
         {
             mDeathTimer += elapseSeconds;
+        }
 
-            // ZomBear 의 FBX 에는 StartSinking 이벤트가 없다. 폴백으로 절반 지점부터 가라앉힌다.
-            bool needsSinkFallback = mDeathPhase == DeathPhase.Dying
-                                     && mDeathTimer >= EnemyTable.DeathEffectTime * SinkFallbackRatio;
-            if (needsSinkFallback)
+        /// <summary>
+        /// 침하를 시작할 때인가. 신호가 둘이다 —
+        /// FBX 에 baked 된 StartSinking 애니메이션 이벤트, 그리고
+        /// 그 이벤트가 없는 ZomBear 를 위해 연출 시간의 절반 지점에서 걸리는 폴백.
+        /// </summary>
+        internal bool ShouldStartSinking
+        {
+            get
             {
-                mDeathPhase = DeathPhase.Sinking;
+                return mSinkRequested
+                       || mDeathTimer >= EnemyTable.DeathEffectTime * SinkFallbackRatio;
             }
+        }
 
-            if (mDeathPhase == DeathPhase.Sinking)
-            {
-                CachedTransform.Translate(Vector3.down * (EnemyTable.SinkSpeed * elapseSeconds), Space.World);
-            }
+        /// <summary>연출 시간이 다 찼는가. 회수 시점이다.</summary>
+        internal bool IsDeathEffectFinished
+        {
+            get { return mDeathTimer >= EnemyTable.DeathEffectTime; }
+        }
 
-            if (mDeathTimer >= EnemyTable.DeathEffectTime)
-            {
-                SafeHide();
-            }
+        /// <summary>바닥으로 가라앉는다.</summary>
+        internal void TickSinking(float elapseSeconds)
+        {
+            CachedTransform.Translate(Vector3.down * (EnemyTable.SinkSpeed * elapseSeconds), Space.World);
         }
 
         // ─── NavMeshAgent 헬퍼 ───
@@ -688,7 +741,7 @@ namespace ToyBoxNightmare
             }
         }
 
-        private void StopMoving()
+        internal void StopMoving()
         {
             if (IsAgentReady)
             {
