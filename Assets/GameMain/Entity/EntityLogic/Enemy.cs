@@ -352,7 +352,7 @@ namespace ToyBoxNightmare
         /// </summary>
         private string FsmName
         {
-            get { return Entity != null ? Entity.Id.ToString() : GetInstanceID().ToString(); }
+            get { return Entity != null ? Entity.Id.ToString() : GetEntityId().ToString(); }
         }
 
         private void CreateStateMachine()
