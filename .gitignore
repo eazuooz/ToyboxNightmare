@@ -78,3 +78,6 @@ crashlytics-build.properties
 # Except GameFramework under all files
 /[Aa]ssets/[Gg]ame[Ff]ramework/
 /External/GameFramework
+
+# 에셋스토어 제출용 묶음 (Tools > Store Bundle > Build 로 재생성)
+/StoreBundle/
