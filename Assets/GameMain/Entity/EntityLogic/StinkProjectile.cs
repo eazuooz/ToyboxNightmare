@@ -43,7 +43,7 @@ namespace ToyBoxNightmare
         private float   mTraveled  = 0f;
         private float   mSpeed     = WeaponTable.StinkSpeed;
 
-        protected internal override void OnShow(object userData)
+        protected override void OnShow(object userData)
         {
             base.OnShow(userData);
 

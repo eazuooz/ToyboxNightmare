@@ -1,0 +1,19 @@
+{
+    "name": "UnityGameFramework.Runtime",
+    "rootNamespace": "UnityGameFramework.Runtime",
+    "references": [
+        "GameFramework",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.SharpZipLib"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

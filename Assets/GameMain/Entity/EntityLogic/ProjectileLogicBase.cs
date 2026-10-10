@@ -27,7 +27,7 @@ namespace ToyBoxNightmare
         private ParticleSystem[] mParticles = null;
         private AudioSource[]    mAudios    = null;
 
-        protected internal override void OnInit(object userData)
+        protected override void OnInit(object userData)
         {
             base.OnInit(userData);
 
@@ -35,7 +35,7 @@ namespace ToyBoxNightmare
             mAudios    = GetComponentsInChildren<AudioSource>(true);
         }
 
-        protected internal override void OnShow(object userData)
+        protected override void OnShow(object userData)
         {
             base.OnShow(userData);
 
@@ -96,7 +96,7 @@ namespace ToyBoxNightmare
             }
         }
 
-        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 

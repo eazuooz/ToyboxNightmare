@@ -246,6 +246,19 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.yamyamcoding.gameframework": {
+      "version": "file:com.yamyamcoding.gameframework",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.addressables": "2.9.0",
+        "com.unity.sharp-zip-lib": "1.4.2",
+        "com.unity.modules.audio": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      }
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

@@ -74,7 +74,7 @@ namespace ToyBoxNightmare
         {
         }
 
-        protected internal override void OnInit(object userData)
+        protected override void OnInit(object userData)
         {
             base.OnInit(userData);
 
@@ -83,7 +83,7 @@ namespace ToyBoxNightmare
             // Entity.gameObject.layer = ...
         }
 
-        protected internal override void OnShow(object userData)
+        protected override void OnShow(object userData)
         {
             base.OnShow(userData);
 
@@ -106,7 +106,7 @@ namespace ToyBoxNightmare
         ///
         /// base 보다 <b>먼저</b> 지운다 — 반납이 base 체인 끝에서 일어나기 때문이다.
         /// </summary>
-        protected internal override void OnHide(bool isShutdown, object userData)
+        protected override void OnHide(bool isShutdown, object userData)
         {
             mTargetableObjectData = null;
 

@@ -41,7 +41,7 @@ namespace ToyBoxNightmare
 
         // ─── 생명주기 ───
 
-        protected internal override void OnInit(object userData)
+        protected override void OnInit(object userData)
         {
             base.OnInit(userData);
 
@@ -78,7 +78,7 @@ namespace ToyBoxNightmare
             return component;
         }
 
-        protected internal override void OnOpen(object userData)
+        protected override void OnOpen(object userData)
         {
             base.OnOpen(userData);
 
@@ -88,7 +88,7 @@ namespace ToyBoxNightmare
             Subscribe();
         }
 
-        protected internal override void OnClose(bool isShutdown, object userData)
+        protected override void OnClose(bool isShutdown, object userData)
         {
             Unsubscribe();
 
