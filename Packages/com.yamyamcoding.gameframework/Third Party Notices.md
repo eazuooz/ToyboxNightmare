@@ -23,7 +23,7 @@ Copyright © 2013–2021 Jiang Yin (EllanJiang)
 
 https://github.com/EllanJiang/UnityGameFramework
 
-Used in: `Runtime/UnityGameFramework` (modified)
+Used in: `Runtime/UnityGameFramework`, `Editor/Inspector`, `Editor/Misc` (modified)
 
 ---
 
