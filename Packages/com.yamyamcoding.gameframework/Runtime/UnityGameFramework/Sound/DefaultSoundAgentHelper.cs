@@ -49,6 +49,12 @@ namespace UnityGameFramework.Runtime
             }
             set
             {
+                // 클립이 없으면 Unity 가 대입을 무시하고 경고만 남긴다. 코어의 SoundAgent.Reset 이 클립 없이도 Time 을 되돌린다.
+                if (mAudioSource.clip == null)
+                {
+                    return;
+                }
+
                 mAudioSource.time = value;
             }
         }

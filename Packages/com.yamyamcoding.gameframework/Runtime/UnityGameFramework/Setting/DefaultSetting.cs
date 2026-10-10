@@ -10,6 +10,7 @@
 using GameFramework;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -81,7 +82,7 @@ namespace UnityGameFramework.Runtime
                 return false;
             }
 
-            return int.Parse(value) != 0;
+            return int.Parse(value, CultureInfo.InvariantCulture) != 0;
         }
 
         public bool GetBool(string settingName, bool defaultValue)
@@ -92,7 +93,7 @@ namespace UnityGameFramework.Runtime
                 return defaultValue;
             }
 
-            return int.Parse(value) != 0;
+            return int.Parse(value, CultureInfo.InvariantCulture) != 0;
         }
 
         public void SetBool(string settingName, bool value)
@@ -109,7 +110,7 @@ namespace UnityGameFramework.Runtime
                 return 0;
             }
 
-            return int.Parse(value);
+            return int.Parse(value, CultureInfo.InvariantCulture);
         }
 
         public int GetInt(string settingName, int defaultValue)
@@ -120,12 +121,12 @@ namespace UnityGameFramework.Runtime
                 return defaultValue;
             }
 
-            return int.Parse(value);
+            return int.Parse(value, CultureInfo.InvariantCulture);
         }
 
         public void SetInt(string settingName, int value)
         {
-            mSettings[settingName] = value.ToString();
+            mSettings[settingName] = value.ToString(CultureInfo.InvariantCulture);
         }
 
         public float GetFloat(string settingName)
@@ -137,7 +138,7 @@ namespace UnityGameFramework.Runtime
                 return 0f;
             }
 
-            return float.Parse(value);
+            return float.Parse(value, CultureInfo.InvariantCulture);
         }
 
         public float GetFloat(string settingName, float defaultValue)
@@ -148,12 +149,12 @@ namespace UnityGameFramework.Runtime
                 return defaultValue;
             }
 
-            return float.Parse(value);
+            return float.Parse(value, CultureInfo.InvariantCulture);
         }
 
         public void SetFloat(string settingName, float value)
         {
-            mSettings[settingName] = value.ToString();
+            mSettings[settingName] = value.ToString(CultureInfo.InvariantCulture);
         }
 
         public string GetString(string settingName)
