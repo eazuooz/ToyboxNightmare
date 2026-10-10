@@ -1,5 +1,11 @@
 # ToyboxNightmare 스크립트 아키텍처
 
+> **2026-10-08 구조 변경 — 프레임워크가 UPM 패키지로 분리됐다.**
+> - 래퍼: `Assets/Scripts/` → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/` (어셈블리 `UnityGameFramework.Runtime`)
+> - 코어: `Assets/Plugins/GameFramework.dll` → `Packages/com.yamyamcoding.gameframework/Runtime/Core/` **소스 컴파일** (어셈블리 `GameFramework`)
+> - 게임 코드의 프레임워크 오버라이드는 `protected internal override` 가 아니라 **`protected override`** 다.
+> - 아래 본문에서 `External/` 빌드·DLL 복사·PostBuild 절대경로를 다루는 대목은 **옛 구조의 기록**이다. 현재 요약은 `CLAUDE.md` 의 "코드 레이어"를 볼 것.
+
 > **이 문서의 목적**: 내일부터 이 프로젝트에 기능을 추가하는 개발자가, 다른 문서를 찾지 않고 하루를 온전히 쓸 수 있게 하는 것.
 >
 > **읽는 순서**: 처음이라면 **§0 → §5.1 → §4**만 읽으면 작업을 시작할 수 있다. §1~§3은 참조용, §6~§8은 배경과 미결정 사항이다.
@@ -19,7 +25,7 @@
 
 ### 0-1. 로그를 먼저 되살린다 (가장 먼저, 예외 없이)
 
-`Assets/Scripts/Utility/Log.cs`(433줄)의 public static 메서드 20개 **전부**에 아래 3개 어트리뷰트가 붙어 있다(`Assets/Scripts/Utility/Log.cs:26-28`, 파일 전체 101개):
+`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs`(433줄)의 public static 메서드 20개 **전부**에 아래 3개 어트리뷰트가 붙어 있다(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs:26-28`, 파일 전체 101개):
 
 ```csharp
 [Conditional("ENABLE_LOG")]
@@ -91,7 +97,7 @@ GameFramework(EllanJiang) 기반의 뱀서라이크(서바이버류) 프로토�
 
 | 항목 | 값 | 근거 |
 |---|---|---|
-| Unity | 6000.3.10f1 | `ProjectSettings/ProjectVersion.txt` |
+| Unity | 6000.6.0f1 | `ProjectSettings/ProjectVersion.txt` |
 | 렌더 파이프라인 | URP 17.3.0 | `Packages/manifest.json:10` |
 | 에셋 로딩 | Addressables 2.9.0 | `Packages/manifest.json:3` |
 | 입력 | Input System 1.18.0, `activeInputHandler: 2` (Both) | `Packages/manifest.json:8`, `ProjectSettings/ProjectSettings.asset:920` |
@@ -152,21 +158,21 @@ GameFramework(EllanJiang) 기반의 뱀서라이크(서바이버류) 프로토�
 
 1. **씬 로드** — `Assets/Scenes/MainScene.unity:679-747`에 `Assets/Prefabs/GameFramework.prefab`(guid `0c57aed266d3dd04c8a7639f949371c0`) 인스턴스가 배치되어 있다.
 
-2. **컴포넌트 등록** — 각 `~Component`의 `Awake()` → `Assets/Scripts/Base/GameFrameworkComponent.cs:16-19` → `GameEntry.RegisterComponent(this)`(`Assets/Scripts/Base/GameEntry.cs:95-118`). 동일 타입 중복은 `Log.Error` 후 거부된다(`GameEntry.cs:110`) — 이게 §5.1 [5]의 원인이다.
+2. **컴포넌트 등록** — 각 `~Component`의 `Awake()` → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/GameFrameworkComponent.cs:16-19` → `GameEntry.RegisterComponent(this)`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/GameEntry.cs:95-118`). 동일 타입 중복은 `Log.Error` 후 거부된다(`GameEntry.cs:110`) — 이게 §5.1 [5]의 원인이다.
 
 3. **모듈 생성** — 각 컴포넌트가 자기 Awake에서 `GameFrameworkEntry.GetModule<IXxxManager>()`를 부른다(`External/GameFramework/GameFramework/Base/GameFrameworkEntry.cs:37`). 인터페이스 강제(`:40`) + FullName이 `GameFramework.`로 시작 강제(`:45`) + `Name.Substring(1)`로 'I' 제거(`:50`) → `Type.GetType`(`:51`), 실패 시 예외(`:52-55`). 인스턴스가 없으면 `CreateModule`(`:73`)이 Priority 내림차순 링크드리스트에 삽입한다(`:84`, 등호 없음 → 동순위는 뒤에 붙음).
    - **실제 생성되는 모듈은 18개**다. 프리팹의 21개 컴포넌트 타입 중 `BaseComponent`, `ReferencePoolComponent`, `ResourceComponent`는 GetModule을 호출하지 않는다.
 
-4. **부트스트랩 헬퍼 주입** — `Assets/Scripts/Base/BaseComponent.cs:154-192`가 Text/Version/Log/Compression/Json 헬퍼를 타입명 문자열로 리플렉션 생성한다. `:175-179`에서 `mEditorResourceMode &= Application.isEditor`.
+4. **부트스트랩 헬퍼 주입** — `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/BaseComponent.cs:154-192`가 Text/Version/Log/Compression/Json 헬퍼를 타입명 문자열로 리플렉션 생성한다. `:175-179`에서 `mEditorResourceMode &= Application.isEditor`.
    - Json 헬퍼는 `GameFramework.prefab:765`에 `UnityGameFramework.Runtime.DefaultJsonHelper`로 **유효하게 설정되어 있다**(확인 완료). `SettingComponent.GetObject<T>`가 동작하는 전제가 충족된다(§3-9).
 
-5. **리소스 어댑터 생성** — `Assets/Scripts/Resource/ResourceComponent.cs:40-44`가 `new ResourceManager()`. **여기가 표준 GF와 갈라지는 지점**이다. `GetModule<IResourceManager>()` 호출은 프로젝트 전체에 0건이고, 대신 `Assets/Scripts/Resource/ResourceManager.cs:26`의 Addressables 어댑터를 직접 new 한다(§3-4).
+5. **리소스 어댑터 생성** — `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceComponent.cs:40-44`가 `new ResourceManager()`. **여기가 표준 GF와 갈라지는 지점**이다. `GetModule<IResourceManager>()` 호출은 프로젝트 전체에 0건이고, 대신 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs:26`의 Addressables 어댑터를 직접 new 한다(§3-4).
 
-6. **Start 페이즈 상호 주입** — `Assets/Scripts/Entity/EntityComponent.cs:114`가 `SetResourceManager(GameEntry.GetComponent<ResourceComponent>().ResourceManager)`. 같은 패턴이 `Assets/Scripts/UI/UIComponent.cs:181`, `Assets/Scripts/Sound/SoundComponent.cs:142`, `Assets/Scripts/Scene/SceneComponent.cs:97`, `Assets/Scripts/Config/ConfigComponent.cs:98`, `Assets/Scripts/DataTable/DataTableComponent.cs:87`, `Assets/Scripts/Localization/LocalizationComponent.cs:118`에 있다. **7곳 모두 null 체크가 없다**(§5-2).
+6. **Start 페이즈 상호 주입** — `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityComponent.cs:114`가 `SetResourceManager(GameEntry.GetComponent<ResourceComponent>().ResourceManager)`. 같은 패턴이 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIComponent.cs:181`, `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Sound/SoundComponent.cs:142`, `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Scene/SceneComponent.cs:97`, `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Config/ConfigComponent.cs:98`, `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/DataTable/DataTableComponent.cs:87`, `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Localization/LocalizationComponent.cs:118`에 있다. **7곳 모두 null 체크가 없다**(§5-2).
    - `EntityComponent.cs:139-146`에서 인스펙터의 엔티티 그룹 4개를 등록한다.
-   - `Assets/Scripts/Setting/SettingComponent.cs:64-70`도 이 페이즈에서 `mSettingManager.Load()`를 자동 호출한다(§3-9).
+   - `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Setting/SettingComponent.cs:64-70`도 이 페이즈에서 `mSettingManager.Load()`를 자동 호출한다(§3-9).
 
-7. **프로시저 시작** — `Assets/Scripts/Procedure/ProcedureComponent.cs:60`(코루틴 Start)
+7. **프로시저 시작** — `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Procedure/ProcedureComponent.cs:60`(코루틴 Start)
    - `:65` `Utility.Assembly.GetType(타입명)` — `Type.GetType` 기반이라 **FQN이 아니면 절대 못 찾는다**
    - `:68-69` 실패 시 `Log.Error` 후 `yield break`
    - `:72` `Activator.CreateInstance` (파라미터 없는 기본 생성자 필요)
@@ -186,12 +192,12 @@ GameFramework(EllanJiang) 기반의 뱀서라이크(서바이버류) 프로토�
 
 10. **엔티티 로드** — `SurvivalGame.cs:54-64`
     - `:56` `EntitySerialId.Next()` (`Assets/GameMain/Utility/EntitySerialId.cs:11`, 리셋 없는 전역 카운터, 첫 값 1)
-    - `:58-63` `EntityComponent.ShowEntity(id, typeof(PlayerSelectLogic), assetPath, "Player", new CharacterSelectData(id, 1, key){ Position = ... })`(`Assets/Scripts/Entity/EntityComponent.cs:312` 오버로드)
-    - 코어 EntityManager → 인스턴스 풀 미스 → `IResourceManager.LoadAsset` → `Assets/Scripts/Resource/ResourceManager.cs:152`, `:161` `Addressables.LoadAssetAsync<object>(assetName)`
+    - `:58-63` `EntityComponent.ShowEntity(id, typeof(PlayerSelectLogic), assetPath, "Player", new CharacterSelectData(id, 1, key){ Position = ... })`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityComponent.cs:312` 오버로드)
+    - 코어 EntityManager → 인스턴스 풀 미스 → `IResourceManager.LoadAsset` → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs:152`, `:161` `Addressables.LoadAssetAsync<object>(assetName)`
     - 주소 해석: `Assets/AddressableAssetsData/AssetGroups/Prefabs.asset:54-55`(Girl → `Assets/Art/Prefabs/Characters/Girl.prefab`), `:30-31`(Boy)
-    - 로드 성공 → `Assets/Scripts/Entity/DefaultEntityHelper.cs:19-22` Instantiate → `:24-37` CreateEntity(`:36` `GetOrAddComponent<Entity>()`) → `Assets/Scripts/Entity/Entity.cs:64-113` OnInit(`:98` `gameObject.AddComponent(entityLogicType)`) → `Entity.OnShow`(`:130-141`) → `EntityLogic.OnShow`
+    - 로드 성공 → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/DefaultEntityHelper.cs:19-22` Instantiate → `:24-37` CreateEntity(`:36` `GetOrAddComponent<Entity>()`) → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/Entity.cs:64-113` OnInit(`:98` `gameObject.AddComponent(entityLogicType)`) → `Entity.OnShow`(`:130-141`) → `EntityLogic.OnShow`
 
-11. **성공 통지** — `Assets/Scripts/Entity/EntityComponent.cs:689-692` → `ShowEntitySuccessEventArgs.Create(e)`(`Assets/Scripts/Entity/ShowEntitySuccessEventArgs.cs:60-70`, `:68`에서 ShowEntityInfo를 ReferencePool에 반납) → `EventComponent.Fire` → `Assets/GameMain/Game/SurvivalGame.cs:107-124`에서 `mGirlSelect`/`mBoySelect`/`mPlayer` 캐싱
+11. **성공 통지** — `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityComponent.cs:689-692` → `ShowEntitySuccessEventArgs.Create(e)`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/ShowEntitySuccessEventArgs.cs:60-70`, `:68`에서 ShowEntityInfo를 ReferencePool에 반납) → `EventComponent.Fire` → `Assets/GameMain/Game/SurvivalGame.cs:107-124`에서 `mGirlSelect`/`mBoySelect`/`mPlayer` 캐싱
 
 12. **클릭 입력** — `Assets/GameMain/Entity/EntityLogic/PlayerSelectLogic.cs:46-54` `OnMouseUp()` → `:52-53` `EventComponent.Fire(CharacterSelectedEventArgs.Create(characterKey))`
     - ⚠ 이 콜백이 **클릭 1회에 2번** 실행된다. 원인은 §5.1 [2].
@@ -210,7 +216,7 @@ GameFramework(EllanJiang) 기반의 뱀서라이크(서바이버류) 프로토�
 ### 2-2. 매 프레임
 
 ```
-Assets/Scripts/Base/BaseComponent.cs:198-201  Update()
+Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/BaseComponent.cs:198-201  Update()
   → GameFrameworkEntry.Update(Time.deltaTime, Time.unscaledDeltaTime)
      → EventManager(7)      : 큐 배출 → 핸들러 호출 → ReferencePool.Release(e)
      → ObjectPoolManager(6)
@@ -255,7 +261,7 @@ Assets/Scripts/Base/BaseComponent.cs:198-201  Update()
 
 | 타입 | 경로 | 비고 |
 |---|---|---|
-| `ProcedureComponent` | `Assets/Scripts/Procedure/ProcedureComponent.cs` | 118줄. `[DisallowMultipleComponent]`(`:19`) — 그런데도 프리팹에 2개가 붙어 있다(§5.1 [5]) |
+| `ProcedureComponent` | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Procedure/ProcedureComponent.cs` | 118줄. `[DisallowMultipleComponent]`(`:19`) — 그런데도 프리팹에 2개가 붙어 있다(§5.1 [5]) |
 | `ToyBoxNightmare.ProcedureBase` | `Assets/GameMain/Procdure/ProcedureBase.cs` | `abstract bool UseNativeDialog`(`:17-20`)만 추가. **이 값을 읽는 코드는 0건** |
 | `ToyBoxNightmare.ProcedureMain` | `Assets/GameMain/Procdure/ProcedureMain.cs` | 48줄. 유일한 프로시저 |
 | `GameBase` | `Assets/GameMain/Game/GameBase.cs` | 48줄. Initialize/Shutdown/Update virtual, abstract GameMode, `bool GameOver { get; protected set; }` |
@@ -281,7 +287,7 @@ EntityData (Assets/GameMain/Entity/EntityData/EntityData.cs, 79줄)
   ├─ ExpGemData        ExpAmount 5, MoveSpeed 4f (:7-8)
   └─ CharacterSelectData  CharacterKey (:5), ctor (int, int, string) (:7)
 
-EntityLogic (Assets/Scripts/Entity/EntityLogic.cs, 139줄)
+EntityLogic (Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityLogic.cs, 139줄)
   ├─ TargetableObject (88줄) — IsDead(:9-15), ApplyDamage(:19-39), OnDead(:62-65)
   │    ├─ Player (130줄) — static Instance(:17), [RequireComponent(typeof(Rigidbody))](:13)
   │    └─ Enemy (75줄)
@@ -304,7 +310,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 **중요 — 인스턴스 풀 동작 (External 소스 기준 추론, DLL 일치 여부는 미확인)**
 `HideEntity`는 인스턴스를 즉시 언스폰하지 않고 `mRecycleQueue`에 Enqueue만 하며, 실제 Unspawn은 다음 `EntityManager.Update`에서 일어난다. 인스턴스 풀은 single-spawn 풀이라 IsInUse 객체를 반환하지 않는다. 따라서 `SurvivalGame.OnCharacterSelected`가 `HideEntity` 직후 같은 콜스택에서 `SpawnPlayer`를 부르면 **같은 인스턴스가 재사용되지 않고** 비동기 LoadAsset → 새 Instantiate 경로로 빠진다. 결과적으로 `Entity.cs:86-96`의 "기존 로직 Destroy" 분기는 이 흐름에서 **실행되지 않는다** → §5.1 [2]의 baked 컴포넌트 문제가 그대로 발현된다.
 
-**조회 API가 통째로 미사용이다.** `EntityComponent.GetEntity/GetEntities/GetAllLoadedEntities`(`Assets/Scripts/Entity/EntityComponent.cs:201-265`), `AttachEntity/DetachEntity`(`:449-651`)를 GameMain이 한 번도 쓰지 않는다. 현재는 `Player.Instance` static + Physics 쿼리로 때우고 있는데, **적을 여러 마리 관리하기 시작하면 이 API로 갈아타야 한다**(§4-1 8단계).
+**조회 API가 통째로 미사용이다.** `EntityComponent.GetEntity/GetEntities/GetAllLoadedEntities`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityComponent.cs:201-265`), `AttachEntity/DetachEntity`(`:449-651`)를 GameMain이 한 번도 쓰지 않는다. 현재는 `Player.Instance` static + Physics 쿼리로 때우고 있는데, **적을 여러 마리 관리하기 시작하면 이 API로 갈아타야 한다**(§4-1 8단계).
 
 **확장** → §4-1.
 
@@ -344,7 +350,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 ### 3-4. 에셋 로딩 (Addressables)
 
 **무엇을 한다**
-`Assets/Scripts/Resource/ResourceManager.cs`(295줄)가 `IResourceManager` 인터페이스 뒤에 Addressables를 숨기는 어댑터다. GF의 에셋번들 파이프라인을 통째로 대체했다(커밋 afd656b).
+`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs`(295줄)가 `IResourceManager` 인터페이스 뒤에 Addressables를 숨기는 어댑터다. GF의 에셋번들 파이프라인을 통째로 대체했다(커밋 afd656b).
 
 **실제 동작하는 것은 4개뿐**
 
@@ -367,7 +373,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 - 빌드: `BuildScriptPackedMode`, `m_BuildRemoteCatalog: 0`, Prefabs 그룹은 `PackTogether` + `LZ4` + Local BuildPath/LoadPath
 - **씬은 Addressable에 하나도 등록되어 있지 않다** → `SceneComponent` 경유 씬 로드는 현재 무조건 실패한다
 
-**해제 경로**: `EntityComponent.HideEntity` → 풀 만료(60초) → `Assets/Scripts/Entity/DefaultEntityHelper.cs:41` `UnloadAsset(entityAsset)` → `:42` `Destroy(instance)`. 별도로 `Assets/Scripts/Resource/ResourceComponent.cs:51-76`이 최대 300초마다 `Resources.UnloadUnusedAssets()` + 필요 시 `GC.Collect()`를 돌린다.
+**해제 경로**: `EntityComponent.HideEntity` → 풀 만료(60초) → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/DefaultEntityHelper.cs:41` `UnloadAsset(entityAsset)` → `:42` `Destroy(instance)`. 별도로 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceComponent.cs:51-76`이 최대 300초마다 `Resources.UnloadUnusedAssets()` + 필요 시 `GC.Collect()`를 돌린다.
 
 **중복 구현 주의**: `Assets/AssetManager/AddressablesController.cs` + `AddressablesLoader.cs`가 별개의 미완성 Addressables 진입점이다. 씬에 실제로 존재하지만 본문이 주석 처리되어 무해하다 — 상세와 판정은 §7-5.
 
@@ -376,7 +382,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 ### 3-5. 이벤트
 
 **무엇을 한다**
-`EventComponent`(`Assets/Scripts/Event/EventComponent.cs`, 90줄)가 `IEventManager` 래퍼. `EventManager`는 Priority 7로 **모든 모듈 중 가장 먼저** Update된다. `Fire`는 큐잉(`:80-83`), `FireNow`는 즉시(`:85`).
+`EventComponent`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Event/EventComponent.cs`, 90줄)가 `IEventManager` 래퍼. `EventManager`는 Priority 7로 **모든 모듈 중 가장 먼저** Update된다. `Fire`는 큐잉(`:80-83`), `FireNow`는 즉시(`:85`).
 
 **핵심 규약**
 
@@ -395,7 +401,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 "Fire는 항상 1프레임 지연"이 아니다. 지연은 `EventManager.Update`(Priority 7) **이후에 실행되는 호출자**에게만 성립한다. 즉 `BaseComponent.Update` 안에서 도는 Priority<7 모듈들(FsmManager, EntityManager 등)에 한정된다.
 - `PlayerSelectLogic.OnMouseUp`은 Unity가 MonoBehaviour.Update 이전 입력 단계에서 디스패치하므로, 그 Fire는 **같은 프레임**의 `BaseComponent.Update` → `EventManager.Update`에서 배출된다.
 - 반면 `EntityComponent.OnShowEntitySuccess`가 발화한 이벤트는 다음 프레임에 도착한다.
-- 다만 `Assets/Scripts/Base/BaseComponent.cs.meta:7`의 `executionOrder: 0`이고 `ProjectSettings/MonoManager.asset`도 없어서 **순서가 보장되지는 않는다.**
+- 다만 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/BaseComponent.cs.meta:7`의 `executionOrder: 0`이고 `ProjectSettings/MonoManager.asset`도 없어서 **순서가 보장되지는 않는다.**
 
 **확장** → §4-4.
 
@@ -432,13 +438,13 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 **막히는 지점 5개 (전부 확인 완료)**
 
 1. `mUIGroups: []` → 그룹 없이 `OpenUIForm`을 부르면 실패한다. 최소 1개(`Default`, depth 0)를 인스펙터에서 추가해야 한다.
-2. `mInstanceRoot: {fileID: 0}` → `Assets/Scripts/UI/UIComponent.cs:203-208`이 `new GameObject("UI Form Instances")`를 만든다. **이건 Canvas가 아니다.** uGUI 폼을 열어도 **렌더링되지 않는다.**
-3. `Assets/Scripts/UI/DefaultUIGroupHelper.cs:14-16` `SetDepth(int depth)`가 **빈 구현**이다 → 그룹 depth 정렬이 무동작. 여러 그룹을 겹쳐 쓸 거면 커스텀 헬퍼가 필요하다.
+2. `mInstanceRoot: {fileID: 0}` → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIComponent.cs:203-208`이 `new GameObject("UI Form Instances")`를 만든다. **이건 Canvas가 아니다.** uGUI 폼을 열어도 **렌더링되지 않는다.**
+3. `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/DefaultUIGroupHelper.cs:14-16` `SetDepth(int depth)`가 **빈 구현**이다 → 그룹 depth 정렬이 무동작. 여러 그룹을 겹쳐 쓸 거면 커스텀 헬퍼가 필요하다.
 4. MainScene에 EventSystem이 없어 버튼 클릭 자체가 안 된다. 게다가 EventSystem을 추가하는 순간 `PlayerSelectLogic.cs:49`의 `EventSystem.current != null` 가드가 **처음으로 살아나며 캐릭터 선택 클릭 동작이 바뀐다.**
 5. UIForm 프리팹도 Addressable 등록이 필수다(로드 경로가 엔티티와 동일).
 
 **⚠ 엔티티와 정반대인 규약 (확인 완료, 이전 초안에 없던 내용)**
-`Assets/Scripts/UI/UIForm.cs:94-98`은 `GetComponent<UIFormLogic>()`을 하고 **null이면 `Log.Error` 후 return한다.** `Assets/Scripts/UI/DefaultUIFormHelper.cs:36`도 `GetOrAddComponent<UIForm>()`까지만 한다.
+`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIForm.cs:94-98`은 `GetComponent<UIFormLogic>()`을 하고 **null이면 `Log.Error` 후 return한다.** `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/DefaultUIFormHelper.cs:36`도 `GetOrAddComponent<UIForm>()`까지만 한다.
 
 > **엔티티: 프리팹에 로직을 붙이면 안 된다(런타임 AddComponent).
 > UI 폼: 프리팹에 로직을 반드시 붙여야 한다(런타임 GetComponent).**
@@ -463,7 +469,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 
 **이 셋을 채우기 전에는 `PlaySound`가 무조건 실패한다.**
 
-부수 사실: `Assets/Scripts/Sound/SoundComponent.cs:112`가 `GetModule<ISceneManager>()`를 호출한다. 프리팹에서 Scene GO를 제거해도 Sound가 남아 있으면 SceneManager 모듈은 계속 생성된다.
+부수 사실: `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Sound/SoundComponent.cs:112`가 `GetModule<ISceneManager>()`를 호출한다. 프리팹에서 Scene GO를 제거해도 Sound가 남아 있으면 SceneManager 모듈은 계속 생성된다.
 
 **확장** → §4-7.
 
@@ -473,10 +479,10 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 
 | 항목 | 값 | 근거 |
 |---|---|---|
-| 컴포넌트 | `Assets/Scripts/Setting/SettingComponent.cs` (`GameFrameworkComponent` 파생) | |
+| 컴포넌트 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Setting/SettingComponent.cs` (`GameFrameworkComponent` 파생) | |
 | 헬퍼 (현재 선택값) | `UnityGameFramework.Runtime.DefaultSettingHelper` | `Assets/Prefabs/GameFramework.prefab:829` |
-| 대안 헬퍼 | `Assets/Scripts/Setting/PlayerPrefsSettingHelper.cs` | 존재하나 미선택 |
-| 저장 위치 | `Application.persistentDataPath` + `/GameFrameworkSetting.dat` | `Assets/Scripts/Setting/DefaultSettingHelper.cs:20`, `:225` (**확인 완료**) |
+| 대안 헬퍼 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Setting/PlayerPrefsSettingHelper.cs` | 존재하나 미선택 |
+| 저장 위치 | `Application.persistentDataPath` + `/GameFrameworkSetting.dat` | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Setting/DefaultSettingHelper.cs:20`, `:225` (**확인 완료**) |
 | 자동 Load | **있다.** `SettingComponent.cs:64-70`의 `Start()`가 `mSettingManager.Load()` | |
 | 자동 Save | **없다.** `Save()`(`:72`)를 명시적으로 불러야 파일에 기록된다 | |
 
@@ -547,7 +553,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 | 9 | **스폰 코드 작성** | 보통 `Assets/GameMain/Game/SurvivalGame.cs` |
 | | ```int id = EntitySerialId.Next();```<br>```GameEntry.GetComponent<EntityComponent>().ShowEntity(id, typeof(X), "주소", "그룹", new XData(id, 1){ Position = pos });``` | `SurvivalGame.cs:56-63` 패턴 |
 | | id는 한 번만 뽑아 ShowEntity 인자와 Data 생성자에 **같은 값**을 넘긴다 | |
-| 10 | ★ **여러 개를 관리한다면 id를 직접 들고 다니지 말고 `EntityComponent` 조회 API를 쓴다** | `Assets/Scripts/Entity/EntityComponent.cs:201-265` |
+| 10 | ★ **여러 개를 관리한다면 id를 직접 들고 다니지 말고 `EntityComponent` 조회 API를 쓴다** | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityComponent.cs:201-265` |
 | | `GetEntity(int id)` / `GetEntities(string entityGroupName)` / `GetAllLoadedEntities()` / `HasEntity(int id)` / `HideEntity(int id)` | |
 | | 지금 GameMain은 이 API를 **한 번도 쓰지 않는다**(`Player.Instance` static + Physics 쿼리로 대체). "적 50마리 관리"를 시작하는 순간 여기로 갈아타야 한다 | |
 | | `GetEntities("Enemy")`로 살아있는 적을 순회하는 것이, 자체 `List<int>`를 유지하며 Hide 타이밍과 동기화하는 것보다 안전하다 | |
@@ -668,20 +674,20 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 | A2 | 같은 씬에 **EventSystem**을 추가한다. ⚠ 이 순간 `PlayerSelectLogic.cs:49`의 `EventSystem.current != null` 가드가 처음 살아나 **캐릭터 선택 클릭 동작이 바뀐다.** 반드시 §0-4 체크리스트로 재확인할 것 |
 | A3 | `GameFramework` 프리팹 인스턴스의 **UIComponent 인스펙터에서 `mInstanceRoot`에 A1의 Canvas Transform을 지정**한다 (`Assets/Prefabs/GameFramework.prefab:150`이 현재 fileID 0). **이걸 안 하면 폼을 열어도 렌더링되지 않는다** |
 | A4 | 같은 인스펙터의 `mUIGroups`(`:155`)에 최소 1개 추가: Name `Default`, Depth 0 |
-| A5 | 그룹을 2개 이상 겹쳐 쓸 계획이면 `DefaultUIGroupHelper.SetDepth`가 빈 구현(`Assets/Scripts/UI/DefaultUIGroupHelper.cs:14-16`)이므로 **커스텀 UIGroupHelper를 만들어 `mUIGroupHelperTypeName`(`prefab:153`)에 지정**해야 한다. 그룹 1개면 지금은 넘어가도 된다 |
+| A5 | 그룹을 2개 이상 겹쳐 쓸 계획이면 `DefaultUIGroupHelper.SetDepth`가 빈 구현(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/DefaultUIGroupHelper.cs:14-16`)이므로 **커스텀 UIGroupHelper를 만들어 `mUIGroupHelperTypeName`(`prefab:153`)에 지정**해야 한다. 그룹 1개면 지금은 넘어가도 된다 |
 
 **B. 폼 한 개 추가**
 
 | # | 작업 | 파일 / 위치 |
 |---|---|---|
 | B1 | **로직 클래스 생성** — `UIFormLogic` 상속 | `Assets/GameMain/UI/XForm.cs` (현재 빈 폴더) |
-| | 훅: `OnInit / OnOpen / OnClose / OnPause / OnResume / OnCover / OnReveal / OnRefocus / OnUpdate / OnDepthChanged` | `Assets/Scripts/UI/UIForm.cs:103-228` |
+| | 훅: `OnInit / OnOpen / OnClose / OnPause / OnResume / OnCover / OnReveal / OnRefocus / OnUpdate / OnDepthChanged` | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIForm.cs:103-228` |
 | B2 | **프리팹 제작** — ★ **B1의 로직 컴포넌트를 프리팹 루트에 반드시 붙인다** | `Assets/Art/Prefabs/UI/` |
 | | `UIForm.cs:94-98`이 `GetComponent<UIFormLogic>()`을 하고 없으면 `Log.Error` 후 return한다. **엔티티와 정반대 규약이다**(§3-7) | |
 | | `UIForm` 컴포넌트 자체는 붙이지 않아도 된다 — `DefaultUIFormHelper.cs:36`이 `GetOrAddComponent<UIForm>()` | |
 | | ⚠ `Assets/Art/Prefabs/UI/HUDCanvas.prefab` / `PauseMenuCanvas.prefab`은 Sample 스크립트가 붙어 있어 **그대로 못 쓴다**(§7-1) | |
 | B3 | **Addressables 등록** — §4-5와 동일 절차 | |
-| B4 | **열기** — `GameEntry.GetComponent<UIComponent>().OpenUIForm("주소", "Default", userData);` | `Assets/Scripts/UI/UIComponent.cs` |
+| B4 | **열기** — `GameEntry.GetComponent<UIComponent>().OpenUIForm("주소", "Default", userData);` | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIComponent.cs` |
 | B5 | **닫기** — `CloseUIForm(...)`. 인스턴스는 파괴되지 않고 UI 풀로 반납된다(`mInstanceExpireTime: 60`, `prefab:148`) → **엔티티와 같은 이유로 Awake/Start 대신 `OnOpen`/`OnClose`를 쓸 것** | |
 
 ### 4-7. 사운드 재생하기 (BGM을 GF로 옮기는 것 포함)
@@ -704,7 +710,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 | 2 | 읽기: `GameEntry.GetComponent<SettingComponent>().GetInt(SettingKeys.HighScore, 0)` — **Load는 `Start()`에서 자동으로 끝나 있다**(`SettingComponent.cs:64-70`) |
 | 3 | 쓰기: `SetInt(...)` → ★ **`Save()`를 반드시 명시 호출**(`:72`). 자동 저장은 없다 |
 | 4 | 복합 객체는 `SetObject<T>/GetObject<T>`(`:162-190`). Json 헬퍼가 유효하게 설정되어 있음을 확인했다(§2-1 4단계) |
-| 5 | 저장 위치는 `Application.persistentDataPath/GameFrameworkSetting.dat`(`Assets/Scripts/Setting/DefaultSettingHelper.cs:20`, `:225`). 테스트 중 초기화하려면 이 파일을 지우면 된다 |
+| 5 | 저장 위치는 `Application.persistentDataPath/GameFrameworkSetting.dat`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Setting/DefaultSettingHelper.cs:20`, `:225`). 테스트 중 초기화하려면 이 파일을 지우면 된다 |
 | 6 | 헬퍼를 `PlayerPrefsSettingHelper`로 바꾸려면 프리팹의 `mSettingHelperTypeName`(`GameFramework.prefab:829`)을 수정 (§8-16) |
 
 ### 4-9. 카메라 추종 붙이기
@@ -736,11 +742,11 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 
 <details><summary>수정 전 진단 (기록용)</summary>
 
-`Assets/Scripts/Resource/ResourceManager.cs:167-168`
+`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs:167-168`
 ```csharp
 if (!mAssetHandles.ContainsKey(op.Result)) mAssetHandles[op.Result] = op;
 ```
-딕셔너리 키가 **로드 결과 오브젝트**다. 같은 프리팹은 항상 동일 인스턴스를 돌려주므로 **2회차 이후 핸들은 추적 자체가 안 된다.** 그리고 이 프로젝트의 정상 시나리오가 정확히 중복 로드다 — `Assets/GameMain/Game/SurvivalGame.cs:58`이 `"Girl"`을 로드하고, `:69`(`SpawnPlayer`)가 **같은 `"Girl"`**을 다시 로드한다(`SpawnPlayer`의 assetName == characterKey). 해제는 `HideEntity` → 풀 만료(60초) → `Assets/Scripts/Entity/DefaultEntityHelper.cs:41` `UnloadAsset` → `ResourceManager.cs:185-189`가 **추적 중인 1개만** Release. → **N번 로드 / 1번 Release.**
+딕셔너리 키가 **로드 결과 오브젝트**다. 같은 프리팹은 항상 동일 인스턴스를 돌려주므로 **2회차 이후 핸들은 추적 자체가 안 된다.** 그리고 이 프로젝트의 정상 시나리오가 정확히 중복 로드다 — `Assets/GameMain/Game/SurvivalGame.cs:58`이 `"Girl"`을 로드하고, `:69`(`SpawnPlayer`)가 **같은 `"Girl"`**을 다시 로드한다(`SpawnPlayer`의 assetName == characterKey). 해제는 `HideEntity` → 풀 만료(60초) → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/DefaultEntityHelper.cs:41` `UnloadAsset` → `ResourceManager.cs:185-189`가 **추적 중인 1개만** Release. → **N번 로드 / 1번 Release.**
 
 파생 3건:
 - **실패 경로 핸들 미해제** — `ResourceManager.cs:172-176`의 else 분기에 `Addressables.Release(op)`가 없다. 잘못된 주소를 반복 요청하면 별도로 누적된다. 지금 `"Projectile"`(`Assets/GameMain/Weapon/ProjectileWeapon.cs:11`)이 미등록 주소다.
@@ -756,7 +762,7 @@ if (!mAssetHandles.ContainsKey(op.Result)) mAssetHandles[op.Result] = op;
 
 `Assets/Art/Prefabs/Characters/Girl.prefab:44636`(`ToyBoxNightmare.Player`), `:44648`(`ToyBoxNightmare.PlayerSelectLogic`) — 둘 다 루트 GameObject(fileID 7515494869112236224, `:44417-44431`, `m_IsActive: 1`, `m_Enabled: 1`)에 붙어 있다. `Assets/Art/Prefabs/Characters/Boy.prefab`도 동일(`:54140`, `:54152`).
 
-`Assets/Scripts/Entity/Entity.cs:22`의 `mEntityLogic`은 `[SerializeField]`가 아닌 순수 private 필드이고, `Entity` 컴포넌트 자체도 프리팹에 없이 런타임에 붙는다(`DefaultEntityHelper.cs:36`). 따라서 `Entity.cs:86-96`의 "기존 로직 Destroy" 분기는 **절대 실행되지 않고**, `:98`이 무조건 `AddComponent(entityLogicType)` 한다.
+`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/Entity.cs:22`의 `mEntityLogic`은 `[SerializeField]`가 아닌 순수 private 필드이고, `Entity` 컴포넌트 자체도 프리팹에 없이 런타임에 붙는다(`DefaultEntityHelper.cs:36`). 따라서 `Entity.cs:86-96`의 "기존 로직 Destroy" 분기는 **절대 실행되지 않고**, `:98`이 무조건 `AddComponent(entityLogicType)` 한다.
 
 | 인스턴스 | 실제 컴포넌트 |
 |---|---|
@@ -780,9 +786,9 @@ if (!mAssetHandles.ContainsKey(op.Result)) mAssetHandles[op.Result] = op;
 ### 🔴 [3] 위 문제들이 전부 무음이다 — `Log.*`가 통째로 컴파일 제거
 
 `ProjectSettings/ProjectSettings.asset:823` → `scriptingDefineSymbols: {}` (csc.rsp 없음)
-`Assets/Scripts/Utility/Log.cs:26-28` → `[Conditional("ENABLE_LOG")] [Conditional("ENABLE_DEBUG_LOG")] [Conditional("ENABLE_DEBUG_AND_ABOVE_LOG")]` (총 101개 attribute, public 메서드 20개 전부)
+`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs:26-28` → `[Conditional("ENABLE_LOG")] [Conditional("ENABLE_DEBUG_LOG")] [Conditional("ENABLE_DEBUG_AND_ABOVE_LOG")]` (총 101개 attribute, public 메서드 20개 전부)
 
-여기에 `Assets/Scripts/Entity/Entity.cs:105-112`, `:133-141`, `:209-216`이 EntityLogic의 `OnInit`/`OnShow`/`OnUpdate` 예외를 **try/catch로 삼킨 뒤 `Log.Error`로만 보고**한다.
+여기에 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/Entity.cs:105-112`, `:133-141`, `:209-216`이 EntityLogic의 `OnInit`/`OnShow`/`OnUpdate` 예외를 **try/catch로 삼킨 뒤 `Log.Error`로만 보고**한다.
 
 > **결과: 엔티티 로직에서 NRE가 나도 콘솔에 아무것도 안 찍히고 그냥 초기화가 중단된다.**
 
@@ -790,11 +796,11 @@ if (!mAssetHandles.ContainsKey(op.Result)) mAssetHandles[op.Result] = op;
 
 | 메시지 | 위치 |
 |---|---|
-| "Can not find procedure type '...'." | `Assets/Scripts/Procedure/ProcedureComponent.cs:68` |
-| "Game Framework component type '...' is already exist." | `Assets/Scripts/Base/GameEntry.cs:110` |
+| "Can not find procedure type '...'." | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Procedure/ProcedureComponent.cs:68` |
+| "Game Framework component type '...' is already exist." | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/GameEntry.cs:110` |
 | 엔티티 로드 실패 경고 | `Assets/GameMain/Game/SurvivalGame.cs:129` |
-| "UI form '...' can not get UI form logic." | `Assets/Scripts/UI/UIForm.cs:97` |
-| Entity try/catch가 삼킨 예외 전부 | `Assets/Scripts/Entity/Entity.cs:105-112` 등 |
+| "UI form '...' can not get UI form logic." | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIForm.cs:97` |
+| Entity try/catch가 삼킨 예외 전부 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/Entity.cs:105-112` 등 |
 
 **나머지 9개 항목의 재현·확인 비용이 전부 여기에 걸려 있다.** 절차는 §0-1.
 (참고: DLL 내부의 `GameFrameworkLog`에는 Conditional이 없어 코어가 직접 찍는 로그는 나온다.)
@@ -838,7 +844,7 @@ if (entityInfo == null) throw new GameFrameworkException("Can not find entity '{
 | 루트 GO "GameFramework" (`Assets/Prefabs/GameFramework.prefab:770-784`, 값은 `:782-784`) | 7401751991573398765 | `ProcedureMain` (**네임스페이스 누락**) | ❌ 항상 실패 |
 
 - `Utility.Assembly.GetType`은 `Type.GetType` 기반이라 네임스페이스 없는 이름은 **확정적으로 null** → `ProcedureComponent.cs:68-69`에서 `Log.Error` 후 `yield break`. `:91`의 `Initialize`에는 절대 도달하지 못한다. **따라서 FSM 중복 생성 경합은 없고 그 부분은 결정론적이다.**
-- 문제는 `GameEntry.RegisterComponent`(`Assets/Scripts/Base/GameEntry.cs:95-118`)가 **둘 중 먼저 Awake된 쪽만 등록하고 나머지를 `Log.Error` 후 거부**한다는 것이다(`:110`). **어느 쪽이 등록되는지는 Awake 순서에 달려 비결정적**이고(`ProjectSettings/MonoManager.asset` 없음), 그 거부 로그마저 §5.1 [3] 때문에 안 보인다.
+- 문제는 `GameEntry.RegisterComponent`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/GameEntry.cs:95-118`)가 **둘 중 먼저 Awake된 쪽만 등록하고 나머지를 `Log.Error` 후 거부**한다는 것이다(`:110`). **어느 쪽이 등록되는지는 Awake 순서에 달려 비결정적**이고(`ProjectSettings/MonoManager.asset` 없음), 그 거부 로그마저 §5.1 [3] 때문에 안 보인다.
 - `[DisallowMultipleComponent]`(`ProcedureComponent.cs:19`)는 **같은 GameObject 안에서만** 막으므로 이 배치를 걸러내지 못한다.
 - `Assets/Scenes/MainScene.unity:735-742`의 프리팹 오버라이드는 **값이 원본과 동일한 무의미 오버라이드**다. 씬에서 되돌려도 해결되지 않는다 — **고칠 지점은 프리팹 루트의 컴포넌트 자체다.**
 
@@ -849,8 +855,8 @@ if (entityInfo == null) throw new GameFrameworkException("Can not find entity '{
 `ProjectSettings/EditorBuildSettings.asset:7-10` — enabled 씬이 `Assets/Scenes/SampleScene.unity` **하나뿐**이고 `Assets/Scenes/MainScene.unity`는 목록에 없다.
 
 - 지금 빌드하면 빈 URP 템플릿 씬이 뜨고 GameFramework가 기동조차 안 한다.
-- `Assets/Scripts/Base/GameEntry.cs:79-83` `Shutdown(ShutdownType.Restart)` → `SceneManager.LoadScene(0)` → **SampleScene**. GameFramework 프리팹에 `DontDestroyOnLoad`가 없어(`Assets` 전체 0건) Single 모드 로드가 `BaseComponent.OnDestroy`(`:211-213`) → `GameFrameworkEntry.Shutdown()`을 유발한다.
-  → **재시작 = 복구 불가능한 종료.** 호출부가 `Assets/Scripts/Debugger/DebuggerComponent.OperationsWindow.cs:57`(디버거 UI)이라 **QA가 실수로 누르기 쉽다.**
+- `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Base/GameEntry.cs:79-83` `Shutdown(ShutdownType.Restart)` → `SceneManager.LoadScene(0)` → **SampleScene**. GameFramework 프리팹에 `DontDestroyOnLoad`가 없어(`Assets` 전체 0건) Single 모드 로드가 `BaseComponent.OnDestroy`(`:211-213`) → `GameFrameworkEntry.Shutdown()`을 유발한다.
+  → **재시작 = 복구 불가능한 종료.** 호출부가 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Debugger/DebuggerComponent.OperationsWindow.cs:57`(디버거 UI)이라 **QA가 실수로 누르기 쉽다.**
 
 **[상태] 에디터 개발에는 영향 없음, 빌드·재시작에서 100% 발현.** 수정은 §8-2.
 
@@ -953,7 +959,7 @@ void Awake() { for(int i = 0; i < maxFreezableEnemies; i++) Instantiate(frostDeb
 | **같은 엔티티에 `HideEntity`는 정확히 1회** | `GameFrameworkException` | §5.1 [4] |
 | `EntityLogic` 오버라이드는 `protected internal override` | 컴파일 에러 | `Player.cs:29` |
 | **엔티티 프리팹에 `EntityLogic`/`Entity`를 붙이지 않는다** | 컴포넌트 중복, 이벤트 다중 발행, NRE | §5.1 [2] |
-| **UI 폼 프리팹에는 `UIFormLogic`을 반드시 붙인다** (엔티티와 정반대) | 폼은 열리지만 콜백이 하나도 안 돈다 | `Assets/Scripts/UI/UIForm.cs:94-98` |
+| **UI 폼 프리팹에는 `UIFormLogic`을 반드시 붙인다** (엔티티와 정반대) | 폼은 열리지만 콜백이 하나도 안 돈다 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIForm.cs:94-98` |
 | `EntityLogic`/`UIFormLogic`에서 Unity Awake/Start 사용 금지 | 풀링 재사용이라 Awake는 인스턴스당 한 번뿐 → 두 번째 스폰부터 초기화 누락 | |
 | 새 `~Component`는 `GameFrameworkComponent` 상속 + `protected override void Awake() { base.Awake(); ... }` | base.Awake()를 빼면 GameEntry에 등록되지 않아 `GetComponent<T>()`가 영원히 null | `GameFrameworkComponent.cs:16-19` |
 | 컴포넌트 참조는 Awake가 아니라 **Start**에서 잡는다 | Awake 순서가 보장되지 않아 null | `EntityComponent.cs:98-113` |
@@ -981,7 +987,7 @@ void Awake() { for(int i = 0; i < maxFreezableEnemies; i++) Instantiate(frostDeb
 - **`PlayerData`/`EnemyData`의 `[SerializeField]`는 인스펙터로 조절할 수 없다**(§4-1 1단계)
 - **물리 모델이 혼재한다**: Enemy는 Transform 직접 이동(`Enemy.cs:54`), Player는 `Rigidbody.MovePosition`(`Player.cs:75`)
 - **ExpGem은 콜라이더가 아니라 매 프레임 거리 계산으로 수집 판정**(`ExpGem.cs:41`) — 개수가 늘면 O(n) 부하
-- **`Assets/Scripts` 하위에 Editor 폴더가 없다** → 원본 GF의 커스텀 인스펙터가 전부 제거되어 프리팹 인스펙터에 raw 필드명(`mEnableOpenUIFormSuccessEvent` 등)이 그대로 노출된다. **프리팹을 인스펙터로 편집할 때는 이 문서의 `GameFramework.prefab:줄번호` 표를 참조할 것**
+- ~~`Assets/Scripts` 하위에 Editor 폴더가 없다~~ → **해결됨(2026-10-10).** 패키지 `Editor/` 에 원본 GF 의 커스텀 인스펙터(Inspector)와 메뉴(Misc)를 이식했다. 프리팹 인스펙터에 헬퍼 타입 드롭다운·프로시저 체크박스·런타임 상태가 보인다. 원본의 AssetBundle 도구는 옮기지 않고 `Editor/Addressables` 에 Addressables 메뉴를 두었다
 - **동순위 모듈의 Update 순서는 정해져 있지 않다** (§2-2 핵심 3)
 
 ---
@@ -1161,9 +1167,9 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
   (반면 `EditorResourceMode`는 아직 3곳에서 읽힌다: `BaseComponent.cs:175-179`, `LocalizationComponent.cs:134`, `DebuggerComponent.EnvironmentInformationWindow.cs:56`)
 - `ResourceComponent.ApplicableGameVersion` / `InternalResourceVersion` (`:37-38`) — 주석은 "Debugger 호환용"이지만 실제로 `DebuggerComponent.EnvironmentInformationWindow.cs:56`이 화면에 그린다.
 - `EntityComponent`의 조회/부착 API 전반 (`GetEntity`/`GetEntities`/`GetAllLoadedEntities` `:201-265`, `AttachEntity`/`DetachEntity` `:449-651`) — GameMain 사용 0건. **적 다수를 관리하려면 이 API로 갈아타야 한다**(§3-2, §4-1 10단계).
-- `Assets/Scripts/UI/DefaultUIGroupHelper.cs:14-16` `SetDepth` — **빈 구현.** UI를 쓰기 시작하면 반드시 문제가 된다(§3-7, §4-6 A5).
-- `Assets/Scripts/Download/WWWDownloadAgentHelper.cs`, `Assets/Scripts/WebRequest/WWWWebRequestAgentHelper.cs` — 프리팹이 UnityWebRequest 계열 헬퍼를 지정하고 있어 미사용.
-- `Assets/Scripts` 하위에 Editor 폴더가 없다 → 커스텀 인스펙터 부재 (§5-4).
+- `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/DefaultUIGroupHelper.cs:14-16` `SetDepth` — **빈 구현.** UI를 쓰기 시작하면 반드시 문제가 된다(§3-7, §4-6 A5).
+- `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Download/WWWDownloadAgentHelper.cs`, `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/WebRequest/WWWWebRequestAgentHelper.cs` — 프리팹이 UnityWebRequest 계열 헬퍼를 지정하고 있어 미사용.
+- ~~`Assets/Scripts` 하위에 Editor 폴더가 없다 → 커스텀 인스펙터 부재~~ → 패키지 `Editor/` 로 이식 완료 (§5-4).
 
 ### 7-5. 별도 Addressables 진입점 (중복 구현)
 
@@ -1200,7 +1206,7 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
 
 `External/GameFramework/GameFramework/Base/Log/GameFrameworkLog.cs`(107줄)가 주석 기계 번역 중 **잘려 나갔다.** `:58`, `:70`, `:82`, `:94`에 `// ... 계속해서 모든 XXX 메서드들에 대해 동일한 패턴으로 번역 ...` 플레이스홀더가 남아 있고, Info/Warning/Error/Fatal에 `(object message)` 오버로드가 **하나씩만** 남아 있다(원본은 각각 여러 제네릭 포맷 오버로드 보유).
 
-현재는 `Assets/Scripts/Utility/Log.cs`가 자체적으로 `string.Format`을 해서 넘기므로 동작에 문제가 없지만, **DLL을 재빌드하면서 다른 코드가 잘린 오버로드를 부르면 컴파일이 깨진다**(§1-4 지뢰 3). 다른 파일에도 같은 절단이 있는지는 **미확인**(플레이스홀더 문자열 검색으로는 이 파일 1개만 검출됨).
+현재는 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs`가 자체적으로 `string.Format`을 해서 넘기므로 동작에 문제가 없지만, **DLL을 재빌드하면서 다른 코드가 잘린 오버로드를 부르면 컴파일이 깨진다**(§1-4 지뢰 3). 다른 파일에도 같은 절단이 있는지는 **미확인**(플레이스홀더 문자열 검색으로는 이 파일 1개만 검출됨).
 
 원본 GameFramework 대비 확인된 수정:
 1. 저작권 헤더에 `Modified © 2025 얌얌코딩` 추가 (`Homepage: https://www.yamyamcoding.com/`, `Feedback: mailto:eazuooz@gmail.com`)
@@ -1217,7 +1223,7 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
 ### 8-1. 즉시 결정 — 개발 환경이 정상 동작하려면
 
 **1. `Log.*`가 전부 컴파일 제거되는 것이 의도인가?**
-→ **권장: 의도가 아니라고 보고 즉시 켠다.** `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG`(§0-1). 지금은 엔티티 예외까지 전부 침묵한다(§5.1 [3]). 진짜로 릴리스에서 로그를 빼고 싶다면 그건 **릴리스 빌드 타겟에서만** 비우면 되는 일이다. 만약 "전부 제거"가 정말 의도라면 `Assets/Scripts/Utility/Log.cs`(433줄) 전체가 사실상 죽은 코드이므로 삭제 검토 대상이 된다.
+→ **권장: 의도가 아니라고 보고 즉시 켠다.** `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG`(§0-1). 지금은 엔티티 예외까지 전부 침묵한다(§5.1 [3]). 진짜로 릴리스에서 로그를 빼고 싶다면 그건 **릴리스 빌드 타겟에서만** 비우면 되는 일이다. 만약 "전부 제거"가 정말 의도라면 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs`(433줄) 전체가 사실상 죽은 코드이므로 삭제 검토 대상이 된다.
 
 **2. `MainScene`을 `EditorBuildSettings`의 scene 0으로 넣을 것인가? `SampleScene`은 삭제할 것인가?**
 → **권장: MainScene을 0번으로 등록하고, SampleScene은 등록만 해제하고 파일은 당분간 남긴다.** 현재 빌드/`LoadScene(0)` 재시작이 빈 SampleScene으로 간다(§5.1 [6]).
@@ -1245,7 +1251,7 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
 → 선택지:
   - **(a) 권장 — `assetName`별 참조 카운트 + 핸들 캐시**로 바꿔 한 번만 로드하고 카운트를 관리. GF EntityManager가 인스턴스마다 `entityAsset`을 들고 있어 GF 계약과 더 잘 맞는다.
   - (b) 핸들 리스트를 쌓아 `UnloadAsset`마다 하나씩 pop.
-  - **어느 쪽이든 실패 경로(`Assets/Scripts/Resource/ResourceManager.cs:172-176`)의 핸들 미해제는 반드시 함께 처리해야 한다.**
+  - **어느 쪽이든 실패 경로(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs:172-176`)의 핸들 미해제는 반드시 함께 처리해야 한다.**
 
 **9. 적/무기/경험치 시스템을 되살릴 것인가, 완전히 버릴 것인가?**
 → 88408fd의 삭제 의도가 '완전 폐기'인지 '재설계를 위한 초기화'인지가 **미확인**이다. **이 문서에서 결론 낼 수 없는 유일한 제품 결정이다.**
@@ -1253,7 +1259,7 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
   - **버린다면**: Enemy/ExpGem/Projectile/Weapon 소스 + `GameFramework.prefab:1073-1087`의 엔티티 그룹 3개 + `ExpGem`/`ProjectileWeapon`의 public setter까지 함께 정리.
 
 **10. 적 에셋은 무엇을 쓸 것인가?**
-→ **권장: 이미 Addressable에 등록되고 콜라이더도 있는 `Zombunny`/`ZomBear`/`ZombieDuck`/`Hellephant`/`Clown`/`Sheep`/`Dog`를 쓴다.** `Assets/Prefabs/Enemy.prefab`은 콜라이더 없음 + Addressable 미등록이라 처음부터 다시 만드는 것과 같다. `Assets/Scripts/Entity/Entity.cs:98`이 EntityLogic을 런타임에 붙이므로 프리팹에 Enemy 스크립트가 없어도 무방하다. 이 경우 **`EnemyData`에 에셋 키 필드가 필요**하다(현재 없음). 단 이 프리팹들에는 Sample의 `EnemyAttack`/`EnemyHealth`/`EnemyMovement`가 붙어 있어 §5.1 [2]와 같은 중복이 생기므로 **프리팹 복제 후 스크립트를 떼는 것이 안전하다.**
+→ **권장: 이미 Addressable에 등록되고 콜라이더도 있는 `Zombunny`/`ZomBear`/`ZombieDuck`/`Hellephant`/`Clown`/`Sheep`/`Dog`를 쓴다.** `Assets/Prefabs/Enemy.prefab`은 콜라이더 없음 + Addressable 미등록이라 처음부터 다시 만드는 것과 같다. `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/Entity.cs:98`이 EntityLogic을 런타임에 붙이므로 프리팹에 Enemy 스크립트가 없어도 무방하다. 이 경우 **`EnemyData`에 에셋 키 필드가 필요**하다(현재 없음). 단 이 프리팹들에는 Sample의 `EnemyAttack`/`EnemyHealth`/`EnemyMovement`가 붙어 있어 §5.1 [2]와 같은 중복이 생기므로 **프리팹 복제 후 스크립트를 떼는 것이 안전하다.**
 
 **11. 적 스폰을 어디에 둘 것인가?**
 → 선택지: `SurvivalGame.Update`로 되돌리기(84ce872 방식) vs 별도 Spawner 시스템(`GameFrameworkComponent` 파생, §5-3)으로 분리.
@@ -1332,11 +1338,11 @@ DataTable / ScriptableObject / JSON 등 외부 데이터 소스를 GameMain 코�
 | 실행 씬 | `Assets/Scenes/MainScene.unity` |
 | Addressable 주소 목록 | `Assets/AddressableAssetsData/AssetGroups/Prefabs.asset` |
 | Addressable 빌드 설정 | `Assets/AddressableAssetsData/AddressableAssetSettings.asset` |
-| 리소스 어댑터 (누수 지점) | `Assets/Scripts/Resource/ResourceManager.cs` |
-| 엔티티 코어 래퍼 | `Assets/Scripts/Entity/EntityComponent.cs`, `Entity.cs`, `DefaultEntityHelper.cs` |
-| UI 코어 래퍼 | `Assets/Scripts/UI/UIComponent.cs`, `UIForm.cs`, `DefaultUIFormHelper.cs` |
-| 설정/세이브 | `Assets/Scripts/Setting/SettingComponent.cs`, `DefaultSettingHelper.cs` |
-| 로그 (컴파일 제거 중) | `Assets/Scripts/Utility/Log.cs` |
+| 리소스 어댑터 (누수 지점) | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs` |
+| 엔티티 코어 래퍼 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Entity/EntityComponent.cs`, `Entity.cs`, `DefaultEntityHelper.cs` |
+| UI 코어 래퍼 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/UI/UIComponent.cs`, `UIForm.cs`, `DefaultUIFormHelper.cs` |
+| 설정/세이브 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Setting/SettingComponent.cs`, `DefaultSettingHelper.cs` |
+| 로그 (컴파일 제거 중) | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs` |
 | 정의 심볼 | `ProjectSettings/ProjectSettings.asset:823` |
 | 빌드 씬 목록 | `ProjectSettings/EditorBuildSettings.asset:7-10` |
 | 코어 DLL | `Assets/Plugins/GameFramework.dll` (git 추적) |
