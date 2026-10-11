@@ -34,8 +34,14 @@ namespace UnityGameFramework.Editor
             "Log.cs"
         };
 
+        // 에셋 식별자가 int(InstanceID) 에서 EntityId 로 바뀌면서 콜백 시그니처도 바뀌었다.
+        // 맞지 않는 쪽을 쓰면 컴파일은 되지만 에셋을 열 때마다 에디터가 오류를 낸다.
         [OnOpenAsset(0)]
+#if UNITY_6000_3_OR_NEWER
+        private static bool OnOpenAsset(UnityEngine.EntityId entityId, int line)
+#else
         private static bool OnOpenAsset(int instanceId, int line)
+#endif
         {
             string selectedStackTrace = GetSelectedStackTrace();
             if (string.IsNullOrEmpty(selectedStackTrace))
