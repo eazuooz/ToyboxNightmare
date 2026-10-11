@@ -32,7 +32,7 @@ namespace ToyBoxNightmare
         private float mSpeed      = WeaponTable.SlimeSpeed;
         private float mHitRadius  = WeaponTable.SlimeHitRadius;
 
-        protected override void OnShow(object userData)
+        protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 

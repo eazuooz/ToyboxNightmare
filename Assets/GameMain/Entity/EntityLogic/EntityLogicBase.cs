@@ -36,7 +36,7 @@ namespace ToyBoxNightmare
             get { return mHidden; }
         }
 
-        protected override void OnShow(object userData)
+        protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 
@@ -52,7 +52,7 @@ namespace ToyBoxNightmare
         /// (Player, Enemy 둘 다 그렇다). 그래서 데이터 반납은 이 메서드의 맨 끝이어야
         /// 파생이 아직 데이터를 읽고 있는 시점을 앞지르지 않는다.
         /// </summary>
-        protected override void OnHide(bool isShutdown, object userData)
+        protected internal override void OnHide(bool isShutdown, object userData)
         {
             mHidden = true;
 
@@ -73,27 +73,6 @@ namespace ToyBoxNightmare
             mOwnedData = null;
 
             ReferencePool.Release(data);
-        }
-
-        /// <summary>
-        /// 이 인스턴스의 FSM 이름.
-        ///
-        /// 코어는 (소유자 타입, 이름) 으로 FSM 을 식별하므로 인스턴스마다 달라야 한다.
-        /// 엔티티 Id 가 그 조건을 만족한다.
-        /// </summary>
-        protected string FsmName
-        {
-            get
-            {
-                // Entity 가 null 이면 EntityManager 를 거치지 않고 프리팹에 baked 된 것이다(규약 위반).
-                // 그래도 이름이 겹치면 안 되므로 Unity 오브젝트 고유 id 로 대신한다.
-                //
-                // GetEntityId 는 Unity 6.3 에서 GetInstanceID 를 대체한 API 다. 이름이 비슷할 뿐
-                // 위의 GameFramework Entity.Id 와는 <b>아무 관계가 없다.</b>
-                if (Entity == null) return GetEntityId().ToString();
-
-                return Entity.Id.ToString();
-            }
         }
 
         /// <summary>

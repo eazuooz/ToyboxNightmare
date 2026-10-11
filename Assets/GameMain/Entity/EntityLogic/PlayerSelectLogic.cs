@@ -51,7 +51,7 @@ namespace ToyBoxNightmare
 
         public string CharacterKey => characterKey;
 
-        protected override void OnInit(object userData)
+        protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
             capsuleCollider = GetComponent<CapsuleCollider>();
@@ -94,7 +94,7 @@ namespace ToyBoxNightmare
             }
         }
 
-        protected override void OnShow(object userData)
+        protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 
@@ -125,12 +125,20 @@ namespace ToyBoxNightmare
             CreateStateMachine();
         }
 
-        protected override void OnHide(bool isShutdown, object userData)
+        protected internal override void OnHide(bool isShutdown, object userData)
         {
             // 가장 먼저 부순다. 회수된 엔티티의 상태가 계속 도는 것을 막는다.
             DestroyStateMachine();
 
             base.OnHide(isShutdown, userData);
+        }
+
+        /// <summary>
+        /// FSM 이름. 코어는 (소유자 타입, 이름) 으로 식별하므로 인스턴스마다 달라야 한다.
+        /// </summary>
+        private string FsmName
+        {
+            get { return Entity != null ? Entity.Id.ToString() : GetEntityId().ToString(); }
         }
 
         private void CreateStateMachine()
@@ -183,7 +191,7 @@ namespace ToyBoxNightmare
         /// 프레임 갱신은 전부 FSM 상태가 한다(FsmManager 가 이것보다 먼저 돈다).
         /// 여기에 로직을 다시 넣으면 상태 밖에 숨은 분기가 생기므로 그러지 말 것.
         /// </summary>
-        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
         }

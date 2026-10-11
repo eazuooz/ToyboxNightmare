@@ -20,7 +20,7 @@ namespace ToyBoxNightmare
         private float mLifetime = FallbackLifetime;
         private float mElapsed  = 0f;
 
-        protected override void OnInit(object userData)
+        protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
 
@@ -35,7 +35,7 @@ namespace ToyBoxNightmare
             }
         }
 
-        protected override void OnShow(object userData)
+        protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 
@@ -78,7 +78,7 @@ namespace ToyBoxNightmare
         {
         }
 
-        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 

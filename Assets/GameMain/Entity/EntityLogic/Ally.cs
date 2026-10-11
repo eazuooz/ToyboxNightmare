@@ -20,7 +20,7 @@ namespace ToyBoxNightmare
         /// <summary>적이 쫓을 좌표. 회수된 뒤에는 의미가 없으므로 호출부가 Available 을 먼저 볼 것.</summary>
         public Vector3 LurePosition => CachedTransform.position;
 
-        protected override void OnInit(object userData)
+        protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
 
@@ -31,7 +31,7 @@ namespace ToyBoxNightmare
             }
         }
 
-        protected override void OnShow(object userData)
+        protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 
@@ -47,7 +47,7 @@ namespace ToyBoxNightmare
             MoveTo(mAllyData.MoveDestination);
         }
 
-        protected override void OnHide(bool isShutdown, object userData)
+        protected internal override void OnHide(bool isShutdown, object userData)
         {
             StopAgent();
 

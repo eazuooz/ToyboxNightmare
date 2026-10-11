@@ -47,7 +47,7 @@ namespace ToyBoxNightmare
 
         // ─── 생명주기 ───
 
-        protected override void OnInit(object userData)
+        protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
 
@@ -93,7 +93,7 @@ namespace ToyBoxNightmare
             return component;
         }
 
-        protected override void OnOpen(object userData)
+        protected internal override void OnOpen(object userData)
         {
             base.OnOpen(userData);
 
@@ -104,7 +104,7 @@ namespace ToyBoxNightmare
             PullVolumeFromMixer();
         }
 
-        protected override void OnClose(bool isShutdown, object userData)
+        protected internal override void OnClose(bool isShutdown, object userData)
         {
             // 정지 상태로 판을 벗어나면 timeScale 이 0 인 채로 남아 다음 판이 통째로 멈춘다.
             GamePause.Clear();
@@ -116,7 +116,7 @@ namespace ToyBoxNightmare
         /// 정지 중에도 돌아야 하므로 <c>realElapseSeconds</c> 기준으로 생각한다.
         /// (UIFormLogic.OnUpdate 는 timeScale 과 무관하게 매 프레임 불린다.)
         /// </summary>
-        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
 
