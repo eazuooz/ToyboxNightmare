@@ -1,4 +1,4 @@
-This package contains third-party software components governed by the
+This software contains third-party software components governed by the
 license(s) indicated below.
 
 ---
@@ -11,7 +11,7 @@ Copyright © 2013–2021 Jiang Yin (EllanJiang)
 
 https://github.com/EllanJiang/GameFramework
 
-Used in: `Runtime/Core` (modified)
+Used in: `GameFramework.dll` (built from modified source)
 
 ---
 
@@ -23,7 +23,7 @@ Copyright © 2013–2021 Jiang Yin (EllanJiang)
 
 https://github.com/EllanJiang/UnityGameFramework
 
-Used in: `Runtime/UnityGameFramework`, `Editor/Inspector`, `Editor/Misc` (modified)
+Used in: `Assets/Scripts`, `Assets/Scripts/Editor/Inspector`, `Assets/Scripts/Editor/Misc` (modified)
 
 ---
 

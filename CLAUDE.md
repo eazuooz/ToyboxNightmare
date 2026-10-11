@@ -21,31 +21,45 @@ GameFramework(EllanJiang) 기반 뱀서라이크 프로토타입. Unity 공식 �
 
 ## 코드 레이어 (수정 권한이 층마다 다르다)
 
-프레임워크는 **임베디드 UPM 패키지** `Packages/com.yamyamcoding.gameframework/` 로 분리돼 있다(판매·배포 단위). 게임 코드와 어셈블리가 다르다.
+세 층이다. **GameFramework(코어)는 Unity 밖의 별도 C# DLL 프로젝트**이고, UnityGameFramework 가 그 DLL 을 써서 Unity 에 붙이며, 게임은 그 둘을 쓴다.
 
 | 층 | 경로 | 어셈블리 | 파일 수 | 수정 권한 |
 |---|---|---|---|---|
-| 1 | `Packages/com.yamyamcoding.gameframework/Runtime/Core/` (GameFramework 코어) | `GameFramework` | 329 | **준금지** — 먼저 사용자에게 확인 |
-| 2 | `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/` (Unity 래퍼) | `UnityGameFramework.Runtime` | 190 | **준금지** — `Resource/` 외에는 사실상 순정 |
+| 1 | `External/GameFramework/` (GameFramework 코어, netstandard2.1 프로젝트) → 빌드하면 `Assets/Plugins/GameFramework.dll` | `GameFramework` | 329 | **준금지** — 먼저 사용자에게 확인 |
+| 2 | `Assets/Scripts/` (UnityGameFramework — Unity 래퍼), `Assets/Scripts/Editor/` (커스텀 인스펙터·메뉴) | `Assembly-CSharp` / `Assembly-CSharp-Editor` | 190 / 33 | **준금지** — `Resource/` 외에는 사실상 순정 |
 | 3 | `Assets/GameMain/` (게임 로직) | `Assembly-CSharp` | — | **자유** — 여기가 우리 코드다 |
 | 4 | `Assets/Sample/` (Zombie Toys 원본) | `Assembly-CSharp` | 34 | 정리 대상 |
 
-- **코어는 이제 소스로 컴파일된다.** 예전의 `Assets/Plugins/GameFramework.dll` 은 제거했다. `Runtime/Core` 의 `.cs` 를 고치면 바로 반영된다.
-- `External/GameFramework/` 는 패키지로 복사하기 전의 **옛 원본**이다(git 미추적). 더 이상 빌드에 쓰이지 않으므로 **여기를 고치지 말 것** — 정본은 패키지 쪽이다.
-- 코어 어셈블리는 `noEngineReferences` 다. `UnityEngine` 을 참조하면 컴파일이 깨진다.
-- upstream 히스토리가 소실되어 **원본 머지가 불가능하다.** 코어를 고치면 "이게 GF 사양인가 우리 버그인가"를 판정할 방법이 사라진다.
-- 패키지는 팔 물건이다. **게임 전용 코드(`ToyBoxNightmare` 네임스페이스)나 유료·서드파티 에셋을 패키지 안에 넣지 말 것.** 패키지가 `Assets/` 를 참조해도 안 된다.
-- MIT 고지(`LICENSE.md`, `Third Party Notices.md`, 각 파일 헤더의 원저작자 표기)를 지우지 말 것. 재배포 조건이다.
+> **이 폴더 구조는 사용자가 정한 것이다. 요청 없이 바꾸지 말 것.** 폴더를 옮기거나 새 최상위 폴더·패키지·asmdef 를 만드는 일은 먼저 물어본다.
+> (2026-10-08 에 프레임워크를 `Packages/com.yamyamcoding.gameframework` UPM 패키지로 옮기고 코어를 소스로 합쳤다가, 의도와 달라 2026-10-11 에 전부 되돌렸다.)
 
-## 스토어 묶음 (판매 단위)
+- **코어의 정본은 `External/GameFramework/` 다**(git 미추적 — `.gitignore` 에 있다). 코어를 고치면 그 프로젝트를 빌드해야 반영된다. `GameFramework.csproj` 의 빌드 후 이벤트(XCOPY)가 `GameFramework.dll` / `.pdb` / `.deps.json` 을 `Assets/Plugins/` 로 복사한다. IDE 에서 솔루션을 빌드하거나 `dotnet build External/GameFramework/GameFramework/GameFramework.csproj -c Debug` 를 쓴다.
+- git 에 올라가는 것은 빌드 결과인 `Assets/Plugins/GameFramework.dll` 이다. **External 을 고쳤으면 DLL 을 다시 빌드해 같이 커밋할 것** — 소스가 git 밖에 있어서 DLL 만이 공유되는 코어다.
+- **코어 소스를 Unity 프로젝트(`Assets/`·`Packages/`) 안에 두지 말 것.** DLL 과 같은 이름의 어셈블리가 둘이 되어 `CS1704` 로 전체 컴파일이 깨진다.
+- 프로젝트에 asmdef 는 없다. 래퍼와 게임 코드가 같은 `Assembly-CSharp` 이다.
+- upstream 히스토리가 소실되어 **원본 머지가 불가능하다.** 프레임워크를 고치면 "이게 GF 사양인가 우리 버그인가"를 판정할 방법이 사라진다.
+- 프레임워크 폴더(`Assets/Scripts`)는 배포할 물건이다. **게임 전용 코드(`ToyBoxNightmare` 네임스페이스)나 유료·서드파티 에셋을 넣지 말 것.**
+- MIT 고지(`Docs/GameFramework/LICENSE.md`, `Third Party Notices.md`, 각 파일 헤더의 원저작자 표기)를 지우지 말 것. 재배포 조건이다.
 
-파는 것은 셋이다 — 코어, Unity 래퍼, 예제(이 게임). `Tools > Store Bundle > Build` (`Assets/Editor/StoreBundleBuilder.cs`) 가 `StoreBundle/` 에 제출용 프로젝트를 만든다(git 미추적, 매번 통째로 재생성).
+## 패키지 내보내기 (배포 단위)
 
-- **개발 프로젝트 구조는 그대로 두고 복사본만 재배치한다.** 묶음 안에서는 `Assets/GameFramework/Framework/` (프레임워크) 와 `Assets/GameFramework/Example/` (예제) 로 들어간다. `.meta` 를 같이 복사해 GUID 가 유지된다.
+`Tools > Export Packages` (`Assets/Editor/StorePackageExporter.cs`) 가 `Builds/StorePackages/` 에 `.unitypackage` 두 개를 쓴다(git 미추적).
+
+| 파일 | 내용 | 푸는 곳 |
+|---|---|---|
+| `GameFramework-<버전>.unitypackage` | `Assets/Plugins/GameFramework.dll` + `Assets/Scripts/**` + `Assets/Prefabs/GameFramework.prefab` | 아무 프로젝트 |
+| `GameFramework-Example-<버전>.unitypackage` | 위 + 예제 게임이 쓰는 에셋 + Addressables 설정 + **ProjectSettings** | **빈 프로젝트** (설정을 덮어쓴다) |
+
+- **경로를 바꾸지 않는다.** 패키지를 열면 이 프로젝트와 똑같은 위치(`Assets/…`)에 풀린다. `.meta` 를 함께 담아 GUID 가 유지된다.
+- 코어는 **DLL 로** 들어간다. 내보내기 전에 External 을 빌드해 둘 것 — DLL 이 없으면 중단한다.
 - 예제에 들어갈 파일은 손으로 고르지 않는다. **빌드 씬 + Addressables 엔트리 + `Assets/GameMain`** 을 뿌리로 한 의존성 폐포다. 게임이 참조하지 않는 에셋은 따라오지 않는다.
-- `Epic Toon FX` / `JMO Assets` / `118 sprite effects bundle` 은 재배포 불가다. 폐포에 섞이면 빌더가 **중단한다**(`sForbiddenFolders`). 예제 프리팹에서 이 폴더의 에셋을 참조하지 말 것.
-- 폐포는 **에셋 참조만** 따라간다. 코드로만 참조하는 스크립트나 ProjectSettings 가 가리키는 에셋은 안 잡히므로 `sExtraFolders` 에 적는다. 새로 생기면 묶음이 컴파일되지 않는다.
-- 묶음을 바꿨으면 깨끗한 Unity 로 열어 컴파일·누락 스크립트를 확인할 것. 개발 프로젝트에서 도는 것은 증거가 못 된다(여기엔 폐포 밖 파일도 다 있다).
+- `Epic Toon FX` / `JMO Assets` / `118 sprite effects bundle` 은 재배포 불가다. 폐포에 섞이면 **중단한다**(`sForbiddenFolders`). 예제 프리팹에서 이 폴더의 에셋을 참조하지 말 것.
+- 폐포는 **에셋 참조만** 따라간다. 코드로만 참조하는 스크립트나 ProjectSettings 가 가리키는 에셋은 안 잡히므로 `sExtraFolders` 에 적는다. 새로 생기면 예제 패키지가 컴파일되지 않는다.
+- UPM 의존성은 패키지 안의 `packagemanagermanifest` 항목으로 전달된다(프레임워크: Addressables, SharpZipLib).
+- 고지 문서(`Docs/GameFramework/LICENSE.md`, `Third Party Notices.md`)는 Assets 밖에 있어 내보낼 때 `Assets/Scripts/` 아래로 넣어 준다. 예제 패키지에는 Luckiest Guy·Zombie Toys 고지가 덧붙는다.
+- 버전은 Player Settings 의 Version(`bundleVersion`)이다.
+- 프레임워크 패키지의 `GameFramework.prefab` 은 이 게임의 설정 그대로다(Procedure 목록에 `ToyBoxNightmare.*`). 받는 쪽에서 Procedure 인스펙터로 자기 절차를 고른다.
+- 패키지를 바꿨으면 깨끗한 프로젝트에 `Unity.exe -batchmode -importPackage` 로 임포트해 컴파일·누락 스크립트를 확인할 것. 개발 프로젝트에서 도는 것은 증거가 못 된다. 배치 모드에서는 `WaitForEndOfFrame` 이 재개되지 않아 `ProcedureComponent.Start` 가 진입 절차를 시작하지 못한다 — 플레이까지 보려면 그 한 줄을 검증 쪽에서 대신 불러야 한다.
 
 ## 실행 흐름
 
@@ -59,14 +73,14 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
                   └ [클릭] OnCharacterSelected → SpawnPlayer(characterKey)  :104
 ```
 
-엔티티 프리팹 로드는 `EntityComponent.ShowEntity` → 코어 `EntityManager` → `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs:161` → **`Addressables.LoadAssetAsync`** 로 간다. `Resources.Load`나 AssetBundle 경로는 살아있는 체인 어디에도 없다.
+엔티티 프리팹 로드는 `EntityComponent.ShowEntity` → 코어 `EntityManager` → `Assets/Scripts/Resource/ResourceManager.cs:161` → **`Addressables.LoadAssetAsync`** 로 간다. `Resources.Load`나 AssetBundle 경로는 살아있는 체인 어디에도 없다.
 
 게임 코드가 실제로 쓰는 프레임워크 컴포넌트는 **`EntityComponent`(7곳) + `EventComponent`(4곳) 단 2종**이다. 나머지 19개는 프리팹에 붙어 Awake만 돈다.
 
 ## 실행 전 필수 설정 (안 하면 검은 화면 + 로그 0줄)
 
 1. **`ENABLE_LOG` 계열 define 켜기** — Project Settings > Player > Scripting Define Symbols에 `ENABLE_LOG;ENABLE_DEBUG_AND_ABOVE_LOG`.
-   `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Log.cs`의 public 메서드 20개 **전부**가 `[Conditional]`이고 `ProjectSettings.asset:823`이 비어 있어 **현재 모든 로그가 컴파일 제거된다.** 플랫폼별 딕셔너리라 타겟마다 반복해야 한다.
+   `Assets/Scripts/Utility/Log.cs`의 public 메서드 20개 **전부**가 `[Conditional]`이고 `ProjectSettings.asset:823`이 비어 있어 **현재 모든 로그가 컴파일 제거된다.** 플랫폼별 딕셔너리라 타겟마다 반복해야 한다.
 2. **Addressables Play Mode Script = `Use Asset Database (fastest)`** — 이 설정은 `Library/`에 있어 git 공유가 안 된다. 안 하면 캐릭터가 하나도 안 뜬다.
 3. **`Assets/Scenes/MainScene.unity`를 직접 연다** — 빌드 씬 목록에 등록되어 있지 않다.
 
@@ -74,7 +88,7 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 
 | 규약 | 어기면 |
 |---|---|
-| `EntityLogic`/`UIFormLogic` 오버라이드는 **`protected override`** (프레임워크가 다른 어셈블리라서. `protected internal override` 는 CS0507) | 컴파일 에러 |
+| `EntityLogic`/`UIFormLogic` 오버라이드는 **`protected internal override`** (프레임워크와 같은 어셈블리라서. `protected override` 는 CS0507) | 컴파일 에러 |
 | **엔티티 프리팹에 `EntityLogic`/`Entity`를 붙이지 않는다** | `Entity.cs:98`이 런타임에 AddComponent → 컴포넌트 중복·이벤트 다중 발행·NRE |
 | **UI 폼 프리팹에는 `UIFormLogic`을 반드시 붙인다** (엔티티와 **정반대**) | `UIForm.cs:94-98`이 `GetComponent`라서 콜백이 하나도 안 돈다 |
 | 같은 엔티티에 `HideEntity`는 **정확히 1회** | 코어에서 `GameFrameworkException` |
@@ -89,7 +103,7 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 
 **새 GameFramework 모듈은 만들 수 없다.** `GameFrameworkModule`이 `internal abstract`다. 새 전역 시스템이 필요하면 `GameFrameworkComponent`를 상속한 MonoBehaviour로 만들어 `Assets/Prefabs/GameFramework.prefab`에 자식으로 추가하고 `GameEntry.GetComponent<T>()`로 접근한다 — 이것이 유일한 확장 경로다.
 
-프레임워크 동작을 바꾸고 싶으면 코드를 고치지 말고 **Helper 교체**를 쓴다(`EntityHelperBase`, `UIFormHelperBase`, `SoundHelperBase`, `ILogHelper`, `ITextHelper` 등 → 인스펙터에 타입명 지정). `Helper.CreateHelper`(`Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Utility/Helper.cs:47`)는 순정이라 안심하고 써도 된다.
+프레임워크 동작을 바꾸고 싶으면 코드를 고치지 말고 **Helper 교체**를 쓴다(`EntityHelperBase`, `UIFormHelperBase`, `SoundHelperBase`, `ILogHelper`, `ITextHelper` 등 → 인스펙터에 타입명 지정). `Helper.CreateHelper`(`Assets/Scripts/Utility/Helper.cs:47`)는 순정이라 안심하고 써도 된다.
 
 ## 알려진 위험
 
@@ -125,7 +139,7 @@ BaseComponent (Assets/Prefabs/GameFramework.prefab, MainScene에 배치)
 - **인코딩 깨짐**: `EntityData.cs:28,39,50,65`, `TargetableObject.cs:45-46,75,81`. 편집 시 인코딩을 건드리면 diff가 폭발한다
 - 삭제된 시스템을 부르는 주석 코드가 남아 있다 — `Enemy.cs:64,71`, `ExpGem.cs:44`, `TargetableObject.cs:82`. **주석만 풀면 컴파일이 깨진다**
 - Missing Script 2건: `Assets/Prefabs/Player.prefab:44`, `UpgradeForm.prefab:48`
-- 패키지 `Editor/` 에 커스텀 인스펙터와 `Game Framework` 메뉴가 있다(원본 `Scripts/Editor` 의 Inspector·Misc 이식 + `Editor/Addressables` 의 Addressables 도구). 원본의 AssetBundle 도구(Resource Editor/Builder/Analyzer/Pack Builder/Sync Tools)는 **일부러 옮기지 않았다** — 런타임이 Addressables 라 산출물을 읽지 못한다
+- `Assets/Scripts/Editor/` 에 커스텀 인스펙터와 `Game Framework` 메뉴가 있다(원본 `Scripts/Editor` 의 Inspector·Misc 이식 + `Editor/Addressables` 의 Addressables 도구). 원본의 AssetBundle 도구(Resource Editor/Builder/Analyzer/Pack Builder/Sync Tools)는 **일부러 옮기지 않았다** — 런타임이 Addressables 라 산출물을 읽지 못한다
 - `EntitySerialId`에 리셋 API가 없다. `TypeId`는 전부 하드코딩 `1`
 
 ## Unity CLI (에디터 직접 제어)
@@ -164,7 +178,7 @@ unity command <name> --json        # 실행
 ## 작업 시
 
 - 게임 로직은 `Assets/GameMain/` 안에서 한다.
-- 프레임워크 계층(`Packages/com.yamyamcoding.gameframework/`)을 고쳐야 한다는 결론이 나오면 **먼저 사용자에게 확인**한다. 예외는 `Packages/com.yamyamcoding.gameframework/Runtime/UnityGameFramework/Resource/ResourceManager.cs` — 100% 자작 코드라 upstream 부채가 없다.
+- 프레임워크 계층(`Assets/Scripts/`, `External/GameFramework/`)을 고쳐야 한다는 결론이 나오면 **먼저 사용자에게 확인**한다. **폴더 구조를 바꾸는 일도 마찬가지다.** 예외는 `Assets/Scripts/Resource/ResourceManager.cs` — 100% 자작 코드라 upstream 부채가 없다.
 - **프리팹/씬(`.prefab`, `.unity`) YAML을 직접 편집하지 않는다.** Unity CLI의 `remove_component`/`set_layer`/`save_prefab_contents` 등 **Unity API를 쓴다.** 에디터가 꺼져 있으면 켜 달라고 요청한다.
   (YAML 직접 편집은 실제로 사고를 낸 적이 있다 — 적 프리팹이 레거시 직렬화 포맷(`- 114: {fileID}`)이라 최신 포맷(`- component:`) 패턴이 안 맞아 dangling 참조가 생겼다.)
 - **컴파일 확인은 직접 한다** — `unity command recompile_status` 와 `console --level error`. 사용자에게 물어보지 않는다.
