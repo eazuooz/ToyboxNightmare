@@ -8,6 +8,7 @@
   - `Game Framework/Log Scripting Define Symbols`, `Open Folder`, `Scenes in Build Settings` menus. Scripting define symbols use the `NamedBuildTarget` API.
   - Log redirection (double-click a `Log.Info` entry to open the caller instead of `DefaultLogHelper.cs`) re-enabled for Unity 6.
 - `Editor/Addressables`: `Game Framework/Addressables` menu (open Groups window, switch Play Mode Script to *Use Asset Database*, build / clean content, validate addresses) and an Addressables-aware `ResourceComponent` inspector.
+- `Game Framework/Download Core Source` menu: after a confirmation dialog, clones the Game Framework core repository into `External/GameFramework` next to `Assets`. Building that project copies `GameFramework.dll` to `Assets/Plugins`. Nothing is downloaded unless the menu is used.
 
 ### Not ported
 - The original AssetBundle tools (Resource Editor, Resource Builder, Resource Analyzer, Resource Pack Builder, Resource Sync Tools) are intentionally left out. This edition loads assets through Addressables, so their output can not be read at runtime.

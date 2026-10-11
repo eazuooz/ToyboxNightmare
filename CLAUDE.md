@@ -33,7 +33,7 @@ GameFramework(EllanJiang) 기반 뱀서라이크 프로토타입. Unity 공식 �
 > **이 폴더 구조는 사용자가 정한 것이다. 요청 없이 바꾸지 말 것.** 폴더를 옮기거나 새 최상위 폴더·패키지·asmdef 를 만드는 일은 먼저 물어본다.
 > (2026-10-08 에 프레임워크를 `Packages/com.yamyamcoding.gameframework` UPM 패키지로 옮기고 코어를 소스로 합쳤다가, 의도와 달라 2026-10-11 에 전부 되돌렸다.)
 
-- **코어의 정본은 `External/GameFramework/` 다**(git 미추적 — `.gitignore` 에 있다). 코어를 고치면 그 프로젝트를 빌드해야 반영된다. `GameFramework.csproj` 의 빌드 후 이벤트(XCOPY)가 `GameFramework.dll` / `.pdb` / `.deps.json` 을 `Assets/Plugins/` 로 복사한다. IDE 에서 솔루션을 빌드하거나 `dotnet build External/GameFramework/GameFramework/GameFramework.csproj -c Debug` 를 쓴다.
+- **코어의 정본은 `External/GameFramework/` 다.** 이 저장소에서는 git 미추적(`.gitignore`)이고, 그 폴더 자체가 별도 저장소 `https://github.com/eazuooz/GameFramework` 의 클론이다 — **코어를 고쳤으면 그 저장소에 커밋·푸시한다.** 코어를 고치면 그 프로젝트를 빌드해야 반영된다. `GameFramework.csproj` 의 빌드 후 이벤트(XCOPY)가 `GameFramework.dll` / `.pdb` / `.deps.json` 을 프로젝트 파일 기준 상대 경로(`..\..\..\Assets\Plugins\`)로 복사한다. IDE 에서 솔루션을 빌드하거나 `dotnet build External/GameFramework/GameFramework/GameFramework.csproj -c Debug` 를 쓴다.
 - git 에 올라가는 것은 빌드 결과인 `Assets/Plugins/GameFramework.dll` 이다. **External 을 고쳤으면 DLL 을 다시 빌드해 같이 커밋할 것** — 소스가 git 밖에 있어서 DLL 만이 공유되는 코어다.
 - **코어 소스를 Unity 프로젝트(`Assets/`·`Packages/`) 안에 두지 말 것.** DLL 과 같은 이름의 어셈블리가 둘이 되어 `CS1704` 로 전체 컴파일이 깨진다.
 - 프로젝트에 asmdef 는 없다. 래퍼와 게임 코드가 같은 `Assembly-CSharp` 이다.
@@ -56,7 +56,8 @@ GameFramework(EllanJiang) 기반 뱀서라이크 프로토타입. Unity 공식 �
 - `Epic Toon FX` / `JMO Assets` / `118 sprite effects bundle` 은 재배포 불가다. 폐포에 섞이면 **중단한다**(`sForbiddenFolders`). 예제 프리팹에서 이 폴더의 에셋을 참조하지 말 것.
 - 폐포는 **에셋 참조만** 따라간다. 코드로만 참조하는 스크립트나 ProjectSettings 가 가리키는 에셋은 안 잡히므로 `sExtraFolders` 에 적는다. 새로 생기면 예제 패키지가 컴파일되지 않는다.
 - UPM 의존성은 패키지 안의 `packagemanagermanifest` 항목으로 전달된다(프레임워크: Addressables, SharpZipLib).
-- 고지 문서(`Docs/GameFramework/LICENSE.md`, `Third Party Notices.md`)는 Assets 밖에 있어 내보낼 때 `Assets/Scripts/` 아래로 넣어 준다. 예제 패키지에는 Luckiest Guy·Zombie Toys 고지가 덧붙는다.
+- 받는 쪽은 메뉴 `Game Framework > Download Core Source` (`Assets/Scripts/Editor/Misc/CoreSourceDownloader.cs`)로 코어 소스를 `External/GameFramework` 에 클론할 수 있다. **확인 창에서 동의했을 때만** 받는다 — 임포트만으로 자동 실행되게 바꾸지 말 것(스토어 가이드라인 2.5.1.d).
+- 문서(`Docs/GameFramework/` 의 `LICENSE.md`, `Third Party Notices.md`, `README.md`)는 Assets 밖에 있어 내보낼 때 `Assets/Scripts/` 아래로 넣어 준다. 예제 패키지에는 Luckiest Guy·Zombie Toys 고지가 덧붙는다.
 - 버전은 Player Settings 의 Version(`bundleVersion`)이다.
 - 프레임워크 패키지의 `GameFramework.prefab` 은 이 게임의 설정 그대로다(Procedure 목록에 `ToyBoxNightmare.*`). 받는 쪽에서 Procedure 인스펙터로 자기 절차를 고른다.
 - 패키지를 바꿨으면 깨끗한 프로젝트에 `Unity.exe -batchmode -importPackage` 로 임포트해 컴파일·누락 스크립트를 확인할 것. 개발 프로젝트에서 도는 것은 증거가 못 된다. 배치 모드에서는 `WaitForEndOfFrame` 이 재개되지 않아 `ProcedureComponent.Start` 가 진입 절차를 시작하지 못한다 — 플레이까지 보려면 그 한 줄을 검증 쪽에서 대신 불러야 한다.

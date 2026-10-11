@@ -53,11 +53,12 @@ namespace ToyBoxNightmare.EditorTools
 
         private const string NoticesDoc = "Third Party Notices.md";
 
-        /// <summary>패키지에 넣는 고지 문서. MIT 재배포 조건이라 빠지면 안 된다.</summary>
-        private static readonly string[] sLicenseDocs =
+        /// <summary>패키지에 넣는 문서. LICENSE 와 고지는 MIT 재배포 조건이라 빠지면 안 된다.</summary>
+        private static readonly string[] sPackageDocs =
         {
             "LICENSE.md",
             NoticesDoc,
+            "README.md",
         };
 
         /// <summary>
@@ -145,7 +146,7 @@ namespace ToyBoxNightmare.EditorTools
             using (var tar = new TarWriter(frameworkFile))
             {
                 AddAssets(tar, projectRoot, frameworkAssets);
-                AddLicenseDocs(tar, projectRoot, false);
+                AddPackageDocs(tar, projectRoot, false);
                 AddManifest(tar, BuildManifest(sFrameworkDependencies, null, false));
             }
 
@@ -153,7 +154,7 @@ namespace ToyBoxNightmare.EditorTools
             using (var tar = new TarWriter(exampleFile))
             {
                 AddAssets(tar, projectRoot, exampleAssets);
-                AddLicenseDocs(tar, projectRoot, true);
+                AddPackageDocs(tar, projectRoot, true);
                 AddProjectSettings(tar, projectRoot);
                 AddManifest(tar, BuildManifest(sFrameworkDependencies, exampleAssets, true));
             }
@@ -378,15 +379,15 @@ namespace ToyBoxNightmare.EditorTools
         }
 
         /// <summary>
-        /// 고지 문서는 Assets 밖(<see cref="DocsFolder"/>)에 있어 .meta 가 없다. 프레임워크 폴더 안에
+        /// 문서는 Assets 밖(<see cref="DocsFolder"/>)에 있어 .meta 가 없다. 프레임워크 폴더 안에
         /// 놓이도록 넣고, GUID 는 경로에서 계산해 다시 내보내도 같게 한다.
         /// </summary>
-        private static void AddLicenseDocs(TarWriter tar, string projectRoot, bool includeExample)
+        private static void AddPackageDocs(TarWriter tar, string projectRoot, bool includeExample)
         {
-            foreach (string doc in sLicenseDocs)
+            foreach (string doc in sPackageDocs)
             {
                 string source = Path.Combine(projectRoot, DocsFolder, doc);
-                if (!File.Exists(source)) throw new InvalidOperationException("StorePackage: 고지 문서가 없다 → " + DocsFolder + "/" + doc);
+                if (!File.Exists(source)) throw new InvalidOperationException("StorePackage: 문서가 없다 → " + DocsFolder + "/" + doc);
 
                 string text = File.ReadAllText(source);
                 if (includeExample && doc == NoticesDoc) text += BuildExampleNotices();

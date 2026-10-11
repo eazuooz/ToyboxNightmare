@@ -34,6 +34,16 @@ Unity용 모듈형 게임 프레임워크. Procedure / FSM, Entity, UI, Event, O
 4. 메뉴 **Game Framework → Log Scripting Define Symbols → Enable All Logs** 로 프레임워크 로그를 켠다.
    켜지 않으면 `Log.Info` / `Log.Error` 가 컴파일에서 빠져 아무것도 찍히지 않는다.
 
+## 코어 소스 받기 (선택)
+
+코어는 DLL 로 들어 있어서 그대로 써도 된다. 코어를 디버깅하거나 고치고 싶을 때만 소스를 받는다.
+
+1. 메뉴 **Game Framework → Download Core Source** 를 고르고 확인 창에서 **Download** 를 누른다.
+   `https://github.com/eazuooz/GameFramework` 가 `<프로젝트>/External/GameFramework` 에 클론된다(git 과 인터넷이 필요하다).
+2. `External/GameFramework/GameFramework.sln` 을 열어 빌드한다. 빌드 후 이벤트가 `GameFramework.dll` 을 `Assets/Plugins` 로 복사하고, Unity 가 새 DLL 을 읽는다.
+
+메뉴를 고르기 전에는 아무것도 받지 않는다. 빌드 후 복사는 Windows 의 XCOPY 를 쓴다.
+
 ## 게임 코드에서 지킬 것
 
 - `EntityLogic` / `UIFormLogic` 의 훅은 **`protected internal override`** 로 오버라이드한다(프레임워크와 게임 코드가 같은 어셈블리다).
