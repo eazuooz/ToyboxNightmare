@@ -155,6 +155,8 @@ MonoBehaviour:
   mUIGroups:
   - mName: Default
     mDepth: 0
+  - mName: Popup
+    mDepth: 1
 --- !u!1 &560897799551230169
 GameObject:
   m_ObjectHideFlags: 0
@@ -562,7 +564,7 @@ MonoBehaviour:
     mAvoidBeingReplacedBySamePriority: 0
     mMute: 0
     mVolume: 1
-    mAgentHelperCount: 8
+    mAgentHelperCount: 16
 --- !u!1 &5115498723110740965
 GameObject:
   m_ObjectHideFlags: 0
@@ -701,9 +703,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mAvailableProcedureTypeNames:
-  - ToyBoxNightmare.ProcedureMain
-  - ToyBoxNightmare.ProcedureGameOver
-  mEntranceProcedureTypeName: ToyBoxNightmare.ProcedureMain
+  - UnityGameFramework.Runtime.ProcedureStarter
+  mEntranceProcedureTypeName: UnityGameFramework.Runtime.ProcedureStarter
 --- !u!1 &6358112816711621563
 GameObject:
   m_ObjectHideFlags: 0
@@ -1085,5 +1086,10 @@ MonoBehaviour:
   - mName: Ally
     mInstanceAutoReleaseInterval: 60
     mInstanceCapacity: 2
+    mInstanceExpireTime: 60
+    mInstancePriority: 0
+  - mName: Weapon
+    mInstanceAutoReleaseInterval: 60
+    mInstanceCapacity: 8
     mInstanceExpireTime: 60
     mInstancePriority: 0

@@ -11,12 +11,13 @@ using UnityEngine;
 namespace ToyBoxNightmare.EditorTools
 {
     /// <summary>
-    /// 배포용 <c>.unitypackage</c> 두 개를 만든다.
+    /// 배포용 <c>.unitypackage</c> 세 개를 만든다.
     ///
     /// <list type="bullet">
-    /// <item><b>프레임워크</b> — 코어 DLL(<c>Assets/Plugins</c>) + UnityGameFramework(<c>Assets/Scripts</c>)
-    /// + <c>GameFramework.prefab</c>.</item>
-    /// <item><b>전체 예제</b> — 위에 예제 게임이 실제로 쓰는 에셋과 프로젝트 설정을 더한 것.</item>
+    /// <item><b>코어</b> — 코어 DLL(<c>Assets/Plugins/GameFramework.dll</c>)과 라이선스 문서뿐. Unity 를 모르는 순수 C# 라이브러리다.</item>
+    /// <item><b>유니티</b> — 코어 DLL + UnityGameFramework(<c>Assets/Scripts</c>, 시작 예제 <c>Starter</c> 포함)
+    /// + <c>GameFramework.prefab</c>. 아무 프로젝트에 넣고 시작 씬을 Play 하면 돈다.</item>
+    /// <item><b>예제</b> — 유니티 패키지에 예제 게임이 실제로 쓰는 에셋과 프로젝트 설정을 더한 것. 빈 프로젝트용.</item>
     /// </list>
     ///
     /// <b>경로를 바꾸지 않는다.</b> 패키지를 열면 이 프로젝트와 똑같은 위치(<c>Assets/…</c>)에 풀린다.
@@ -31,14 +32,19 @@ namespace ToyBoxNightmare.EditorTools
         /// <summary>프로젝트 루트 기준 출력 폴더. .gitignore 의 /Builds/ 에 걸린다.</summary>
         private const string OutputFolder = "Builds/StorePackages";
 
-        private const string FrameworkPackageName = "GameFramework";
-        private const string ExamplePackageName   = "GameFramework-Example";
+        private const string CorePackageName    = "GameFramework-Core";
+        private const string UnityPackageName   = "GameFramework-Unity";
+        private const string ExamplePackageName = "GameFramework-Example";
 
         /// <summary>UnityGameFramework(런타임 + Editor). 폴더 전체가 프레임워크다.</summary>
         private const string FrameworkFolder = "Assets/Scripts";
 
         /// <summary>코어 DLL. External/GameFramework 의 빌드 후 이벤트가 여기에 복사한다.</summary>
         private const string CoreAssembly = "Assets/Plugins/GameFramework.dll";
+
+        /// <summary>코어 패키지의 문서 자리. 코어 패키지에는 Assets/Scripts 가 없어서 DLL 옆에 이름을 붙여 둔다.</summary>
+        private const string CoreDocsFolder = "Assets/Plugins";
+        private const string CoreDocsPrefix = "GameFramework-";
 
         /// <summary>프레임워크 컴포넌트가 모두 붙은 프리팹. 씬에 이것 하나를 놓고 시작한다.</summary>
         private const string FrameworkPrefab = "Assets/Prefabs/GameFramework.prefab";
@@ -68,7 +74,6 @@ namespace ToyBoxNightmare.EditorTools
         private static readonly string[] sExtraFolders =
         {
             "Assets/Settings",      // URP 파이프라인 에셋 — GraphicsSettings/QualitySettings 가 참조한다
-            "Assets/AssetManager",  // Environment.prefab 의 컴포넌트가 같은 폴더의 로더를 코드로 참조한다
         };
 
         /// <summary>
@@ -142,11 +147,19 @@ namespace ToyBoxNightmare.EditorTools
 
             string version = PlayerSettings.bundleVersion;
 
-            string frameworkFile = Path.Combine(outputDir, FrameworkPackageName + "-" + version + ".unitypackage");
+            // 코어는 Unity 패키지 의존성이 없어 manifest 항목을 넣지 않는다.
+            string coreFile = Path.Combine(outputDir, CorePackageName + "-" + version + ".unitypackage");
+            using (var tar = new TarWriter(coreFile))
+            {
+                AddAssets(tar, projectRoot, new List<string> { CoreAssembly });
+                AddPackageDocs(tar, projectRoot, CoreDocsFolder, CoreDocsPrefix, false);
+            }
+
+            string frameworkFile = Path.Combine(outputDir, UnityPackageName + "-" + version + ".unitypackage");
             using (var tar = new TarWriter(frameworkFile))
             {
                 AddAssets(tar, projectRoot, frameworkAssets);
-                AddPackageDocs(tar, projectRoot, false);
+                AddPackageDocs(tar, projectRoot, FrameworkFolder, string.Empty, false);
                 AddManifest(tar, BuildManifest(sFrameworkDependencies, null, false));
             }
 
@@ -154,13 +167,13 @@ namespace ToyBoxNightmare.EditorTools
             using (var tar = new TarWriter(exampleFile))
             {
                 AddAssets(tar, projectRoot, exampleAssets);
-                AddPackageDocs(tar, projectRoot, true);
+                AddPackageDocs(tar, projectRoot, FrameworkFolder, string.Empty, true);
                 AddProjectSettings(tar, projectRoot);
                 AddManifest(tar, BuildManifest(sFrameworkDependencies, exampleAssets, true));
             }
 
-            Debug.Log(string.Format("StorePackage: 완료 — 프레임워크 {0}개 → {1} / 전체 예제 {2}개 → {3}",
-                frameworkAssets.Count, frameworkFile, exampleAssets.Count, exampleFile));
+            Debug.Log(string.Format("StorePackage: 완료 — 코어 → {0} / 유니티 {1}개 → {2} / 예제 {3}개 → {4}",
+                coreFile, frameworkAssets.Count, frameworkFile, exampleAssets.Count, exampleFile));
         }
 
         // ─── 무엇을 넣을지 ───
@@ -309,9 +322,9 @@ namespace ToyBoxNightmare.EditorTools
             sb.Append("\n---\n\nComponent Name: Luckiest Guy (font)\n\nLicense Type: Apache License 2.0\n\n");
             sb.Append("Copyright (c) Astigmatic\n\nhttps://fonts.google.com/specimen/Luckiest+Guy\n\n");
             sb.Append("Used in: `Assets/Fonts`. Full text: `Assets/Fonts/LICENSE.txt`\n");
-            sb.Append("\n---\n\nComponent Name: Zombie Toys (art, audio, and the Countdown/FlashFade UI scripts)\n\n");
+            sb.Append("\n---\n\nComponent Name: Zombie Toys (art and audio)\n\n");
             sb.Append("License Type: Unity Asset Store EULA\n\nCopyright (c) Unity Technologies\n\nhttps://unity.com/legal/as-terms\n\n");
-            sb.Append("Used in: `Assets/Art`, `Assets/Audio`, `Assets/Sample`. Included for demonstration purposes only.\n");
+            sb.Append("Used in: `Assets/Art`, `Assets/Audio`. Included for demonstration purposes only.\n");
 
             return sb.ToString();
         }
@@ -379,10 +392,10 @@ namespace ToyBoxNightmare.EditorTools
         }
 
         /// <summary>
-        /// 문서는 Assets 밖(<see cref="DocsFolder"/>)에 있어 .meta 가 없다. 프레임워크 폴더 안에
-        /// 놓이도록 넣고, GUID 는 경로에서 계산해 다시 내보내도 같게 한다.
+        /// 문서는 Assets 밖(<see cref="DocsFolder"/>)에 있어 .meta 가 없다. 패키지마다 정한 폴더에
+        /// 놓이도록 넣고(이름 앞에 prefix 를 붙인다), GUID 는 경로에서 계산해 다시 내보내도 같게 한다.
         /// </summary>
-        private static void AddPackageDocs(TarWriter tar, string projectRoot, bool includeExample)
+        private static void AddPackageDocs(TarWriter tar, string projectRoot, string destinationFolder, string prefix, bool includeExample)
         {
             foreach (string doc in sPackageDocs)
             {
@@ -392,7 +405,7 @@ namespace ToyBoxNightmare.EditorTools
                 string text = File.ReadAllText(source);
                 if (includeExample && doc == NoticesDoc) text += BuildExampleNotices();
 
-                string pathname = FrameworkFolder + "/" + doc;
+                string pathname = destinationFolder + "/" + prefix + doc;
                 string guid     = Hash128.Compute(GuidSeed + pathname).ToString();
                 string meta     = "fileFormatVersion: 2\nguid: " + guid + "\n";
 
