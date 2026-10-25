@@ -310,6 +310,19 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 
 ### 3-3. 무기 · 전투
 
+> **2026-10-11 현재 구조는 아래 본문과 다르다.** 무기는 엔티티다 — `WeaponLogicBase : EntityLogicBase`, 스폰 데이터 `XxxWeaponData : WeaponData : EntityData`,
+> 프리팹 `Assets/Art/Prefabs/Attacks/*Attack.prefab`(엔티티 그룹 `Weapon`). `WeaponLoadout.Equip` 이 `ShowEntity` 로 요청하면 무기가
+> `OnShow` 에서 `AttachEntity` 로 플레이어의 `Antenna` 에 붙고, 플레이어가 `OnAttached`/`OnDetached` 로 로드아웃 슬롯을 갱신한다.
+> 발사 시점은 로드아웃이 플레이어 갱신 안에서 내려 준다. 요약은 `CLAUDE.md` 의 "알려진 위험 → 해결됨". 아래는 2026-03 시점의 기록이다.
+>
+> **2026-10-25: 엔티티 클래스 이름을 `XxxLogic` / `XxxData` 짝으로 맞췄다.** `Player`→`PlayerLogic`, `Enemy`→`EnemyLogic`, `Ally`→`AllyLogic`,
+> `TargetableObject`→`TargetableObjectLogic`, `HitEffect`/`StinkHit`→`HitEffectLogic`/`StinkHitLogic`, `StinkProjectile`/`SlimeProjectile`→`…Logic`,
+> `{Lightning,Frost,Stink,Slime}Weapon`→`…WeaponLogic`, `WeaponBase`→`WeaponLogicBase`, `CharacterSelectSpotlight`→`…Logic`. 데이터는
+> `CharacterSelectData`→`PlayerSelectData`, `SpotlightData`→`CharacterSelectSpotlightData`, `ArcProjectileData`→`StinkProjectileData`,
+> `HomingProjectileData`→`SlimeProjectileData`, `EffectData`→`HitEffectData`(+`StinkHitData`), 무기별 `XxxWeaponData` 신설.
+> 로직이 들고 있던 능력치·튜닝 상수와 로직 안의 표(`EnemyTable`/`WeaponTable`) 직접 참조는 데이터로 옮겼고, 스폰하는 쪽이 표에서 채운다.
+> 본문에 남은 옛 이름(`Player.cs`, `Enemy.cs`, `WeaponBase.cs` …)은 그 시점의 기록이다.
+
 **설계 의도**
 무기는 Entity 시스템 밖의 순수 MonoBehaviour(`WeaponBase`)로 Player GameObject에 AddComponent되어 자체 `Update` 타이머로 공격하고, 타격체(`Projectile`)만 EntityComponent로 스폰한다. 데미지는 `TargetableObject.ApplyDamage()` 단일 지점으로 수렴한다.
 
@@ -583,7 +596,7 @@ Player 그룹의 `InstanceAutoReleaseInterval` / `InstanceExpireTime`은 각각 
 | | `ToyBoxNightmare.ProcedureBase` 상속, `public override bool UseNativeDialog => false;` **반드시 구현** | `ProcedureBase.cs:17-20` |
 | | 파라미터 없는 기본 생성자 유지 (`Activator.CreateInstance` 사용) | `ProcedureComponent.cs:72` |
 | 2 | **프리팹에 문자열 등록** | `Assets/Prefabs/GameFramework.prefab:679-693` |
-| | ★ **자식 'Procedure' GameObject**의 ProcedureComponent → `mAvailableProcedureTypeNames`에 **네임스페이스 포함 FQN**으로 추가 (`ToyBoxNightmare.ProcedureX`) | |
+| | ★ **자식 'Procedure' GameObject**의 ProcedureComponent → `mAvailableProcedureTypeNames`에 **네임스페이스 포함 FQN**으로 추가 (`ToyBoxNightmare.ProcedureX`). 2026-10-18 부터 이 설정은 **MainScene 의 프리팹 인스턴스 오버라이드**다 — 프리팹 기본값은 시작 절차 `UnityGameFramework.Runtime.ProcedureStarter` 이므로 프리팹에 Apply 하지 말 것 | |
 | | ⚠ 루트 GameObject 쪽 ProcedureComponent(`:770-784`)는 이미 깨져 있다. **거기 넣으면 동작하지 않는다.** 씬 인스펙터에서 편집해도 마찬가지다 — 상세는 §5.1 [5] | |
 | 3 | **전이 코드** — `ChangeState<ProcedureX>(procedureOwner)`. **`FsmState` 내부에서만 호출 가능**하다 | |
 | 4 | **주의** — FSM 상태 집합은 `Fsm.Create` 시점에 고정된다. 런타임 상태 추가 API가 없다 | |
