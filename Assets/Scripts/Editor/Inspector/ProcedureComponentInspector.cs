@@ -39,7 +39,7 @@ namespace UnityGameFramework.Editor
             }
             else if (EditorApplication.isPlaying)
             {
-                EditorGUILayout.LabelField("Current Procedure", t.CurrentProcedure == null ? "None" : t.CurrentProcedure.GetType().ToString());
+                EditorGUILayout.LabelField("Current Procedure", GetCurrentProcedureName(t));
             }
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
@@ -95,6 +95,23 @@ namespace UnityGameFramework.Editor
             serializedObject.ApplyModifiedProperties();
 
             Repaint();
+        }
+
+        // 진입 절차는 ProcedureComponent.Start 가 끝나야 시작된다. 재생 직후 그 전에 인스펙터가 그려지면
+        // 코어의 CurrentProcedure 가 "You must initialize procedure first." 예외를 던진다.
+        // 아직 시작 전이면 절차가 없는 것으로 표시한다.
+        private static string GetCurrentProcedureName(ProcedureComponent procedureComponent)
+        {
+            try
+            {
+                ProcedureBase currentProcedure = procedureComponent.CurrentProcedure;
+
+                return currentProcedure == null ? "None" : currentProcedure.GetType().ToString();
+            }
+            catch (GameFramework.GameFrameworkException)
+            {
+                return "None";
+            }
         }
 
         protected override void OnCompileComplete()

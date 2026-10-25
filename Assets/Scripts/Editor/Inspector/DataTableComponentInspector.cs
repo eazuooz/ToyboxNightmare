@@ -32,10 +32,10 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mEnableLoadDataTableUpdateEvent);
-                EditorGUILayout.PropertyField(mEnableLoadDataTableDependencyAssetEvent);
+                PropertyField(mEnableLoadDataTableUpdateEvent);
+                PropertyField(mEnableLoadDataTableDependencyAssetEvent);
                 mDataTableHelperInfo.Draw();
-                EditorGUILayout.PropertyField(mCachedBytesSize);
+                PropertyField(mCachedBytesSize);
             }
             EditorGUI.EndDisabledGroup();
 

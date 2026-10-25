@@ -34,14 +34,14 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mEnablePlaySoundUpdateEvent);
-                EditorGUILayout.PropertyField(mEnablePlaySoundDependencyAssetEvent);
-                EditorGUILayout.PropertyField(mInstanceRoot);
-                EditorGUILayout.PropertyField(mAudioMixer);
+                PropertyField(mEnablePlaySoundUpdateEvent);
+                PropertyField(mEnablePlaySoundDependencyAssetEvent);
+                PropertyField(mInstanceRoot);
+                PropertyField(mAudioMixer);
                 mSoundHelperInfo.Draw();
                 mSoundGroupHelperInfo.Draw();
                 mSoundAgentHelperInfo.Draw();
-                EditorGUILayout.PropertyField(mSoundGroups, true);
+                PropertyField(mSoundGroups, true);
             }
             EditorGUI.EndDisabledGroup();
 

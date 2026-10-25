@@ -34,12 +34,12 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mEnableShowEntityUpdateEvent);
-                EditorGUILayout.PropertyField(mEnableShowEntityDependencyAssetEvent);
-                EditorGUILayout.PropertyField(mInstanceRoot);
+                PropertyField(mEnableShowEntityUpdateEvent);
+                PropertyField(mEnableShowEntityDependencyAssetEvent);
+                PropertyField(mInstanceRoot);
                 mEntityHelperInfo.Draw();
                 mEntityGroupHelperInfo.Draw();
-                EditorGUILayout.PropertyField(mEntityGroups, true);
+                PropertyField(mEntityGroups, true);
             }
             EditorGUI.EndDisabledGroup();
 

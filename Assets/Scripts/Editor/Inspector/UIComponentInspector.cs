@@ -39,11 +39,11 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mEnableOpenUIFormSuccessEvent);
-                EditorGUILayout.PropertyField(mEnableOpenUIFormFailureEvent);
-                EditorGUILayout.PropertyField(mEnableOpenUIFormUpdateEvent);
-                EditorGUILayout.PropertyField(mEnableOpenUIFormDependencyAssetEvent);
-                EditorGUILayout.PropertyField(mEnableCloseUIFormCompleteEvent);
+                PropertyField(mEnableOpenUIFormSuccessEvent);
+                PropertyField(mEnableOpenUIFormFailureEvent);
+                PropertyField(mEnableOpenUIFormUpdateEvent);
+                PropertyField(mEnableOpenUIFormDependencyAssetEvent);
+                PropertyField(mEnableCloseUIFormCompleteEvent);
             }
             EditorGUI.EndDisabledGroup();
 
@@ -101,10 +101,10 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mInstanceRoot);
+                PropertyField(mInstanceRoot);
                 mUIFormHelperInfo.Draw();
                 mUIGroupHelperInfo.Draw();
-                EditorGUILayout.PropertyField(mUIGroups, true);
+                PropertyField(mUIGroups, true);
             }
             EditorGUI.EndDisabledGroup();
 

@@ -28,8 +28,8 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mEnableLoadSceneUpdateEvent);
-                EditorGUILayout.PropertyField(mEnableLoadSceneDependencyAssetEvent);
+                PropertyField(mEnableLoadSceneUpdateEvent);
+                PropertyField(mEnableLoadSceneDependencyAssetEvent);
             }
             EditorGUI.EndDisabledGroup();
 

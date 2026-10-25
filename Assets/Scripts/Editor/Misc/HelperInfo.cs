@@ -53,7 +53,7 @@ namespace UnityGameFramework.Editor
 
             if (mHelperTypeNameIndex <= 0)
             {
-                EditorGUILayout.PropertyField(mCustomHelper);
+                GameFrameworkInspector.PropertyField(mCustomHelper);
                 if (mCustomHelper.objectReferenceValue == null)
                 {
                     EditorGUILayout.HelpBox(Utility.Text.Format("You must set Custom {0} Helper.", displayName), MessageType.Error);

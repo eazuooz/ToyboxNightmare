@@ -120,7 +120,7 @@ namespace UnityGameFramework.Editor
             }
             else
             {
-                EditorGUILayout.PropertyField(mEnableStrictCheck);
+                PropertyField(mEnableStrictCheck);
             }
 
             serializedObject.ApplyModifiedProperties();

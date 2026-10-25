@@ -35,7 +35,7 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mInstanceRoot);
+                PropertyField(mInstanceRoot);
 
                 mWebRequestAgentHelperInfo.Draw();
 

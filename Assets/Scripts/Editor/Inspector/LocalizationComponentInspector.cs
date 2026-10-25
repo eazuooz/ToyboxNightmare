@@ -30,10 +30,10 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mEnableLoadDictionaryUpdateEvent);
-                EditorGUILayout.PropertyField(mEnableLoadDictionaryDependencyAssetEvent);
+                PropertyField(mEnableLoadDictionaryUpdateEvent);
+                PropertyField(mEnableLoadDictionaryDependencyAssetEvent);
                 mLocalizationHelperInfo.Draw();
-                EditorGUILayout.PropertyField(mCachedBytesSize);
+                PropertyField(mCachedBytesSize);
             }
             EditorGUI.EndDisabledGroup();
 

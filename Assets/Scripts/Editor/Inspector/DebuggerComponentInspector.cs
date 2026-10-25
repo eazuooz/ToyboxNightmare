@@ -28,7 +28,7 @@ namespace UnityGameFramework.Editor
 
             DebuggerComponent t = (DebuggerComponent)target;
 
-            EditorGUILayout.PropertyField(mSkin);
+            PropertyField(mSkin);
 
             if (EditorApplication.isPlaying && IsPrefabInHierarchy(t.gameObject))
             {
@@ -40,10 +40,10 @@ namespace UnityGameFramework.Editor
             }
             else
             {
-                EditorGUILayout.PropertyField(mActiveWindow);
+                PropertyField(mActiveWindow);
             }
 
-            EditorGUILayout.PropertyField(mShowFullWindow);
+            PropertyField(mShowFullWindow);
 
             if (EditorApplication.isPlaying)
             {
@@ -53,7 +53,7 @@ namespace UnityGameFramework.Editor
                 }
             }
 
-            EditorGUILayout.PropertyField(mConsoleWindow, true);
+            PropertyField(mConsoleWindow, true);
 
             serializedObject.ApplyModifiedProperties();
         }

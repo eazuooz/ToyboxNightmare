@@ -36,7 +36,7 @@ namespace UnityGameFramework.Editor
 
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlayingOrWillChangePlaymode);
             {
-                EditorGUILayout.PropertyField(mInstanceRoot);
+                PropertyField(mInstanceRoot);
                 mDownloadAgentHelperInfo.Draw();
                 mDownloadAgentHelperCount.intValue = EditorGUILayout.IntSlider("Download Agent Helper Count", mDownloadAgentHelperCount.intValue, 1, 16);
             }
