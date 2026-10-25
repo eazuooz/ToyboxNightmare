@@ -15,7 +15,7 @@ namespace ToyBoxNightmare
     ///
     /// <b>이 스크립트는 프리팹에 직접 붙어 있어야 한다</b>(UI 폼 규약 — 엔티티와 정반대).
     /// </summary>
-    public class PauseMenuForm : UIFormLogic
+    public class PauseMenuForm : UIFormBase
     {
         // 프리팹 계층 계약.
         private const string PanelPath         = "PausePanel";
@@ -210,11 +210,8 @@ namespace ToyBoxNightmare
 
         public void Quit()
         {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
+            // 프레임워크를 먼저 내린다(모듈 정리 → 종료). 에디터에서는 재생을 멈춘다.
+            GameEntry.Shutdown(ShutdownType.Quit);
         }
     }
 }

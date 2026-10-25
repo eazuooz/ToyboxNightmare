@@ -8,7 +8,7 @@ namespace ToyBoxNightmare
     /// 주기가 되면 적 엔티티를 띄운다.
     ///
     /// <b>MonoBehaviour 가 아니다.</b> <see cref="SurvivalGame"/> 이 인스턴스를 들고
-    /// 자기 Update 에서 <see cref="OnUpdate"/> 를 직접 굴린다. 이유는 <see cref="WeaponBase"/>
+    /// 자기 Update 에서 <see cref="OnUpdate"/> 를 직접 굴린다. 이유는 <see cref="WeaponLogicBase"/>
     /// 와 같다 — Unity 메시지는 virtual 이 아니고, 업데이트 순서가 미보장이며, 엔티티 풀
     /// 재사용과 맞지 않는다.
     ///
@@ -141,7 +141,7 @@ namespace ToyBoxNightmare
 
             entityComponent.ShowEntity(
                 id,
-                typeof(Enemy),
+                typeof(EnemyLogic),
                 point.AssetName,
                 EnemyTable.EntityGroup,
                 EnemyData.Create(id, SurvivalGame.DefaultEntityTypeId, stats, point.Position));

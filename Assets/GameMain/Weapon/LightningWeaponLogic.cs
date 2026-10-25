@@ -10,37 +10,38 @@ namespace ToyBoxNightmare
     /// 전방이 곧 마우스 방향이다. 원본 LightningAttack 이 <c>new Ray(transform.position,
     /// transform.forward)</c> 하나로 끝나는 이유가 이것이고, 그래서 레티클도 없다.
     /// </summary>
-    public class LightningWeapon : WeaponBase
+    public class LightningWeaponLogic : WeaponLogicBase
     {
-        // 튜닝값(사거리/데미지/쿨다운)은 WeaponTable 로 옮겼다. 무기마다 튜닝 창구가 다르면
-        // 밸런스를 만질 때 어느 파일을 열어야 하는지가 매번 달라진다.
-        private const string BoltPath = "Antenna/LightningAttack/LightningBolt";
+        // 능력치(사거리/피해/쿨다운/착탄 이펙트)는 LightningWeaponData 에 있다. 값은 WeaponTable 에서 채워진다.
+        /// <summary>빔 연출 오브젝트. 무기 프리팹(LightningAttack) 루트 기준 경로다.</summary>
+        private const string BoltPath = "LightningBolt";
 
         private LightningBoltVfx mBolt = null;
 
-        /// <summary>총구 스파클. 무기를 바꾸면 베이스가 꺼 준다.</summary>
-        protected override string VfxRootPath => "Antenna/LightningAttack";
+        /// <summary>이 무기의 능력치. 회수된 뒤에는 null.</summary>
+        private LightningWeaponData Stats => DataAs<LightningWeaponData>();
 
-        /// <summary>발사에 성공하면 로드아웃이 이 값으로 전역 쿨다운을 건다. 원본과 같은 1초.</summary>
-        public override float Cooldown => WeaponTable.LightningCooldown;
-
-        /// <summary>
-        /// Root 가 null 인 경우는 없다 — <see cref="WeaponBase.Initialize"/> 가 owner 없이는
-        /// 여기까지 오지 않는다. 총구 해석도 베이스가 <see cref="WeaponBase.MuzzleOrigin"/> 으로 맡는다.
-        /// </summary>
-        protected override void OnInitialize()
+        /// <summary>빔 연출은 무기 프리팹의 자식이라 인스턴스당 한 번만 찾으면 된다.</summary>
+        protected override void OnWeaponInit()
         {
             ResolveBoltVfx();
         }
 
+        /// <summary>풀에서 다시 나올 때 이전 판의 빔이 남아 있지 않게 한다.</summary>
+        protected override void OnWeaponShow()
+        {
+            if (mBolt != null)
+            {
+                mBolt.StopImmediate();
+            }
+        }
+
         private void ResolveBoltVfx()
         {
-            if (mBolt != null) return;
-
-            Transform boltTransform = Root.Find(BoltPath);
+            Transform boltTransform = CachedTransform.Find(BoltPath);
             if (boltTransform == null)
             {
-                Log.Warning("LightningWeapon: '{0}' 을 찾지 못했다. 빔 연출 없이 동작한다.", BoltPath);
+                Log.Warning("LightningWeaponLogic: '{0}' 을 찾지 못했다. 빔 연출 없이 동작한다.", BoltPath);
                 return;
             }
 
@@ -48,10 +49,20 @@ namespace ToyBoxNightmare
             // 실제 표시 여부는 LineRenderer/Light 를 껐다 켜서 제어한다.
             boltTransform.gameObject.SetActive(true);
 
-            mBolt = boltTransform.GetComponent<LightningBoltVfx>();
-            if (mBolt == null)
+            mBolt = new LightningBoltVfx(boltTransform);
+        }
+
+        /// <summary>
+        /// 빔 연출은 스스로 돌지 않는다. 이 무기가 떠 있는 동안 여기서 굴린다 —
+        /// 손에 들려 있지 않아도 엔티티의 OnUpdate 는 불리므로, 내려놓은 뒤의 잔여 시간도 여기서 소진된다.
+        /// </summary>
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
+
+            if (mBolt != null)
             {
-                mBolt = boltTransform.gameObject.AddComponent<LightningBoltVfx>();
+                mBolt.OnUpdate(elapseSeconds);
             }
         }
 
@@ -63,22 +74,25 @@ namespace ToyBoxNightmare
         /// </summary>
         protected override bool OnFireHeld()
         {
-            // 발사 원점은 안테나. LightningBolt GO 도 안테나 아래에 있어 같은 위치이므로,
-            // VFX 는 시작점을 따로 받지 않고 자기 트랜스폼을 매 프레임 읽는다.
+            LightningWeaponData stats = Stats;
+            if (stats == null) return false;
+
+            // 발사 원점은 무기 자신(소유자의 안테나에 붙어 있다). LightningBolt GO 도 그 아래에
+            // 있어 같은 위치이므로, VFX 는 시작점을 따로 받지 않고 자기 트랜스폼을 매 프레임 읽는다.
             Vector3 origin = MuzzleOrigin;
 
             // Transform.forward 는 이미 단위 벡터라 정규화가 필요 없다.
             Vector3 direction = Owner.CachedTransform.forward;
 
             // 아무것도 안 맞으면(사이에 콜라이더가 없다) 최대 사거리까지 빔만 그린다.
-            Vector3 beamEndPoint = origin + direction * WeaponTable.LightningRange;
+            Vector3 beamEndPoint = origin + direction * stats.Range;
 
             RaycastHit hit;
             if (Physics.Raycast(origin, direction, out hit,
-                                WeaponTable.LightningRange, WeaponUtil.HitscanMask))
+                                stats.Range, WeaponUtil.HitscanMask))
             {
                 beamEndPoint = hit.point;
-                ApplyHitscanHit(hit);
+                ApplyHitscanHit(hit, stats);
             }
 
             PlayBolt(beamEndPoint);
@@ -88,24 +102,27 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>레이가 맞은 것을 처리한다 — 적이면 피해를 주고, 무엇에 맞았든 착탄 이펙트를 띄운다.</summary>
-        private void ApplyHitscanHit(RaycastHit hit)
+        private void ApplyHitscanHit(RaycastHit hit, LightningWeaponData stats)
         {
             Entity entity   = hit.collider.GetComponentInParent<Entity>();
-            Enemy  hitEnemy = entity != null ? entity.Logic as Enemy : null;
+            EnemyLogic  hitEnemy = entity != null ? entity.Logic as EnemyLogic : null;
             if (hitEnemy != null && !hitEnemy.IsDead)
             {
-                hitEnemy.ApplyDamage(Owner.Entity, WeaponTable.LightningDamage);
+                hitEnemy.ApplyDamage(Owner.Entity, stats.Damage);
             }
 
             // 착탄 이펙트. 원본은 위치만 옮기고 회전은 건드리지 않는다.
             // strikeableMask 에 걸렸을 때만 나오므로(바닥 레이어 8 은 마스크 밖) 여기가 맞다.
-            WeaponUtil.SpawnEffect(typeof(HitEffect), WeaponTable.LightningHitAsset,
-                hit.point, Quaternion.identity, WeaponTable.LightningHitLifetime);
+            WeaponUtil.SpawnEffect(typeof(HitEffectLogic), stats.HitEffectAsset,
+                hit.point, Quaternion.identity, stats.HitEffectLifetime);
+            GameSound.PlaySfx(SoundTable.LightningHit, hit.point);
         }
 
         /// <summary>빔 연출은 없어도 게임플레이는 돌아간다. 프리팹에서 못 찾았으면 조용히 넘어간다.</summary>
         private void PlayBolt(Vector3 endPoint)
         {
+            GameSound.PlaySfx(SoundTable.LightningFire, MuzzleOrigin);
+
             if (mBolt != null)
             {
                 mBolt.Play(endPoint);
@@ -113,8 +130,8 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>
-        /// 빔은 스스로 꺼지지 못한다 — 무기를 끄면 빔 GameObject 가 VFX 루트와 함께 비활성이
-        /// 되어 Update 가 멈추기 때문이다. 여기서 확실히 끊는다.
+        /// 무기를 내려놓으면 빔 GameObject 가 무기와 함께 보이지 않게 된다. 남은 시간이 흐르기를
+        /// 기다리지 않고 여기서 바로 끊는다.
         /// </summary>
         protected override void OnWeaponDisabled()
         {
@@ -122,16 +139,6 @@ namespace ToyBoxNightmare
             {
                 mBolt.StopImmediate();
             }
-        }
-
-        /// <summary>
-        /// 캐릭터가 바뀌면 이 참조는 남의 것이 된다. 버려서 다음 Initialize 가 다시 찾게 한다 —
-        /// <see cref="ResolveBoltVfx"/> 가 <c>if (mBolt != null) return;</c> 으로만 걸러서,
-        /// 여기서 안 버리면 옛 캐릭터의 빔을 계속 물고 있는다.
-        /// </summary>
-        protected override void OnDispose()
-        {
-            mBolt = null;
         }
     }
 }

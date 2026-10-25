@@ -43,8 +43,8 @@ namespace ToyBoxNightmare
 
         private const float PickDistance = 1000f;
 
-        /// <summary>사망 연출을 보여 주고 회수하기까지의 시간. 원본 낙선 연출 길이와 같다.</summary>
-        private const float HideDelayAfterDeath = 1.5f;
+        /// <summary>스폰 데이터. 회수 때 반납되므로 OnHide 에서 놓는다.</summary>
+        private PlayerSelectData mSelectData = null;
 
         /// <summary>애니메이터 트리거 이름. 이름이 틀려도 Unity 는 조용히 무시한다.</summary>
         private const string DieTriggerParam = "Die";
@@ -105,8 +105,8 @@ namespace ToyBoxNightmare
             mRejected        = false;
             mRejectedElapsed = 0f;
 
-            var selectData = userData as CharacterSelectData;
-            if (selectData == null)
+            mSelectData = userData as PlayerSelectData;
+            if (mSelectData == null)
             {
                 // 스폰 측 계약 위반. 프리팹 기본 키/위치로 남아 두 캐릭터가 겹칠 수 있다.
                 Log.Error("Character select data is invalid.");
@@ -117,9 +117,9 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            characterKey             = selectData.CharacterKey;
-            CachedTransform.position = selectData.Position;
-            CachedTransform.rotation = selectData.Rotation;
+            characterKey             = mSelectData.CharacterKey;
+            CachedTransform.position = mSelectData.Position;
+            CachedTransform.rotation = mSelectData.Rotation;
 
             // 상태 기계는 **맨 마지막**에 세운다. 상태가 소유자 값을 바로 읽기 때문이다.
             CreateStateMachine();
@@ -129,6 +129,9 @@ namespace ToyBoxNightmare
         {
             // 가장 먼저 부순다. 회수된 엔티티의 상태가 계속 도는 것을 막는다.
             DestroyStateMachine();
+
+            // 데이터는 base 체인 끝에서 참조 풀로 반납된다. 반납된 것을 들고 있지 않는다.
+            mSelectData = null;
 
             base.OnHide(isShutdown, userData);
         }
@@ -265,8 +268,11 @@ namespace ToyBoxNightmare
         /// <summary>연출 시간이 다 차면 회수한다.</summary>
         internal void TickHideDelay(float elapseSeconds)
         {
+            // 데이터 없이 떴으면 기다릴 시간도 정해지지 않았다. 바로 회수한다.
+            float hideDelay = mSelectData != null ? mSelectData.HideDelay : 0f;
+
             mRejectedElapsed += elapseSeconds;
-            if (mRejectedElapsed < HideDelayAfterDeath) return;
+            if (mRejectedElapsed < hideDelay) return;
 
             SafeHide();
         }
@@ -289,8 +295,8 @@ namespace ToyBoxNightmare
         {
             if (capsuleCollider == null || !capsuleCollider.enabled) return false;
 
-            // UI 위 클릭은 무시한다. 현재 씬에 EventSystem 이 없어 항상 통과하지만,
-            // M6 에서 Canvas 를 추가하면 이 가드가 살아난다.
+            // UI 위 클릭은 무시한다. 선택 화면에도 HUD 폼이 떠 있으므로(안내문) 그 위를 누르면
+            // 캐릭터가 골라지지 않아야 한다. EventSystem 은 씬에 하나 놓여 있다.
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return false;
 
             Camera cam = Camera.main;

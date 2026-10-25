@@ -25,14 +25,18 @@ namespace ToyBoxNightmare
 
         /// <summary>이 투사체가 들고 있는 파티클. 풀 재사용 시 Stop → 배치 → Play 순서가 중요하다.</summary>
         private ParticleSystem[] mParticles = null;
-        private AudioSource[]    mAudios    = null;
+
+        /// <summary>
+        /// 발사음의 Addressables 주소. 없으면 null. 소리는 프리팹에 박아 두지 않고
+        /// <see cref="GameSound"/> 로 낸다.
+        /// </summary>
+        protected virtual string LaunchSound => null;
 
         protected internal override void OnInit(object userData)
         {
             base.OnInit(userData);
 
             mParticles = GetComponentsInChildren<ParticleSystem>(true);
-            mAudios    = GetComponentsInChildren<AudioSource>(true);
         }
 
         protected internal override void OnShow(object userData)
@@ -54,7 +58,7 @@ namespace ToyBoxNightmare
         protected void PlayEffects()
         {
             PlayParticles();
-            PlayAudios();
+            GameSound.PlaySfx(LaunchSound, CachedTransform.position);
         }
 
         private void PlayParticles()
@@ -66,19 +70,6 @@ namespace ToyBoxNightmare
                 if (ps != null)
                 {
                     ps.Play(true); // 인자 true 가 자식까지 재생한다
-                }
-            }
-        }
-
-        private void PlayAudios()
-        {
-            if (mAudios == null) return;
-
-            foreach (var audio in mAudios)
-            {
-                if (audio != null && audio.clip != null)
-                {
-                    audio.Play();
                 }
             }
         }

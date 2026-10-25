@@ -3,9 +3,13 @@ using UnityEngine;
 namespace ToyBoxNightmare
 {
     /// <summary>
-    /// Girl/Boy 프리팹의 <c>Antenna/LightningAttack/LightningBolt</c> 를 구동한다.
-    /// 그 GameObject 에는 LineRenderer(ZapBeamAdditive) · ParticleSystem · Light ·
-    /// AudioSource 가 이미 붙어 있고 기본 비활성 상태다.
+    /// 무기 프리팹 <c>LightningAttack</c> 의 자식 <c>LightningBolt</c> 를 구동한다.
+    /// 그 GameObject 에는 LineRenderer(ZapBeamAdditive) · ParticleSystem · Light 가
+    /// 이미 붙어 있고 기본 비활성 상태다.
+    ///
+    /// <b>MonoBehaviour 가 아니다.</b> <see cref="LightningWeaponLogic"/> 이 만들어 들고, 무기 엔티티의
+    /// <c>OnUpdate</c> 안에서 <see cref="OnUpdate"/> 를 굴린다. Unity 의 Update 로 따로 돌지 않으므로
+    /// 무기 엔티티가 멈추면 빔도 같이 멈춘다. 발사음도 여기서 내지 않는다(무기가 GameSound 로 낸다).
     ///
     /// 원본 LightningBolt.cs 의 정리본이다. 핵심은 <b>지그재그 폴리라인</b>이다 —
     /// 원본은 AnimationCurve 6개를 미리 만들어 두고 매 프레임 하나씩 돌려가며
@@ -13,7 +17,7 @@ namespace ToyBoxNightmare
     ///
     /// 아래 커브 상수는 원본 Girl.prefab 의 rayPhases 직렬화 실측값이다.
     /// </summary>
-    public class LightningBoltVfx : MonoBehaviour
+    public class LightningBoltVfx
     {
         /// <summary>빔이 보이는 시간. 원본 effectDuration.</summary>
         private const float EffectDuration = 0.75f;
@@ -71,9 +75,11 @@ namespace ToyBoxNightmare
                   -.0442f,.0421f,.0012f,.0011f},
         };
 
+        /// <summary>빔 GameObject 의 트랜스폼. 빔의 시작점이다.</summary>
+        private readonly Transform mRoot = null;
+
         private LineRenderer     mLine      = null;
         private Light            mLight     = null;
-        private AudioSource      mAudio     = null;
         private ParticleSystem[] mParticles = null;
 
         private Vector3 mEndPoint  = Vector3.zero;
@@ -84,12 +90,14 @@ namespace ToyBoxNightmare
         // 반복 발사가 똑같아 보이지 않는다.
         private int mPhaseIndex = 0;
 
-        private void Awake()
+        public LightningBoltVfx(Transform root)
         {
-            mLine      = GetComponent<LineRenderer>();
-            mLight     = GetComponent<Light>();
-            mAudio     = GetComponent<AudioSource>();
-            mParticles = GetComponentsInChildren<ParticleSystem>(true);
+            GameAssert.IsTrue(root != null, "LightningBoltVfx 는 빔 트랜스폼 없이 만들 수 없다.");
+
+            mRoot      = root;
+            mLine      = root.GetComponent<LineRenderer>();
+            mLight     = root.GetComponent<Light>();
+            mParticles = root.GetComponentsInChildren<ParticleSystem>(true);
 
             if (mLine != null)
             {
@@ -105,7 +113,7 @@ namespace ToyBoxNightmare
         /// 이 GameObject 는 프리팹에서 비활성이었다가 무기 장착 시 켜진다.
         /// Play On Awake 파티클이 그대로 돌면 안테나에서 계속 스파크가 튄다.
         ///
-        /// 한 번 멈추는 것만으로는 부족하다. 이 GameObject 의 부모(Antenna/LightningAttack)가
+        /// 한 번 멈추는 것만으로는 부족하다. 이 GameObject 의 부모(무기 엔티티 LightningAttack)가
         /// 무기 전환 때마다 껐다 켜지는데, playOnAwake 파티클은 <b>재활성될 때마다</b> 다시
         /// 재생을 시작한다(프리팹 실측: playOnAwake=True, loop=True). 그러면 발사와 무관하게
         /// 안테나 끝에서 착탄 스파크가 영구히 루프한다. 자동 재생 자체를 끈다.
@@ -122,11 +130,6 @@ namespace ToyBoxNightmare
                     main.playOnAwake = false;
                 }
             }
-
-            if (mAudio != null)
-            {
-                mAudio.playOnAwake = false;
-            }
         }
 
         /// <summary>
@@ -142,15 +145,14 @@ namespace ToyBoxNightmare
             SetVisible(true);
             ChangePhase();
             PlayParticles();
-            PlayAudio();
         }
 
         /// <summary>
         /// 빔을 즉시 끈다.
         ///
-        /// <b>반드시 무기를 내려놓는 쪽에서 불러야 한다.</b> 이 GameObject 는 무기 VFX 루트
-        /// (<c>Antenna/LightningAttack</c>)의 자식이라, 무기를 끄면 계층상 비활성이 되어
-        /// <see cref="Update"/> 가 멈춘다. 그러면 <c>mRemaining &gt; 0</c> / LineRenderer 켜짐 /
+        /// <b>반드시 무기를 내려놓는 쪽에서 불러야 한다.</b> 이 GameObject 는 무기 엔티티
+        /// (<c>LightningAttack</c>)의 자식이라, 무기를 끄면 계층상 비활성이 된다.
+        /// 그대로 두면 <c>mRemaining &gt; 0</c> / LineRenderer 켜짐 /
         /// 마지막 월드 좌표 폴리라인이 그대로 얼어붙고, 다음에 무기를 다시 켜는 순간
         /// <b>이전 발사의 표적 지점으로 향하는 유령 빔</b>이 잔여 시간만큼 그어진다.
         /// </summary>
@@ -161,23 +163,23 @@ namespace ToyBoxNightmare
 
             SetVisible(false);
             StopParticles();
-            StopAudio();
         }
 
-        private void Update()
+        /// <summary>빔의 수명과 형상을 한 프레임 진행한다. 소유 무기가 자기 OnUpdate 에서 부른다.</summary>
+        public void OnUpdate(float elapseSeconds)
         {
             if (mRemaining <= 0f) return;
 
-            mRemaining -= Time.deltaTime;
+            mRemaining -= elapseSeconds;
             if (mRemaining <= 0f)
             {
-                // 수명이 다했다. 형상만 지운다 — 오디오를 끊는 곳은 StopImmediate 뿐이다.
+                // 수명이 다했다. 형상을 지운다.
                 SetVisible(false);
                 StopParticles();
                 return;
             }
 
-            mPhaseTimer += Time.deltaTime;
+            mPhaseTimer += elapseSeconds;
             if (mPhaseTimer < PhaseDuration) return;
 
             mPhaseTimer = 0f;
@@ -205,7 +207,7 @@ namespace ToyBoxNightmare
 
             int pointCount = Mathf.Min(keyTimes.Length, keyOffsets.Length);
 
-            Vector3 start      = transform.position;
+            Vector3 start      = mRoot.position;
             Vector3 startToEnd = mEndPoint - start;
 
             mLine.positionCount = pointCount;
@@ -241,23 +243,6 @@ namespace ToyBoxNightmare
                 {
                     ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 }
-            }
-        }
-
-        /// <summary>클립이 비어 있으면 재생하지 않는다 — 빈 AudioSource 는 경고만 남긴다.</summary>
-        private void PlayAudio()
-        {
-            if (mAudio != null && mAudio.clip != null)
-            {
-                mAudio.Play();
-            }
-        }
-
-        private void StopAudio()
-        {
-            if (mAudio != null)
-            {
-                mAudio.Stop();
             }
         }
 

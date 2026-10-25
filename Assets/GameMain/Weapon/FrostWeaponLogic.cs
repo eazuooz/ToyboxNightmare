@@ -16,11 +16,11 @@ namespace ToyBoxNightmare
     /// 여기서는 매 프레임 "지금 콘 안에 있는 집합"을 다시 계산하므로 Enter/Exit 개념이
     /// 사라지고 그 버그가 구조적으로 없어진다.
     /// </summary>
-    public class FrostWeapon : WeaponBase
+    public class FrostWeaponLogic : WeaponLogicBase
     {
-        private const string FrostAttackPath = "Antenna/FrostAttack";
-        private const string FrostConePath   = "Antenna/FrostAttack/FrostCone";
-        private const string FrostArcPath    = "Antenna/FrostAttack/FrostArc";
+        // 무기 프리팹(FrostAttack) 루트 기준 경로다.
+        private const string FrostConePath = "FrostCone";
+        private const string FrostArcPath  = "FrostArc";
 
         /// <summary>콘 꼭짓점의 FrostAttack 로컬 좌표. 원본 Arc 메시 정점에서 역산했다.</summary>
         private static readonly Vector3 ApexLocal = new Vector3(-0.015296f, 0.044137f, 0.342790f);
@@ -44,58 +44,46 @@ namespace ToyBoxNightmare
         /// <summary>발사 버튼을 누르고 있는가. 콘을 켜 둘지와 재판정을 돌릴지를 이걸로 정한다.</summary>
         private bool mFiring = false;
 
+        /// <summary>원본 콘 AudioSource 의 볼륨.</summary>
+        private const float ConeSoundVolume = 0.85f;
+
+        /// <summary>재생 중인 분사음. 없으면 <see cref="GameSound.NoSound"/>.</summary>
+        private int mConeSoundId = GameSound.NoSound;
+
         /// <summary>이번 프레임에 얼릴 적들. 매 프레임 재사용해 할당을 없앤다.</summary>
-        private readonly List<Enemy> mConeTargets = new List<Enemy>(16);
+        private readonly List<EnemyLogic> mConeTargets = new List<EnemyLogic>(16);
 
         /// <summary>반경 안 후보 스크래치. 위와 같은 이유로 필드에 둔다.</summary>
-        private readonly List<Enemy> mCandidates = new List<Enemy>(16);
+        private readonly List<EnemyLogic> mCandidates = new List<EnemyLogic>(16);
 
-        /// <summary>총구 스파클. 무기를 바꾸면 베이스가 꺼 준다.</summary>
-        protected override string VfxRootPath => FrostAttackPath;
-
-        /// <summary>원본에 쿨다운이 없다. 발사해도 로드아웃이 아무것도 걸지 않는다.</summary>
-        public override float Cooldown => 0f;
-
-        /// <summary>
-        /// Root 가 null 인 경우는 없다 — <see cref="WeaponBase.Initialize"/> 가 owner 없이는
-        /// 여기까지 오지 않는다.
-        /// </summary>
-        protected override void OnInitialize()
+        /// <summary>콘과 판정 기준 트랜스폼은 무기 프리팹 안에 있어 인스턴스당 한 번만 찾으면 된다.</summary>
+        protected override void OnWeaponInit()
         {
-            mFiring = false;
+            // 무기 프리팹의 루트가 곧 원본의 FrostAttack 이다. 콘 꼭짓점과 축을 여기서 읽는다.
+            mFrostAttack = CachedTransform;
 
-            ResolveConeTransforms();
-            SetConeActive(false);
+            Transform cone = CachedTransform.Find(FrostConePath);
+            if (cone == null)
+            {
+                Log.Warning("FrostWeaponLogic: '{0}' 을 찾지 못했다. 콘 연출 없이 동작한다.", FrostConePath);
+            }
+
+            mFrostCone = cone != null ? cone.gameObject : null;
+
+            DisableLegacyArcCollider();
         }
 
-        private void ResolveConeTransforms()
+        /// <summary>풀에서 다시 나올 때 콘이 켜진 채로 등장하지 않게 한다.</summary>
+        protected override void OnWeaponShow()
         {
-            if (mFrostAttack == null)
-            {
-                mFrostAttack = Root.Find(FrostAttackPath);
-                if (mFrostAttack == null)
-                {
-                    Log.Warning("FrostWeapon: '{0}' 을 찾지 못했다.", FrostAttackPath);
-                }
-                else
-                {
-                    // 활성/비활성은 베이스가 VfxRootPath 로 관리한다. 여기서 켜면
-                    // 다른 무기로 바꿔도 총구 파티클이 남는다.
-                    DisableLegacyArcCollider();
-                }
-            }
-
-            if (mFrostCone == null && mFrostAttack != null)
-            {
-                Transform cone = Root.Find(FrostConePath);
-                mFrostCone = cone != null ? cone.gameObject : null;
-            }
+            mFiring = false;
+            SetConeActive(false);
         }
 
         /// <summary>코드 판정으로 갈았으므로 원본 판정용 콜라이더는 꺼 둔다(이중 판정 방지).</summary>
         private void DisableLegacyArcCollider()
         {
-            Transform arc = Root.Find(FrostArcPath);
+            Transform arc = CachedTransform.Find(FrostArcPath);
             if (arc == null) return;
 
             MeshCollider meshCollider = arc.GetComponent<MeshCollider>();
@@ -149,19 +137,22 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>지금 실제로 얼릴 적들 — 반경과 부채꼴 각도를 둘 다 통과한 집합이다.</summary>
-        private int CollectCone(List<Enemy> results)
+        private int CollectCone(List<EnemyLogic> results)
         {
             results.Clear();
+
+            FrostWeaponData stats = DataAs<FrostWeaponData>();
+            if (stats == null) return 0;
 
             ConePose cone;
             if (!TryGetCone(out cone)) return 0;
 
             int candidateCount = WeaponUtil.FindEnemiesInSphere(
-                cone.Apex, WeaponTable.FrostConeRadius, mCandidates);
+                cone.Apex, stats.ConeRadius, mCandidates);
 
             for (int i = 0; i < candidateCount; i++)
             {
-                if (IsInCone(mCandidates[i], cone))
+                if (IsInCone(mCandidates[i], cone, stats.ConeHalfAngle))
                 {
                     results.Add(mCandidates[i]);
                 }
@@ -206,12 +197,12 @@ namespace ToyBoxNightmare
             return true;
         }
 
-        private static bool IsInCone(Enemy enemy, ConePose cone)
+        private static bool IsInCone(EnemyLogic enemy, ConePose cone, float halfAngle)
         {
             Vector3 toEnemy = enemy.CachedTransform.position - cone.Apex;
             toEnemy.y = 0f;
 
-            return Vector3.Angle(cone.Axis, toEnemy) <= WeaponTable.FrostConeHalfAngle;
+            return Vector3.Angle(cone.Axis, toEnemy) <= halfAngle;
         }
 
         /// <summary>다른 무기로 전환되면 콘과 루프 사운드를 반드시 끈다.</summary>
@@ -221,24 +212,33 @@ namespace ToyBoxNightmare
             SetConeActive(false);
         }
 
-        /// <summary>
-        /// 캐릭터가 바뀌면 이 둘은 남의 트랜스폼이 된다. 버려서 다음 Initialize 가 다시 찾게 한다 —
-        /// <see cref="ResolveConeTransforms"/> 가 <c>if (mX == null)</c> 로만 걸러서,
-        /// 여기서 안 버리면 옛 캐릭터의 콘을 계속 켜게 된다.
-        /// </summary>
-        protected override void OnDispose()
-        {
-            mFrostAttack = null;
-            mFrostCone   = null;
-            mFiring      = false;
-        }
-
         private void SetConeActive(bool active)
         {
             if (mFrostCone != null && mFrostCone.activeSelf != active)
             {
                 mFrostCone.SetActive(active);
             }
+
+            SetConeSoundActive(active);
+        }
+
+        /// <summary>
+        /// 콘이 켜져 있는 동안 분사음을 반복한다. 원본은 콘 프리팹의 AudioSource 가 냈다.
+        /// 켜고 끄는 호출이 매 프레임 올 수 있으므로 상태가 바뀔 때만 프레임워크에 요청한다.
+        /// </summary>
+        private void SetConeSoundActive(bool active)
+        {
+            bool isPlaying = mConeSoundId != GameSound.NoSound;
+            if (isPlaying == active) return;
+
+            if (!active)
+            {
+                GameSound.Stop(mConeSoundId);
+                mConeSoundId = GameSound.NoSound;
+                return;
+            }
+
+            mConeSoundId = GameSound.PlayLoop(SoundTable.FrostConeLoop, CachedTransform.position, ConeSoundVolume);
         }
     }
 }

@@ -7,13 +7,13 @@ namespace ToyBoxNightmare
     /// </summary>
     public sealed class PlayerAliveState : PlayerStateBase
     {
-        protected override void OnUpdate(IFsm<Player> fsm, float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(IFsm<PlayerLogic> fsm, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(fsm, elapseSeconds, realElapseSeconds);
 
             if (TryChangeToDying(fsm)) return;
 
-            Player owner = fsm.Owner;
+            PlayerLogic owner = fsm.Owner;
 
             // 이미 체력이 0 인데 사망 연출이 아직 시작 안 된 프레임이 있을 수 있다.
             // 그 사이 입력을 받으면 시체가 한 프레임 더 움직인다.

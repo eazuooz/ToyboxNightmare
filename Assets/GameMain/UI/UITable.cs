@@ -8,10 +8,16 @@ namespace ToyBoxNightmare
     public static class UITable
     {
         /// <summary>
-        /// 기본 UI 그룹. <c>GameFramework.prefab</c> 의 UIComponent.mUIGroups 에
+        /// 기본 UI 그룹(깊이 0). HUD 가 들어간다. <c>GameFramework.prefab</c> 의 UIComponent.mUIGroups 에
         /// <b>같은 이름으로 등록돼 있어야 한다.</b> 없으면 OpenUIForm 이 실패한다.
         /// </summary>
         public const string DefaultGroup = "Default";
+
+        /// <summary>
+        /// 위에 겹쳐 뜨는 폼의 UI 그룹(깊이 1). 일시정지 메뉴가 들어간다.
+        /// 그룹 깊이가 클수록 위에 그려진다 — <see cref="UIFormBase"/> 가 깊이를 Canvas 순서로 옮긴다.
+        /// </summary>
+        public const string PopupGroup = "Popup";
 
         /// <summary>
         /// HUD 폼의 Addressables 주소. Groups 창에 이 문자열로 등록돼 있어야 한다
@@ -20,12 +26,7 @@ namespace ToyBoxNightmare
         public const string HudForm = "HUDForm";
 
         /// <summary>
-        /// 일시정지 폼의 Addressables 주소.
-        ///
-        /// HUD 와 <b>같은 그룹</b>에 넣는다. 겹치는 순서는 UI 그룹 depth 가 아니라
-        /// 각 폼 Canvas 의 sortingOrder 로 정한다 — 두 폼 모두 자기 Canvas(Screen Space Overlay)를
-        /// 들고 있어서 그쪽이 실제로 렌더 순서를 결정하기 때문이다.
-        /// (게다가 <c>DefaultUIGroupHelper.SetDepth</c> 는 빈 구현이라 그룹 depth 가 아무 일도 하지 않는다.)
+        /// 일시정지 폼의 Addressables 주소. <see cref="PopupGroup"/> 에 열어 HUD 위에 그려지게 한다.
         /// </summary>
         public const string PauseMenuForm = "PauseMenuForm";
     }

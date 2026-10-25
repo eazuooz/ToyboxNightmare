@@ -436,7 +436,6 @@ GameObject:
   - component: {fileID: 22403732}
   - component: {fileID: 22287672}
   - component: {fileID: 11430728}
-  - component: {fileID: 11435934}
   m_Layer: 5
   m_Name: DamageImage
   m_TagString: Untagged
@@ -501,21 +500,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &11435934
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 168680}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5d4b1757c1d84eccbaedf0a0087ff56, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  image: {fileID: 11430728}
-  flashColor: {r: 1, g: 0, b: 0, a: 0.1}
-  flashSpeed: 5
 --- !u!1 &171774
 GameObject:
   m_ObjectHideFlags: 0
@@ -579,6 +563,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -891,7 +876,6 @@ GameObject:
   m_Component:
   - component: {fileID: 22492468}
   - component: {fileID: 11458378}
-  - component: {fileID: 11404578}
   m_Layer: 5
   m_Name: CountdownSlider
   m_TagString: Untagged
@@ -970,19 +954,6 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &11404578
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 191284}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e514cabd62d7c44b5bec68a0d14691a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  slider: {fileID: 11458378}
 --- !u!1 &192182
 GameObject:
   m_ObjectHideFlags: 0

@@ -10,8 +10,11 @@ namespace ToyBoxNightmare
     /// 원본에는 "무엇에든 닿으면 터지는" 트리거가 있었지만 이식하지 않는다.
     /// 이식본은 플레이어 콜라이더가 총구 앞에 있어 발사 즉시 자폭한다.
     /// </summary>
-    public class StinkProjectile : ProjectileLogicBase
+    public class StinkProjectileLogic : ProjectileLogicBase
     {
+        /// <summary>던지는 순간의 소리. 원본은 투사체 프리팹의 AudioSource 가 냈다.</summary>
+        protected override string LaunchSound => SoundTable.StinkFire;
+
         /// <summary>원본 프리팹의 arc 커브. 최고점 1.0 유닛 @ 진행률 0.80.</summary>
         private static readonly AnimationCurve Arc = new AnimationCurve(
             new Keyframe(0.00000095f, 0.0000138f,  1.250883f,     1.250883f),
@@ -41,23 +44,28 @@ namespace ToyBoxNightmare
         private Vector3 mDirection = Vector3.forward;
         private float   mTotal     = 0f;
         private float   mTraveled  = 0f;
-        private float   mSpeed     = WeaponTable.StinkSpeed;
+
+        /// <summary>데이터의 속도에 하한을 건 값. 발사 후 변하지 않는다.</summary>
+        private float   mSpeed     = 0f;
+
+        /// <summary>스폰 데이터. 터질 때 가스 구름의 능력치를 여기서 읽는다. 회수된 뒤에는 null.</summary>
+        private StinkProjectileData mData = null;
 
         protected internal override void OnShow(object userData)
         {
             base.OnShow(userData);
 
-            var data = userData as ArcProjectileData;
-            if (data == null)
+            mData = userData as StinkProjectileData;
+            if (mData == null)
             {
-                Log.Error("StinkProjectile data is invalid.");
+                Log.Error("StinkProjectileLogic: StinkProjectileData 가 아니다.");
                 SafeHide();
                 return;
             }
 
-            mStart     = data.Position;
-            mSpeed     = Mathf.Max(MinSpeed, data.Speed);
-            mPath      = data.ImpactPoint - mStart;
+            mStart     = mData.Position;
+            mSpeed     = Mathf.Max(MinSpeed, mData.Speed);
+            mPath      = mData.ImpactPoint - mStart;
             mTotal     = mPath.magnitude;
             mDirection = Vector3.forward;
             mTraveled  = 0f;
@@ -105,10 +113,28 @@ namespace ToyBoxNightmare
         {
             if (IsHiding) return;
 
-            SpawnEffect(typeof(StinkHit), WeaponTable.StinkHitAsset,
-                GetImpactPoint(), HitRotation, WeaponTable.StinkHitLifetime);
+            Vector3 impactPoint = GetImpactPoint();
+
+            // 가스 구름의 능력치는 무기가 실어 보낸 값을 그대로 넘긴다.
+            if (mData != null)
+            {
+                int id = EntitySerialId.Next();
+                WeaponUtil.SpawnEffect(typeof(StinkHitLogic), mData.HitEffectAsset,
+                    StinkHitData.Create(id, 1, impactPoint, HitRotation,
+                        mData.HitEffectLifetime, mData.BlastRadius, mData.FleeDuration));
+            }
+
+            GameSound.PlaySfx(SoundTable.StinkHit, impactPoint);
 
             SafeHide();
+        }
+
+        protected internal override void OnHide(bool isShutdown, object userData)
+        {
+            // 데이터는 base 체인 끝에서 참조 풀로 반납된다. 반납된 것을 들고 있지 않는다.
+            mData = null;
+
+            base.OnHide(isShutdown, userData);
         }
 
         /// <summary>가스 구름이 설 지면 좌표. 발사 시점에 확정된 착탄점을 Y=0 으로 눌러 쓴다.</summary>

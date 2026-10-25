@@ -20,6 +20,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 064f0a8fe808db14daf735acc6bad84d
+    m_Address: StinkAttack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 08e54000e23d1461a96002c851a10746
     m_Address: Clown
     m_ReadOnly: 0
@@ -43,6 +48,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 16f7cca3b4ceb423a8f1697b7764ec0c
+    m_Address: EnemyFreezeSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1d3bfb9269f136947bf8ac164cace1ff
     m_Address: ZomBunnyDeath
     m_ReadOnly: 0
@@ -65,6 +75,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Prefabs
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 28bd61aa3b65c41499cfd109392eb86a
+    m_Address: LightningHitSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4a3cb14c5e88d144ea87f6954156e45a
     m_Address: SlimeHit
     m_ReadOnly: 0
@@ -72,6 +87,26 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5671dd473fd4e8e49b686f50a7c1c252
     m_Address: StinkProjectile
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57728ad878f8d4a6489f4a16542e3324
+    m_Address: FrostConeLoopSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 59bc8ed4227353c48a46e675a49acd96
+    m_Address: FrostAttack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a6174228cd95447ab1936b79f0aff29
+    m_Address: EnemySlimeLoopSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5b6b354fa7c4c403aaa25faa14394f35
+    m_Address: BackgroundMusic
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -91,6 +126,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 704eeb334ac4440489bff246fb5e7d6f
+    m_Address: SlimeAttack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 776c6a76b1ad6450aaeeecfee2e869cb
+    m_Address: StinkFireSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8c615fd0429f34edf85539d70279360d
     m_Address: HellephantDeath
     m_ReadOnly: 0
@@ -107,6 +152,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a66edea1949a2489d8b363346132e796
+    m_Address: SlimeHitSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: acc5a3cbf9b7346a8ab39f638c4a60cc
+    m_Address: LightningFireSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b55565c8cc274484980c4f9ef6c83573
     m_Address: ZombieDuck
     m_ReadOnly: 0
@@ -118,11 +173,21 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc1c9d0e9bf554cc7ad9386e1858ce24
+    m_Address: StinkHitSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cd60940a6e45a457097be96cca6a8af3
     m_Address: Hellephant
     m_ReadOnly: 0
     m_SerializedLabels:
     - Prefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1c541824bb01f249adb5b6646196b73
+    m_Address: LightningAttack
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d36a393bca4582043982db9089e1694f
     m_Address: PlayerDeath
@@ -136,6 +201,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: de39ac2a4a30ced46a867212f1f870c7
     m_Address: HUDForm
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: edd7ca3127aeec7448bbf8c36c3176a4
+    m_Address: CharacterSelectSpotlight
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

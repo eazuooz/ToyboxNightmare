@@ -7,12 +7,12 @@ namespace ToyBoxNightmare
     /// <summary>
     /// 아군(양). 소환되면 목적지로 한 번 걸어갈 뿐 아무것도 하지 않는다 —
     /// <b>미끼다.</b> 적이 아군을 쫓게 만드는 것은 아군 자신이 아니라
-    /// <see cref="SurvivalGame.GetChaseTargetPosition"/> 이 돌려주는 좌표다.
+    /// 적이 <see cref="EntityFinder.FindAlly"/> 로 아군을 찾아 그 좌표를 쫓기 때문이다.
     ///
     /// 원본 Ally 도 NavMeshAgent 에 SetDestination 을 1회 걸고 끝이며,
     /// 도착 후 다시 움직이거나 플레이어를 따라다니지 않는다.
     /// </summary>
-    public class Ally : EntityLogicBase
+    public class AllyLogic : EntityLogicBase
     {
         private NavMeshAgent mAgent    = null;
         private AllyData     mAllyData = null;
@@ -27,7 +27,7 @@ namespace ToyBoxNightmare
             mAgent = GetComponent<NavMeshAgent>();
             if (mAgent == null)
             {
-                Log.Warning("Ally: NavMeshAgent 가 없다. 소환 위치에 그대로 서 있게 된다.");
+                Log.Warning("AllyLogic: NavMeshAgent 가 없다. 소환 위치에 그대로 서 있게 된다.");
             }
         }
 
@@ -38,7 +38,7 @@ namespace ToyBoxNightmare
             mAllyData = userData as AllyData;
             if (mAllyData == null)
             {
-                Log.Error("Ally: AllyData 가 아니다. 회수한다.");
+                Log.Error("AllyLogic: AllyData 가 아니다. 회수한다.");
                 SafeHide();
                 return;
             }
@@ -58,7 +58,7 @@ namespace ToyBoxNightmare
 
         /// <summary>
         /// 스폰 좌표로 옮기고 NavMesh 폴리곤 위로 스냅한다.
-        /// (Enemy 와 같은 절차다 — 에이전트가 켜진 채 transform 을 옮기면 Unity 가 경고를 낸다.)
+        /// (EnemyLogic 와 같은 절차다 — 에이전트가 켜진 채 transform 을 옮기면 Unity 가 경고를 낸다.)
         /// </summary>
         private void PlaceOnNavMesh(Vector3 position)
         {

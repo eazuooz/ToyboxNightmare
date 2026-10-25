@@ -15,8 +15,8 @@ namespace ToyBoxNightmare
     ///       엔티티 풀이 재사용을 대신 해 준다.</item>
     /// </list>
     ///
-    /// <b>미끼 역할은 여기서 하지 않는다.</b> 적은 <see cref="SurvivalGame.GetChaseTargetPosition"/> 을
-    /// 폴링하고, 그 함수가 <see cref="GetLurePosition"/> 을 거쳐 아군 좌표를 돌려준다.
+    /// <b>미끼 역할은 여기서 하지 않는다.</b> 적은 <see cref="EntityFinder.FindAlly"/> 로 떠 있는
+    /// 아군 엔티티를 직접 찾아 그 좌표(<see cref="AllyLogic.LurePosition"/>)를 쫓는다.
     /// </summary>
     public class AllySquad
     {
@@ -25,7 +25,7 @@ namespace ToyBoxNightmare
 
         private int   mPoints           = 0;
         private int   mAllyEntityId     = NoAllyId;
-        private Ally  mAlly             = null;
+        private AllyLogic  mAlly             = null;
         private float mRemainingSeconds = 0f;
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace ToyBoxNightmare
 
             entityComponent.ShowEntity(
                 id,
-                typeof(Ally),
+                typeof(AllyLogic),
                 AllyTable.Asset,
                 AllyTable.Group,
                 AllyData.Create(id, AllyTable.EntityTypeId, AllyTable.SpawnPosition, destination));
@@ -114,10 +114,10 @@ namespace ToyBoxNightmare
         {
             if (entity == null) return;
 
-            Ally ally = entity.Logic as Ally;
+            AllyLogic ally = entity.Logic as AllyLogic;
             if (ally == null)
             {
-                GameAssert.Unreachable("AllySquad: Ally 로직이 아닌 엔티티가 넘어왔다.");
+                GameAssert.Unreachable("AllySquad: AllyLogic 이 아닌 엔티티가 넘어왔다.");
                 return;
             }
 
@@ -174,20 +174,6 @@ namespace ToyBoxNightmare
             if (mRemainingSeconds > 0f) return;
 
             Unsummon();
-        }
-
-        /// <summary>
-        /// 적이 쫓을 좌표. 아군이 실제로 화면에 서 있을 때만 아군을 돌려주고,
-        /// 그 외에는 fallback(플레이어)을 그대로 돌려준다.
-        ///
-        /// 소환 직후 로드가 끝나기 전에도 fallback 이 나간다 — 원본도 아군이 존재해야
-        /// EnemyTarget 이 바뀌므로 같은 동작이다.
-        /// </summary>
-        public Vector3 GetLurePosition(Vector3 fallback)
-        {
-            if (mAlly == null || !mAlly.Available) return fallback;
-
-            return mAlly.LurePosition;
         }
 
         // ─── HUD 통보 ───

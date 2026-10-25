@@ -9,11 +9,11 @@ namespace ToyBoxNightmare
     /// 적 엔티티. NavMeshAgent 로 플레이어를 추적하고, 사거리 안에서 주기적으로 공격한다.
     /// 사망하면 즉시 사라지지 않고 연출(정지 → 침하) 후 회수된다.
     /// </summary>
-    public class Enemy : TargetableObject
+    public class EnemyLogic : TargetableObjectLogic
     {
-        // ─── 튜닝 상수 ───
-
-        private const float FleeDistance = 10f; // 원본 runAwayDistance
+        // ─── 구현 상수 ───
+        // 능력치(체력·속도·공격·도주 거리·사망 연출 시간)는 EnemyData 에 있다. 여기에는 계산과
+        // 프리팹 구조에 묶인 값만 둔다.
 
         /// <summary>도주 목적지를 NavMesh 폴리곤 위로 스냅할 때 허용하는 탐색 반경.</summary>
         private const float FleeSampleRadius = 4f;
@@ -79,8 +79,8 @@ namespace ToyBoxNightmare
         // ─── 상태 기계 ───
         // 추격 / 대기 / 쓰러짐 / 침하 네 상태를 GameFramework FSM 으로 돌린다.
         // 상태는 무상태라 인스턴스를 풀 재사용 사이에 그대로 돌려쓴다(OnInit 에서 1회 생성).
-        private IFsm<Enemy>       mFsm    = null;
-        private FsmState<Enemy>[] mStates = null;
+        private IFsm<EnemyLogic>       mFsm    = null;
+        private FsmState<EnemyLogic>[] mStates = null;
 
         // 플레이어 사망 연출을 한 번만 재생하기 위한 플래그
         private bool mPlayerDeadNotified = false;
@@ -163,7 +163,7 @@ namespace ToyBoxNightmare
         }
 
         // ─── 디버프 수신 API ───
-        // 무기 쪽(FrostWeapon / StinkHit / SlimeProjectile)이 부르는 창구다. 시그니처를 바꾸지 말 것.
+        // 무기 쪽(FrostWeaponLogic / StinkHitLogic / SlimeProjectileLogic)이 부르는 창구다. 시그니처를 바꾸지 말 것.
         // 상태와 판정은 전부 EnemyDebuffs 에 있고 여기서는 위임만 한다.
 
         /// <summary>Frost 콘 안에 있는 동안 매 재판정 틱마다 호출한다.</summary>
@@ -204,14 +204,38 @@ namespace ToyBoxNightmare
         /// <summary>빙결 VFX 토글. 프리팹에 FreezeFx 자식이 없으면 조용히 무시된다.</summary>
         internal void SetFreezeFxActive(bool active)
         {
+            // 소리는 연출이 꺼져 있다가 켜지는 순간에만 한 번 낸다.
+            bool turnsOn = active && mFreezeFx != null && !mFreezeFx.activeSelf;
+
             SetFxActive(mFreezeFx, active);
+
+            if (turnsOn)
+            {
+                GameSound.PlaySfx(SoundTable.EnemyFreeze, CachedTransform.position);
+            }
         }
 
         /// <summary>슬라임 VFX 토글. 프리팹에 SlimeFx 자식이 없으면 조용히 무시된다.</summary>
         internal void SetSlimeFxActive(bool active)
         {
             SetFxActive(mSlimeFx, active);
+
+            // 슬라임이 붙어 있는 동안 지속음을 낸다. 떼어질 때(만료·사망·회수) 반드시 끈다 —
+            // 이 함수는 ClearAll 을 통해 그 모든 경로에서 false 로 불린다.
+            if (!active)
+            {
+                GameSound.Stop(mSlimeLoopSoundId);
+                mSlimeLoopSoundId = GameSound.NoSound;
+                return;
+            }
+
+            if (mSlimeLoopSoundId != GameSound.NoSound) return;
+
+            mSlimeLoopSoundId = GameSound.PlayLoop(SoundTable.EnemySlimeLoop, CachedTransform.position, 1f);
         }
+
+        /// <summary>재생 중인 슬라임 지속음. 없으면 <see cref="GameSound.NoSound"/>.</summary>
+        private int mSlimeLoopSoundId = GameSound.NoSound;
 
         private static void SetFxActive(GameObject fx, bool active)
         {
@@ -232,7 +256,7 @@ namespace ToyBoxNightmare
 
             // 상태 인스턴스도 여기서 한 번만 만든다. 상태가 값을 전부 fsm.Owner 에서 읽으므로
             // 스폰마다 다시 만들 이유가 없다 — 적은 계속 스폰되므로 그만큼 할당이 줄어든다.
-            mStates = new FsmState<Enemy>[]
+            mStates = new FsmState<EnemyLogic>[]
             {
                 new EnemyChaseState(),
                 new EnemyIdleState(),
@@ -264,13 +288,13 @@ namespace ToyBoxNightmare
         {
             if (mColliders == null || mColliders.Length == 0)
             {
-                Log.Warning("Enemy '{0}' 루트에 Collider 가 없다. 히트스캔·트리거 판정이 전부 빗나간다.",
+                Log.Warning("EnemyLogic '{0}' 루트에 Collider 가 없다. 히트스캔·트리거 판정이 전부 빗나간다.",
                     CachedTransform.name);
             }
 
             if (mAnimator == null)
             {
-                Log.Warning("Enemy '{0}' 에 Animator 가 없다. 사망/빙결 연출이 재생되지 않는다.",
+                Log.Warning("EnemyLogic '{0}' 에 Animator 가 없다. 사망/빙결 연출이 재생되지 않는다.",
                     CachedTransform.name);
             }
         }
@@ -360,7 +384,7 @@ namespace ToyBoxNightmare
             FsmComponent fsmComponent = GameEntry.GetComponent<FsmComponent>();
             if (fsmComponent == null)
             {
-                Log.Error("Enemy: FsmComponent 가 없다. 추격도 사망 연출도 돌지 않는다.");
+                Log.Error("EnemyLogic: FsmComponent 가 없다. 추격도 사망 연출도 돌지 않는다.");
                 return;
             }
 
@@ -398,7 +422,7 @@ namespace ToyBoxNightmare
 
             // 임계값으로 채워 둔다. 0 으로 두면 첫 SetDestination 이 0.5초 뒤에나
             // 나가서 스폰 직후 반 초 동안 제자리 달리기를 한다.
-            mRetargetTimer = EnemyTable.RetargetInterval;
+            mRetargetTimer = mEnemyData.RetargetInterval;
         }
 
         /// <summary>연출용 컴포넌트를 프리팹 초기 상태로 되돌린다.</summary>
@@ -473,7 +497,7 @@ namespace ToyBoxNightmare
         /// 원본 EnemyMovement 는 코루틴으로 같은 주기를 돌되 첫 SetDestination 은
         /// 즉시 나가므로, OnShow 에서 타이머를 임계값으로 채워 그 의미를 맞췄다.
         /// </summary>
-        internal void TickChase(Player player, float elapseSeconds)
+        internal void TickChase(PlayerLogic player, float elapseSeconds)
         {
             if (!IsAgentReady) return;
 
@@ -481,7 +505,7 @@ namespace ToyBoxNightmare
             mAgent.speed     = mEnemyData.Stats.MoveSpeed * mSpeedMultiplier;
 
             mRetargetTimer += elapseSeconds;
-            if (mRetargetTimer < EnemyTable.RetargetInterval) return;
+            if (mRetargetTimer < mEnemyData.RetargetInterval) return;
 
             mRetargetTimer = 0f;
 
@@ -496,7 +520,7 @@ namespace ToyBoxNightmare
         /// 그래서 첫 타격은 접촉 후 0~간격 사이의 임의 시점에 나간다.
         /// (타이머를 0 으로 리셋하면 접촉 즉시 확정 타격이 되어 원본보다 가혹해진다.)
         /// </summary>
-        internal void TickAttack(Player player, float elapseSeconds)
+        internal void TickAttack(PlayerLogic player, float elapseSeconds)
         {
             EnemyStats stats = mEnemyData.Stats;
 
@@ -540,10 +564,12 @@ namespace ToyBoxNightmare
         /// </summary>
         private static Vector3 ResolveChasePosition(Vector3 playerPosition)
         {
-            SurvivalGame game = SurvivalGame.Instance;
-            if (game == null) return playerPosition;
+            // 아군이 실제로 화면에 서 있을 때만 아군을 쫓는다. 소환 직후 로드가 끝나기 전에는
+            // 플레이어를 그대로 쫓는다 — 원본도 아군이 존재해야 EnemyTarget 이 바뀐다.
+            AllyLogic ally = EntityFinder.FindAlly();
+            if (ally == null) return playerPosition;
 
-            return game.GetChaseTargetPosition(playerPosition);
+            return ally.LurePosition;
         }
 
         /// <summary>플레이어 반대편으로 FleeDistance 만큼 떨어진, NavMesh 위의 지점.</summary>
@@ -559,7 +585,7 @@ namespace ToyBoxNightmare
                 away = CachedTransform.forward;
             }
 
-            Vector3 destination = CachedTransform.position + away.normalized * FleeDistance;
+            Vector3 destination = CachedTransform.position + away.normalized * mEnemyData.FleeDistance;
 
             NavMeshHit navHit;
             if (NavMesh.SamplePosition(destination, out navHit, FleeSampleRadius, NavMesh.AllAreas))
@@ -693,20 +719,20 @@ namespace ToyBoxNightmare
             get
             {
                 return mSinkRequested
-                       || mDeathTimer >= EnemyTable.DeathEffectTime * SinkFallbackRatio;
+                       || mDeathTimer >= mEnemyData.DeathEffectTime * SinkFallbackRatio;
             }
         }
 
         /// <summary>연출 시간이 다 찼는가. 회수 시점이다.</summary>
         internal bool IsDeathEffectFinished
         {
-            get { return mDeathTimer >= EnemyTable.DeathEffectTime; }
+            get { return mDeathTimer >= mEnemyData.DeathEffectTime; }
         }
 
         /// <summary>바닥으로 가라앉는다.</summary>
         internal void TickSinking(float elapseSeconds)
         {
-            CachedTransform.Translate(Vector3.down * (EnemyTable.SinkSpeed * elapseSeconds), Space.World);
+            CachedTransform.Translate(Vector3.down * (mEnemyData.SinkSpeed * elapseSeconds), Space.World);
         }
 
         // ─── NavMeshAgent 헬퍼 ───
@@ -736,7 +762,7 @@ namespace ToyBoxNightmare
             }
             else
             {
-                Log.Warning("Enemy '{0}' 가 NavMesh 위에 놓이지 못했다. 스폰 좌표 {1} 확인 필요.",
+                Log.Warning("EnemyLogic '{0}' 가 NavMesh 위에 놓이지 못했다. 스폰 좌표 {1} 확인 필요.",
                     stats.AssetName, position);
             }
         }

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ToyBoxNightmare
 {
     /// <summary>
-    /// 아군(양) 튜닝값. 전부 원본 좀비토이 씬의 AllyManager / Ally 인스펙터 실측값이다.
+    /// 아군(양) 튜닝값. 전부 원본 좀비토이 씬의 AllyManager / AllyLogic 인스펙터 실측값이다.
     /// </summary>
     public static class AllyTable
     {

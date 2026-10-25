@@ -22,6 +22,17 @@ namespace ToyBoxNightmare
 
         public const string BackgroundMusic = "BackgroundMusic";
 
+        // 무기·디버프. 주소가 엔티티 프리팹의 주소(LightningHit, StinkHit …)와 겹치지 않게 Sound 를 붙였다 —
+        // Addressables 주소는 에셋 종류와 무관하게 하나의 이름공간이다.
+        public const string LightningFire  = "LightningFireSound";
+        public const string LightningHit   = "LightningHitSound";
+        public const string FrostConeLoop  = "FrostConeLoopSound";
+        public const string StinkFire      = "StinkFireSound";
+        public const string StinkHit       = "StinkHitSound";
+        public const string SlimeHit       = "SlimeHitSound";
+        public const string EnemyFreeze    = "EnemyFreezeSound";
+        public const string EnemySlimeLoop = "EnemySlimeLoopSound";
+
         public const string PlayerHurt  = "PlayerHurt";
         public const string PlayerDeath = "PlayerDeath";
 

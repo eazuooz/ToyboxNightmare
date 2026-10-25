@@ -10,13 +10,13 @@ namespace ToyBoxNightmare
     /// - Rigidbody 기반 이동 (FixedUpdate)
     /// - 마우스 방향으로 회전
     /// - WASD 이동
+    ///
+    /// 능력치(최대·현재 체력, 이동 속도, 사망 대기 시간)는 <see cref="PlayerData"/> 에 있다 — 스폰하는 쪽이 정한다.
+    /// 여기에는 이 인스턴스가 실행 중에만 갖는 것(컴포넌트 캐시, 이번 프레임의 입력·조준, 사망 타이머, FSM, 무기 묶음)을 둔다.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
-    public class Player : TargetableObject
+    public class PlayerLogic : TargetableObjectLogic
     {
-        // 싱글턴 - 다른 로직에서 플레이어 위치를 참조할 때 사용
-        public static Player Instance { get; private set; }
-
         // ─── 애니메이터 파라미터 이름 ───
         // 이름이 틀려도 Unity 는 조용히 무시하므로 문자열을 흩뿌리지 않고 여기 모아 둔다.
         private const string WalkingBoolParam = "IsWalking";
@@ -45,16 +45,13 @@ namespace ToyBoxNightmare
         // 상태는 무상태라 인스턴스를 풀 재사용 사이에 그대로 돌려쓴다(OnInit 에서 1회 생성).
         // FSM 자체는 스폰마다 만들고 회수마다 부순다 — 회수된 엔티티의 상태가 계속 돌면 안 된다.
 
-        private IFsm<Player>       mFsm    = null;
-        private FsmState<Player>[] mStates = null;
+        private IFsm<PlayerLogic>       mFsm    = null;
+        private FsmState<PlayerLogic>[] mStates = null;
 
         // 사망 연출
         private bool  mDying         = false;
         private float mDeathTimer    = 0f;
         private bool  mDeathNotified = false;
-
-        /// <summary>원본 GameManager 의 delayOnPlayerDeath.</summary>
-        private const float DeathDelay = 1f;
 
         /// <summary>
         /// 피격/사거리 판정의 기준점. 콜라이더 중심이 트랜스폼 원점에서
@@ -95,7 +92,7 @@ namespace ToyBoxNightmare
 
             // 상태 인스턴스도 여기서 한 번만 만든다. 상태가 값을 전부 fsm.Owner 에서 읽으므로
             // 스폰마다 다시 만들 이유가 없고, 그만큼 스폰당 할당이 줄어든다.
-            mStates = new FsmState<Player>[]
+            mStates = new FsmState<PlayerLogic>[]
             {
                 new PlayerAliveState(),
                 new PlayerPausedState(),
@@ -104,7 +101,7 @@ namespace ToyBoxNightmare
 
             mRigidbody = GetComponent<Rigidbody>();
             // includeInactive: true 가 필수다. 이 캐릭터 GameObject 는 선택화면
-            // (PlayerSelectLogic)으로 먼저 쓰인 뒤 회수됐다가 Player 로 재사용되는데,
+            // (PlayerSelectLogic)으로 먼저 쓰인 뒤 회수됐다가 PlayerLogic 으로 재사용되는데,
             // 회수 시점에 OnHide 가 SetActive(false) 를 걸어 두고 OnInit 은 OnShow 보다 먼저 돈다.
             // 기본값(false)이면 여기서 Animator 를 못 찾아 걷기·사망 애니메이션이 조용히 안 나온다.
             mAnimator  = GetComponentInChildren<Animator>(true);
@@ -121,17 +118,17 @@ namespace ToyBoxNightmare
         {
             if (mRigidbody == null)
             {
-                Log.Error("Player '{0}': Rigidbody 가 없어 이동이 동작하지 않는다.", Name);
+                Log.Error("PlayerLogic '{0}': Rigidbody 가 없어 이동이 동작하지 않는다.", Name);
             }
 
             if (mAnimator == null)
             {
-                Log.Warning("Player '{0}': Animator 를 찾지 못했다. 이동/사망 애니메이션이 재생되지 않는다.", Name);
+                Log.Warning("PlayerLogic '{0}': Animator 를 찾지 못했다. 이동/사망 애니메이션이 재생되지 않는다.", Name);
             }
 
             if (mCollider == null)
             {
-                Log.Warning("Player '{0}': CapsuleCollider 가 없다. 중심점이 트랜스폼 원점으로 대체된다.", Name);
+                Log.Warning("PlayerLogic '{0}': CapsuleCollider 가 없다. 중심점이 트랜스폼 원점으로 대체된다.", Name);
             }
         }
 
@@ -139,12 +136,11 @@ namespace ToyBoxNightmare
         {
             base.OnShow(userData);
 
-            // 상태 리셋과 Instance 갱신은 userData 검사보다 <b>먼저</b> 한다.
+            // 상태 리셋은 userData 검사보다 <b>먼저</b> 한다.
             // 이 인스턴스는 풀에서 재사용되므로, 데이터가 없다고 여기서 그냥 빠져나가면
             // 이전 판의 mDying/mDeathTimer/mDeathNotified 와 꺼진 콜라이더를 그대로 물고
             // 등장해 1초 뒤 스스로 사라진다. 데이터가 없어도 인스턴스는 깨끗해야 한다.
             ResetRuntimeState();
-            Instance = this;
 
             mPlayerData = userData as PlayerData;
             if (mPlayerData == null)
@@ -184,7 +180,7 @@ namespace ToyBoxNightmare
             FsmComponent fsmComponent = GameEntry.GetComponent<FsmComponent>();
             if (fsmComponent == null)
             {
-                Log.Error("Player: FsmComponent 가 없다. 입력도 사망 연출도 돌지 않는다.");
+                Log.Error("PlayerLogic: FsmComponent 가 없다. 입력도 사망 연출도 돌지 않는다.");
                 return;
             }
 
@@ -236,8 +232,8 @@ namespace ToyBoxNightmare
             // 가장 먼저 부순다. 회수된 엔티티의 상태가 계속 도는 것을 막는다.
             DestroyStateMachine();
 
-            mWeaponLoadout.Shutdown();
-            mWeaponLoadout.Dispose();
+            // 무기는 여기서 치우지 않는다. 무기도 엔티티라, 코어가 이 OnHide 를 부르기 전에
+            // 붙어 있는 무기를 전부 먼저 떼고(OnDetached) 회수했다.
 
             // 데이터는 base 체인 끝(EntityLogicBase)에서 ReferencePool 로 반납된다.
             // 반납이 참조를 지워 주지 않으므로 여기서 놓아야 FixedUpdate 의 mPlayerData null
@@ -245,16 +241,34 @@ namespace ToyBoxNightmare
             // 암묵 전제에만 기대게 되고, 재스폰이 같은 인스턴스를 꺼내면 남의 이동속도를 읽는다.
             mPlayerData = null;
 
-            // 무조건 지우면 안 된다. 재시작 경로에서는 새 Player 가 먼저 OnShow 되고
-            // 이전 인스턴스가 그 뒤에 회수되므로, 그때 "새" Instance 를 지워 버리면
-            // PlayerCameraFollow 가 타겟을 잃고 선택 앵글로 돌아간다.
-            // UnityEngine.Object 라 ReferenceEquals 가 아니라 == 를 쓴다(파괴된 객체 비교).
-            if (Instance == this)
+            base.OnHide(isShutdown, userData);
+        }
+
+        /// <summary>
+        /// 자식 엔티티가 붙었다. 지금 붙는 것은 무기뿐이다 —
+        /// <see cref="WeaponLoadout.Equip"/> 이 요청한 무기가 로드를 마치고 스스로 붙어 온다.
+        /// </summary>
+        protected internal override void OnAttached(EntityLogic childEntity, Transform parentTransform, object userData)
+        {
+            base.OnAttached(childEntity, parentTransform, userData);
+
+            WeaponLogicBase weapon = childEntity as WeaponLogicBase;
+            if (weapon != null)
             {
-                Instance = null;
+                mWeaponLoadout.Attach(weapon);
+            }
+        }
+
+        /// <summary>자식 엔티티가 떨어졌다. 무기가 회수되기 직전에 온다.</summary>
+        protected internal override void OnDetached(EntityLogic childEntity, object userData)
+        {
+            WeaponLogicBase weapon = childEntity as WeaponLogicBase;
+            if (weapon != null)
+            {
+                mWeaponLoadout.Detach(weapon);
             }
 
-            base.OnHide(isShutdown, userData);
+            base.OnDetached(childEntity, userData);
         }
 
         /// <summary>
@@ -296,8 +310,11 @@ namespace ToyBoxNightmare
         /// </summary>
         internal void TickDeathSequence(float elapseSeconds)
         {
+            // 데이터가 없으면 FSM 이 만들어지지 않아 여기까지 오지 않는다. 그래도 바로 회수되게 0 으로 본다.
+            float deathDelay = mPlayerData != null ? mPlayerData.DeathDelay : 0f;
+
             mDeathTimer += elapseSeconds;
-            if (mDeathTimer < DeathDelay) return;
+            if (mDeathTimer < deathDelay) return;
 
             NotifyDied();
             SafeHide();
@@ -512,8 +529,7 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            int finalScore = SurvivalGame.Instance != null ? SurvivalGame.Instance.Score : 0;
-            eventComponent.Fire(this, PlayerDiedEventArgs.Create(finalScore));
+            eventComponent.Fire(this, PlayerDiedEventArgs.Create());
         }
     }
 }

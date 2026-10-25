@@ -5,17 +5,17 @@ namespace ToyBoxNightmare
 {
     /// <summary>
     /// 적에게 걸리는 디버프 3종 — Frost(빙결) / Stink(도주) / Slime(공격봉인 DoT) — 의
-    /// 상태와 전이. 추격·공격·사망 연출은 <see cref="Enemy"/> 쪽에 남아 있다.
+    /// 상태와 전이. 추격·공격·사망 연출은 <see cref="EnemyLogic"/> 쪽에 남아 있다.
     ///
-    /// AttachEntity 대신 Enemy 내부 상태로 관리한다. 엔티티가 회수되면 상태도 함께
+    /// AttachEntity 대신 EnemyLogic 내부 상태로 관리한다. 엔티티가 회수되면 상태도 함께
     /// 사라지므로 "주인 잃은 디버프" 가 원천적으로 생기지 않는다.
     ///
-    /// <b>MonoBehaviour 가 아니다.</b> 소유 <see cref="Enemy"/> 가 인스턴스를 만들어 들고
-    /// <c>Enemy.OnUpdate</c> 가 직접 <see cref="OnUpdate"/> 를 굴린다 — 이유는
-    /// <see cref="WeaponBase"/> 클래스 주석과 같다(Unity 메시지 비-virtual, 갱신 순서 미보장,
+    /// <b>MonoBehaviour 가 아니다.</b> 소유 <see cref="EnemyLogic"/> 가 인스턴스를 만들어 들고
+    /// <c>EnemyLogic.OnUpdate</c> 가 직접 <see cref="OnUpdate"/> 를 굴린다 — 이유는
+    /// <see cref="WeaponLogicBase"/> 클래스 주석과 같다(Unity 메시지 비-virtual, 갱신 순서 미보장,
     /// 풀 재사용과 불화).
     ///
-    /// 이 객체 자체는 엔티티 풀 재사용 사이에 살아남는다. 그래서 <c>Enemy.OnShow</c> 가
+    /// 이 객체 자체는 엔티티 풀 재사용 사이에 살아남는다. 그래서 <c>EnemyLogic.OnShow</c> 가
     /// <see cref="ClearAll"/> 로 이전 판의 상태를 되돌린다.
     /// </summary>
     public class EnemyDebuffs
@@ -42,7 +42,7 @@ namespace ToyBoxNightmare
         private const int NoAttackerId = 0;
 
         /// <summary>디버프가 걸리는 대상. 생성 시점에 정해지고 바뀌지 않는다.</summary>
-        private readonly Enemy mOwner = null;
+        private readonly EnemyLogic mOwner = null;
 
         // ─── 디버프 상태 ───
 
@@ -70,17 +70,17 @@ namespace ToyBoxNightmare
         /// DoT 를 넣은 공격자를 <b>참조가 아니라 Id 로</b> 들고 있다. DoT 는 최대 3초를 끄는데
         /// 그 사이 발사체 엔티티는 회수되고 같은 인스턴스가 다른 발사체로 재사용될 수 있다.
         /// 참조로 들면 마지막 틱이 무관한 엔티티를 공격자로 넘긴다.
-        /// (SlimeProjectile 이 대상 추적에 같은 이유로 Id 를 쓴다.)
+        /// (SlimeProjectileLogic 이 대상 추적에 같은 이유로 Id 를 쓴다.)
         /// </summary>
         private int mSlimeAttackerId = NoAttackerId;
 
         /// <summary>
-        /// 소유자는 <c>Enemy.OnInit</c> 에서 한 번만 넘어온다. this 를 넘겨야 해서
+        /// 소유자는 <c>EnemyLogic.OnInit</c> 에서 한 번만 넘어온다. this 를 넘겨야 해서
         /// 필드 초기화자로는 만들 수 없다(C# 은 필드 초기화자에서 this 를 못 쓴다).
         /// </summary>
-        public EnemyDebuffs(Enemy owner)
+        public EnemyDebuffs(EnemyLogic owner)
         {
-            GameAssert.IsTrue(owner != null, "EnemyDebuffs 는 소유 Enemy 없이 만들 수 없다.");
+            GameAssert.IsTrue(owner != null, "EnemyDebuffs 는 소유 EnemyLogic 없이 만들 수 없다.");
 
             mOwner = owner;
         }
@@ -166,7 +166,7 @@ namespace ToyBoxNightmare
         // ─── 갱신 ───
 
         /// <summary>
-        /// <c>Enemy.OnUpdate</c> 가 매 프레임 부른다. 호출 위치(IsHiding 검사 뒤, 사망 연출 갱신 앞)의
+        /// <c>EnemyLogic.OnUpdate</c> 가 매 프레임 부른다. 호출 위치(IsHiding 검사 뒤, 사망 연출 갱신 앞)의
         /// 근거는 그 호출부 주석에 있다.
         /// </summary>
         public void OnUpdate(float elapseSeconds)
@@ -278,7 +278,7 @@ namespace ToyBoxNightmare
             mSlimeTicksLeft--;
             mSlimeTickTimer = mSlimeTickInterval;
 
-            // 이미 죽었으면 TargetableObject.ApplyDamage 의 IsDead 가드가 무시한다.
+            // 이미 죽었으면 TargetableObjectLogic.ApplyDamage 의 IsDead 가드가 무시한다.
             // 이 한 방이 치명타면 OnDead → ClearAll → ClearSlime 으로 재진입해
             // mSlimeTicksLeft 를 0 으로 만든다. 아래 마무리는 그래도 안전하도록 멱등이다.
             mOwner.ApplyDamage(ResolveSlimeAttacker(), mSlimeTickDamage);
@@ -302,7 +302,7 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>
-        /// 디버프 전량 해제. 풀 재사용(<c>Enemy.OnShow</c>)과 사망(<c>Enemy.OnDead</c>) 양쪽에서 부른다.
+        /// 디버프 전량 해제. 풀 재사용(<c>EnemyLogic.OnShow</c>)과 사망(<c>EnemyLogic.OnDead</c>) 양쪽에서 부른다.
         /// </summary>
         public void ClearAll()
         {

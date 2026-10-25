@@ -8,11 +8,11 @@ namespace ToyBoxNightmare
     /// </summary>
     public sealed class EnemyIdleState : EnemyStateBase
     {
-        protected override void OnStateUpdate(IFsm<Enemy> fsm, Enemy owner, float elapseSeconds)
+        protected override void OnStateUpdate(IFsm<EnemyLogic> fsm, EnemyLogic owner, float elapseSeconds)
         {
             if (TryChangeToDying(fsm, owner)) return;
 
-            Player player = Player.Instance;
+            PlayerLogic player = EntityFinder.FindPlayer();
 
             bool isPlayerSpawned = player != null && player.Available;
             if (!isPlayerSpawned)

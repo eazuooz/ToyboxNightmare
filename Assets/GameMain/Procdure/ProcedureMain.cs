@@ -1,3 +1,4 @@
+using UnityEngine.AI;
 using UnityGameFramework.Runtime;
 using ProcedureOwner = GameFramework.Fsm.IFsm<GameFramework.Procedure.IProcedureManager>;
 
@@ -18,12 +19,35 @@ namespace ToyBoxNightmare
 
             Log.Info("ProcedureMain: Enter");
 
+            WarnIfSceneIsIncomplete();
+
+            // 배경음악은 SoundComponent 로 튼다. 이미 나오고 있으면 그대로 둔다.
+            GameSound.PlayMusic();
+
             // 구독이 먼저다. OpenUIForm 은 비동기라 실패 통지가 이 아래 호출 도중에도 올 수 있다.
             SubscribeUIFailure();
             OpenForms();
 
             mGame = new SurvivalGame();
             mGame.Initialize();
+        }
+
+        /// <summary>
+        /// 이 게임은 <c>Assets/Scenes/MainScene.unity</c> 에서 돌아야 한다. 방(Environment)·NavMesh·
+        /// 카메라 추종(<see cref="PlayerCameraFollow"/>)이 그 씬에 놓여 있기 때문이다.
+        /// 새 씬에 GameFramework 프리팹만 놓고 실행해도 게임은 시작되지만, 적이 움직이지 않고
+        /// 카메라도 따라오지 않는다 — 콘솔에는 Unity 의 NavMesh 경고만 잔뜩 남는다.
+        /// 원인을 바로 알 수 있게 진입하자마자 한 번 알린다.
+        /// </summary>
+        private static void WarnIfSceneIsIncomplete()
+        {
+            bool hasNavMesh      = NavMesh.CalculateTriangulation().vertices.Length > 0;
+            bool hasCameraFollow = GameEntry.GetComponent<PlayerCameraFollow>() != null;
+            if (hasNavMesh && hasCameraFollow) return;
+
+            Log.Error("이 씬에는 예제 게임에 필요한 것이 없다(NavMesh: {0}, 카메라 추종: {1}). "
+                      + "Assets/Scenes/MainScene.unity 를 열고 실행할 것.",
+                hasNavMesh ? "있음" : "없음", hasCameraFollow ? "있음" : "없음");
         }
 
         /// <summary>
@@ -40,16 +64,17 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            OpenOnce(ui, UITable.HudForm);
-            OpenOnce(ui, UITable.PauseMenuForm);
+            // 그룹이 곧 겹치는 순서다. 일시정지 메뉴는 HUD 보다 깊이가 큰 Popup 그룹에 연다.
+            OpenOnce(ui, UITable.HudForm, UITable.DefaultGroup);
+            OpenOnce(ui, UITable.PauseMenuForm, UITable.PopupGroup);
         }
 
         /// <summary>이미 떠 있으면 두 번 열지 않는다(프로시저 재진입 방어).</summary>
-        private static void OpenOnce(UIComponent ui, string assetName)
+        private static void OpenOnce(UIComponent ui, string assetName, string uiGroupName)
         {
             if (ui.HasUIForm(assetName)) return;
 
-            ui.OpenUIForm(assetName, UITable.DefaultGroup);
+            ui.OpenUIForm(assetName, uiGroupName);
         }
 
         /// <summary>
@@ -108,7 +133,7 @@ namespace ToyBoxNightmare
 
             // 게임오버는 SurvivalGame 이 PlayerDied 를 받아 세운다.
             // 전이 시 OnLeave 가 mGame.Shutdown() 을 부르고, ProcedureGameOver 가
-            // 남은 엔티티를 회수한다.
+            // 남은 엔티티가 없는지 확인한다.
             if (mGame.GameOver)
             {
                 ChangeState<ProcedureGameOver>(procedureOwner);
@@ -117,9 +142,8 @@ namespace ToyBoxNightmare
 
         protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
         {
-            // 순서가 중요하다. 엔티티를 먼저 회수해야 각 OnHide 훅이 아직 살아 있는
-            // SurvivalGame.Instance 를 볼 수 있다. Shutdown 이 먼저 돌면 Instance 가
-            // null 인 상태에서 훅이 실행된다.
+            // 만든 순서의 반대로 치운다. 엔티티는 게임이 띄운 것이므로 엔티티가 먼저다.
+            // 게임을 먼저 내리면, 회수되는 엔티티가 기대고 있을 수 있는 판 상태가 먼저 사라진다.
             CleanupEntities();
 
             mGame?.Shutdown();

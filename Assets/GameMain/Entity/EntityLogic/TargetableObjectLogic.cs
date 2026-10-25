@@ -6,7 +6,7 @@ namespace ToyBoxNightmare
     /// <summary>
     /// 체력을 가지고 피격/사망 처리를 하는 엔티티의 공통 베이스.
     /// </summary>
-    public abstract class TargetableObject : EntityLogicBase
+    public abstract class TargetableObjectLogic : EntityLogicBase
     {
         [SerializeField]
         private TargetableObjectData mTargetableObjectData = null;
@@ -154,11 +154,11 @@ namespace ToyBoxNightmare
 
         /// <summary>
         /// 충돌은 양쪽 엔티티 모두에서 통지되므로 한쪽만 처리해야 중복 판정이 안 난다.
-        /// 상대도 TargetableObject 일 때만 Id 비교로 담당을 정한다.
+        /// 상대도 TargetableObjectLogic 일 때만 Id 비교로 담당을 정한다.
         /// </summary>
         private bool IsCollisionHandledByOther(Entity otherEntity)
         {
-            return otherEntity.Logic is TargetableObject && otherEntity.Id >= Entity.Id;
+            return otherEntity.Logic is TargetableObjectLogic && otherEntity.Id >= Entity.Id;
         }
     }
 }

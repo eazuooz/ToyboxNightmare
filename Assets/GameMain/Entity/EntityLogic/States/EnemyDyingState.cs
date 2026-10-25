@@ -11,7 +11,7 @@ namespace ToyBoxNightmare
     /// </summary>
     public sealed class EnemyDyingState : EnemyStateBase
     {
-        protected override void OnStateUpdate(IFsm<Enemy> fsm, Enemy owner, float elapseSeconds)
+        protected override void OnStateUpdate(IFsm<EnemyLogic> fsm, EnemyLogic owner, float elapseSeconds)
         {
             owner.TickDeathTimer(elapseSeconds);
 

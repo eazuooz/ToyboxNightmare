@@ -11,10 +11,17 @@ namespace ToyBoxNightmare
     public static class WeaponTable
     {
         // ─── 엔티티 그룹 ───
+        public const string WeaponGroup     = "Weapon";
         public const string ProjectileGroup = "Projectile";
         public const string EffectGroup     = "Effect";
 
         // ─── Addressables 주소 ───
+        // 무기 엔티티 프리팹. 플레이어의 발사점(WeaponLogicBase.AttachPath)에 붙는다.
+        public const string LightningWeaponAsset = "LightningAttack";
+        public const string FrostWeaponAsset     = "FrostAttack";
+        public const string StinkWeaponAsset     = "StinkAttack";
+        public const string SlimeWeaponAsset     = "SlimeAttack";
+
         public const string LightningHitAsset    = "LightningHit";
         public const string StinkProjectileAsset = "StinkProjectile";
         public const string StinkHitAsset        = "StinkHit";
@@ -45,7 +52,7 @@ namespace ToyBoxNightmare
         /// <summary>
         /// <b>Frost 에는 쿨다운이 없다.</b> 원본 <c>PlayerAttack</c> 도 Frost 를 쏜 뒤
         /// <c>attackCooldown</c> 에 0을 넣는다 — 즉 다음 발사가 곧바로 가능하다.
-        /// 0 이라는 사실 자체가 계약(<c>WeaponBase.Cooldown</c>)의 일부라 상수로 이름을 붙여 둔다.
+        /// 0 이라는 사실 자체가 계약(<c>WeaponLogicBase.Cooldown</c>)의 일부라 상수로 이름을 붙여 둔다.
         /// </summary>
         public const float FrostCooldown = 0f;
 

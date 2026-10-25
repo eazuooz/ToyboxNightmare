@@ -5,7 +5,7 @@ namespace ToyBoxNightmare
 {
     /// <summary>
     /// 적 엔티티 데이터. 종별 수치는 <see cref="EnemyTable"/> 이 들고 있고,
-    /// 여기서는 그중 한 종의 스냅샷을 붙들어 <see cref="Enemy"/> 에 넘긴다.
+    /// 여기서는 그중 한 종의 스냅샷을 붙들어 <see cref="EnemyLogic"/> 에 넘긴다.
     /// </summary>
     public class EnemyData : TargetableObjectData
     {
@@ -27,6 +27,12 @@ namespace ToyBoxNightmare
             data.mStats   = stats;
             data.Position = position;
 
+            // 모든 종이 같은 값을 쓰는 행동 수치. 표의 공통 상수로 채운다.
+            data.RetargetInterval = EnemyTable.RetargetInterval;
+            data.DeathEffectTime  = EnemyTable.DeathEffectTime;
+            data.SinkSpeed        = EnemyTable.SinkSpeed;
+            data.FleeDistance     = EnemyTable.FleeDistance;
+
             // TargetableObjectData 는 HitPoints 를 0 으로 두므로 여기서 반드시 채운다.
             // 빠뜨리면 스폰 즉시 IsDead 가 true 다.
             data.HitPoints = stats.MaxHitPoints;
@@ -45,12 +51,29 @@ namespace ToyBoxNightmare
         public float  TimeBetweenAttacks => mStats.TimeBetweenAttacks;
         public int    ScoreValue         => mStats.ScoreValue;
 
+        /// <summary>추적 목적지를 다시 잡는 주기(초).</summary>
+        public float RetargetInterval { get; private set; }
+
+        /// <summary>쓰러지기 시작해서 회수될 때까지의 시간(초).</summary>
+        public float DeathEffectTime { get; private set; }
+
+        /// <summary>쓰러진 뒤 바닥으로 가라앉는 속도.</summary>
+        public float SinkSpeed { get; private set; }
+
+        /// <summary>악취를 맞고 달아날 거리.</summary>
+        public float FleeDistance { get; private set; }
+
         public override void Clear()
         {
             base.Clear();
 
             // 이전 종의 스탯을 물고 나가면 체력·속도·점수가 통째로 뒤바뀐다.
             mStats = default(EnemyStats);
+
+            RetargetInterval = 0f;
+            DeathEffectTime  = 0f;
+            SinkSpeed        = 0f;
+            FleeDistance     = 0f;
         }
     }
 }

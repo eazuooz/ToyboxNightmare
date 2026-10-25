@@ -1,3 +1,4 @@
+using GameFramework;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityGameFramework.Runtime;
@@ -99,7 +100,7 @@ namespace ToyBoxNightmare
         /// 둘 다 레이어 9다. Physics.queriesHitTriggers 기본값이 true 라 OverlapSphere 가
         /// 적 1기당 원소를 2개 돌려준다 — 중복 제거를 빼면 디버프가 2회 적용된다.
         /// </summary>
-        public static int FindEnemiesInSphere(Vector3 origin, float radius, List<Enemy> result)
+        public static int FindEnemiesInSphere(Vector3 origin, float radius, List<EnemyLogic> result)
         {
             GameAssert.IsTrue(result != null, "FindEnemiesInSphere: 결과 버퍼가 null 이다.");
             if (result == null) return 0;
@@ -111,7 +112,7 @@ namespace ToyBoxNightmare
 
             for (int i = 0; i < hitCount; i++)
             {
-                Enemy enemy = GetAttackableEnemy(sOverlapBuffer[i]);
+                EnemyLogic enemy = GetAttackableEnemy(sOverlapBuffer[i]);
                 if (enemy == null) continue;
 
                 // OverlapSphere 는 **콜라이더 겹침**으로 잡는다. 적의 Shootable 트리거 구가
@@ -149,7 +150,7 @@ namespace ToyBoxNightmare
         /// 콜라이더 하나에서 "지금 때릴 수 있는 적" 을 꺼낸다. 아니면 null.
         /// 바닥·환경 콜라이더, 시체, 회수된 엔티티가 전부 여기서 걸러진다.
         /// </summary>
-        private static Enemy GetAttackableEnemy(Collider collider)
+        private static EnemyLogic GetAttackableEnemy(Collider collider)
         {
             // 같은 프레임에 파괴된 콜라이더가 버퍼에 남아 있을 수 있다.
             if (collider == null) return null;
@@ -157,7 +158,7 @@ namespace ToyBoxNightmare
             Entity entity = collider.GetComponentInParent<Entity>();
             if (entity == null) return null;
 
-            Enemy enemy = entity.Logic as Enemy;
+            EnemyLogic enemy = entity.Logic as EnemyLogic;
             // Available 을 IsDead 보다 먼저 본다. IsDead 는 스폰 데이터를 읽는데,
             // 회수된 엔티티의 데이터는 이미 풀로 반납된 뒤라 답을 신뢰할 수 없다.
             if (enemy == null || !enemy.Available || enemy.IsDead) return null;
@@ -190,20 +191,29 @@ namespace ToyBoxNightmare
 
             GameAssert.IsTrue(lifetime > 0f, "SpawnEffect: lifetime 이 0 이하면 이펙트가 보이기 전에 회수된다.");
 
+            int id = EntitySerialId.Next();
+            SpawnEffect(logicType, assetName, HitEffectData.Create(id, 1, position, rotation, lifetime));
+        }
+
+        /// <summary>
+        /// 데이터를 직접 만들어 넘기는 판. 능력치가 더 붙은 이펙트(<see cref="StinkHitData"/>)를 띄울 때 쓴다.
+        /// 데이터의 Id 로 띄우므로 <c>EntitySerialId.Next()</c> 로 받은 Id 로 만들어 넘길 것.
+        /// 띄우지 못하면 데이터를 참조 풀에 돌려준다.
+        /// </summary>
+        public static void SpawnEffect(System.Type logicType, string assetName, HitEffectData data)
+        {
+            if (data == null) return;
+
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
-            if (entityComponent == null)
+            if (logicType == null || string.IsNullOrEmpty(assetName) || entityComponent == null)
             {
-                Log.Error("SpawnEffect: EntityComponent 가 없다. GameFramework 프리팹 구성을 확인할 것.");
+                Log.Error("SpawnEffect: 이펙트를 띄울 수 없다. (logicType={0}, assetName={1}, EntityComponent={2})",
+                    logicType, assetName, entityComponent != null);
+                ReferencePool.Release(data);
                 return;
             }
 
-            int id = EntitySerialId.Next();
-            entityComponent.ShowEntity(
-                id,
-                logicType,
-                assetName,
-                WeaponTable.EffectGroup,
-                EffectData.Create(id, 1, position, rotation, lifetime));
+            entityComponent.ShowEntity(data.Id, logicType, assetName, WeaponTable.EffectGroup, data);
         }
     }
 }

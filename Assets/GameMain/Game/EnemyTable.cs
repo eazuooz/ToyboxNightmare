@@ -85,6 +85,9 @@ namespace ToyBoxNightmare
         /// <summary>사망 후 바닥으로 가라앉는 속도.</summary>
         public const float SinkSpeed = 2.5f;
 
+        /// <summary>악취를 맞고 달아날 거리. 원본 runAwayDistance.</summary>
+        public const float FleeDistance = 10f;
+
         /// <summary>엔티티 그룹 이름. GameFramework.prefab 의 mEntityGroups 와 일치해야 한다.</summary>
         public const string EntityGroup = "Enemy";
 

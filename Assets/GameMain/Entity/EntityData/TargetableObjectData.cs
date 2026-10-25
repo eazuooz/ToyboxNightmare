@@ -2,7 +2,7 @@ namespace ToyBoxNightmare
 {
     /// <summary>
     /// 체력을 가지는 엔티티의 데이터 베이스.
-    /// <see cref="TargetableObject"/> 가 OnShow 에서 이걸 받아 들고 있으며,
+    /// <see cref="TargetableObjectLogic"/> 가 OnShow 에서 이걸 받아 들고 있으며,
     /// 피격/사망 판정은 전부 여기 담긴 <see cref="HitPoints"/> 로 이뤄진다.
     /// </summary>
     public abstract class TargetableObjectData : EntityData

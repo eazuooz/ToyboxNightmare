@@ -10,7 +10,7 @@ namespace ToyBoxNightmare
     /// (쿨다운도 걸리지 않는다). 대상 선정도 원본 그대로 — 마우스 지면 지점에서 위로
     /// 짧은 레이를 쏴 걸린 적을 찍는다.
     /// </summary>
-    public class SlimeWeapon : WeaponBase
+    public class SlimeWeaponLogic : WeaponLogicBase
     {
         /// <summary>
         /// 방향 벡터로 쓰기엔 너무 짧다고 볼 제곱 길이.
@@ -22,15 +22,16 @@ namespace ToyBoxNightmare
         /// 찍어 둔 대상. 원본과 같이 <b>끈적하다</b> — 레이가 빗나간 프레임에는 지우지 않고,
         /// 발사에 성공했을 때만 놓는다.
         /// </summary>
-        private Enemy mTarget = null;
+        private EnemyLogic mTarget = null;
 
-        protected override string VfxRootPath => "Antenna/SlimeAttack";
+        /// <summary>대상(없으면 마우스 지점)을 가리키는 원본 선택 링. 무기 프리팹(SlimeAttack) 루트 기준이다.</summary>
+        protected override string ReticlePath => "SlimeSelectRing";
 
-        /// <summary>대상(없으면 마우스 지점)을 가리키는 원본 선택 링.</summary>
-        protected override string ReticlePath => "Antenna/SlimeAttack/SlimeSelectRing";
-
-        /// <summary>발사에 성공하면 로드아웃이 이 값으로 전역 쿨다운을 건다. 원본과 같은 3.5초.</summary>
-        public override float Cooldown => WeaponTable.SlimeCooldown;
+        /// <summary>풀에서 다시 나올 때 이전 판에 찍어 둔 대상을 물고 있지 않게 한다.</summary>
+        protected override void OnWeaponShow()
+        {
+            mTarget = null;
+        }
 
         /// <summary>
         /// 대상을 다시 찍고 레티클을 갱신한다. 원본 UpdateReticule 과 같은 순서다 —
@@ -66,9 +67,9 @@ namespace ToyBoxNightmare
         /// 마우스 지면 지점에서 위로 레이를 쏴 적을 찍는다.
         /// 빗나간 프레임에는 <b>이전 대상을 유지한다</b> — 원본이 <c>target</c> 을 그때 지우지 않는다.
         /// </summary>
-        private Enemy FindTargetUnderCursor()
+        private EnemyLogic FindTargetUnderCursor()
         {
-            Enemy current = mTarget;
+            EnemyLogic current = mTarget;
 
             // 회수됐거나 죽은 적을 계속 물고 있으면 안 된다. 원본은 Transform 을 들고 있어
             // 죽은 적에게도 그대로 쐈지만, 엔티티 풀에서는 그 자리에 다른 적이 재사용되므로
@@ -78,15 +79,18 @@ namespace ToyBoxNightmare
             // 지면 조준이 실패한 프레임은 쏠 지점 자체가 대체값이라 새로 찍지 않는다.
             if (!Owner.HasAimPoint) return current;
 
+            SlimeWeaponData stats = DataAs<SlimeWeaponData>();
+            if (stats == null) return current;
+
             RaycastHit hit;
             if (!Physics.Raycast(Owner.AimPoint, Vector3.up, out hit,
-                                 WeaponTable.SlimeTargetRayLength, WeaponUtil.ShootableMask))
+                                 stats.TargetRayLength, WeaponUtil.ShootableMask))
             {
                 return current;
             }
 
             Entity entity   = hit.collider.GetComponentInParent<Entity>();
-            Enemy  newTarget = entity != null ? entity.Logic as Enemy : null;
+            EnemyLogic  newTarget = entity != null ? entity.Logic as EnemyLogic : null;
             if (newTarget == null || !newTarget.Available || newTarget.IsDead) return current;
 
             return newTarget;
@@ -100,9 +104,12 @@ namespace ToyBoxNightmare
         {
             if (mTarget == null) return false;
 
+            SlimeWeaponData stats = DataAs<SlimeWeaponData>();
+            if (stats == null) return false;
+
             // 유도탄은 대상을 Id 로 들고 간다. Entity 가 없으면 넘길 Id 자체가 없다 —
             // 살아 있는 적이라면 반드시 붙어 있어야 하므로 계약 위반이다.
-            GameAssert.IsTrue(mTarget.Entity != null, "SlimeWeapon: 대상 Enemy 에 Entity 가 없다.");
+            GameAssert.IsTrue(mTarget.Entity != null, "SlimeWeaponLogic: 대상 EnemyLogic 에 Entity 가 없다.");
             if (mTarget.Entity == null)
             {
                 mTarget = null;
@@ -112,7 +119,7 @@ namespace ToyBoxNightmare
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
             if (entityComponent == null)
             {
-                Log.Error("SlimeWeapon: EntityComponent 를 찾지 못했다. 투사체를 띄울 수 없다.");
+                Log.Error("SlimeWeaponLogic: EntityComponent 를 찾지 못했다. 투사체를 띄울 수 없다.");
                 return false;
             }
 
@@ -121,17 +128,16 @@ namespace ToyBoxNightmare
             int id = EntitySerialId.Next();
             entityComponent.ShowEntity(
                 id,
-                typeof(SlimeProjectile),
-                WeaponTable.SlimeProjectileAsset,
+                typeof(SlimeProjectileLogic),
+                stats.ProjectileAsset,
                 WeaponTable.ProjectileGroup,
-                HomingProjectileData.Create(
+                SlimeProjectileData.Create(
                     id, 1,
                     origin,
                     GetLaunchRotation(origin, mTarget),
                     mTarget.Entity.Id,
                     Owner.Entity != null ? Owner.Entity.Id : 0,
-                    WeaponTable.SlimeSpeed,
-                    WeaponTable.SlimeHitRadius));
+                    stats));
 
             // 원본과 같이 쏘고 나면 대상 선택을 놓는다. 다음 대상은 다시 찍어야 한다.
             mTarget = null;
@@ -142,7 +148,7 @@ namespace ToyBoxNightmare
         /// 발사 자세. 총구와 적이 정확히 겹치면 방향 벡터가 0 이 되어 <c>LookRotation</c> 이
         /// 에러를 뱉으므로, 그때만 캐릭터가 보는 쪽으로 대신한다.
         /// </summary>
-        private Quaternion GetLaunchRotation(Vector3 origin, Enemy target)
+        private Quaternion GetLaunchRotation(Vector3 origin, EnemyLogic target)
         {
             Vector3 toTarget = target.CachedTransform.position - origin;
 
@@ -153,12 +159,6 @@ namespace ToyBoxNightmare
 
         /// <summary>다른 무기로 전환되면 찍어 둔 대상을 버린다. 돌아왔을 때 그대로 남아 있으면 안 된다.</summary>
         protected override void OnWeaponDisabled()
-        {
-            mTarget = null;
-        }
-
-        /// <summary>캐릭터가 바뀌면 이 참조는 남의 적이 된다.</summary>
-        protected override void OnDispose()
         {
             mTarget = null;
         }

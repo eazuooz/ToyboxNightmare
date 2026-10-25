@@ -15,7 +15,7 @@ namespace ToyBoxNightmare
     /// 화면 요소는 원본 좀비토이 HUDCanvas 를 그대로 쓴다. 갱신은 전부 이벤트 구독으로 하며
     /// 게임 로직을 직접 폴링하지 않는다 — HUD 가 없어도 게임은 돌아야 하기 때문이다.
     /// </summary>
-    public class HUDForm : UIFormLogic
+    public class HUDForm : UIFormBase
     {
         // 프리팹 계층 계약. 자식 이름이 바뀌면 조용히 null 이 되므로 한곳에 모아 둔다.
         private const string HealthSliderPath = "HealthUI/HealthSlider";
@@ -30,12 +30,31 @@ namespace ToyBoxNightmare
 
         private const string ScoreFormat = "Score: {0}";
 
-        private Slider     mHealthSlider = null;
-        private FlashFade  mDamageFlash  = null;
-        private Text       mGameOverText = null;
-        private Text       mInfoText     = null;
-        private GameObject mAllyButton   = null;
-        private Countdown  mCountdown    = null;
+        // ─── 피격 섬광 ───
+        // 원본은 이미지에 붙은 FlashFade 컴포넌트가 코루틴으로 돌렸다. 폼이 직접 돌린다 —
+        // 폼의 OnUpdate 는 프레임워크가 부르므로, 폼이 닫히거나 가려지면 연출도 같이 멈춘다.
+
+        /// <summary>맞는 순간 화면에 깔리는 색. 원본 FlashFade 의 값이다.</summary>
+        private static readonly Color DamageFlashColor = new Color(1f, 0f, 0f, 0.1f);
+
+        /// <summary>섬광이 걷히는 속도. 원본 FlashFade 의 flashSpeed.</summary>
+        private const float DamageFlashFadeSpeed = 5f;
+
+        /// <summary>이보다 옅어지면 완전히 지운다. Lerp 는 0 에 닿지 않는다.</summary>
+        private const float DamageFlashMinAlpha = 0.01f;
+
+        private Slider     mHealthSlider    = null;
+        private Image      mDamageImage     = null;
+        private Text       mGameOverText    = null;
+        private Text       mInfoText        = null;
+        private GameObject mAllyButton      = null;
+        private Slider     mCountdownSlider = null;
+
+        /// <summary>피격 섬광이 걷히는 중인가.</summary>
+        private bool mDamageFlashing = false;
+
+        /// <summary>무기 쿨다운 게이지에 남은 시간(초). 0 이하면 게이지를 숨긴다.</summary>
+        private float mCooldownRemaining = 0f;
 
         private bool mSubscribed = false;
 
@@ -46,10 +65,10 @@ namespace ToyBoxNightmare
             base.OnInit(userData);
 
             mHealthSlider = Find<Slider>(HealthSliderPath);
-            mDamageFlash  = Find<FlashFade>(DamageImagePath);
+            mDamageImage  = Find<Image>(DamageImagePath);
             mGameOverText = Find<Text>(GameOverTextPath);
             mInfoText     = Find<Text>(InfoTextPath);
-            mCountdown    = Find<Countdown>(CountdownPath);
+            mCountdownSlider = Find<Slider>(CountdownPath);
 
             Transform allyButton = CachedTransform.Find(AllyButtonPath);
             mAllyButton = allyButton != null ? allyButton.gameObject : null;
@@ -115,6 +134,89 @@ namespace ToyBoxNightmare
 
             // 아이콘은 소환 가능해질 때만 켠다. 판 시작 시점에는 포인트가 0 이라 항상 꺼진 상태다.
             SetAllyButtonVisible(false);
+
+            ClearDamageFlash();
+            HideCooldownGauge();
+        }
+
+        // ─── 프레임 갱신 ───
+
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
+
+            UpdateDamageFlash(elapseSeconds);
+            UpdateCooldownGauge(elapseSeconds);
+        }
+
+        /// <summary>섬광을 조금씩 걷어 낸다. 원본 FlashFade.Fade 코루틴과 같은 식이다.</summary>
+        private void UpdateDamageFlash(float elapseSeconds)
+        {
+            if (!mDamageFlashing || mDamageImage == null) return;
+
+            mDamageImage.color = Color.Lerp(mDamageImage.color, Color.clear, DamageFlashFadeSpeed * elapseSeconds);
+            if (mDamageImage.color.a > DamageFlashMinAlpha) return;
+
+            ClearDamageFlash();
+        }
+
+        private void BeginDamageFlash()
+        {
+            if (mDamageImage == null) return;
+
+            mDamageImage.color = DamageFlashColor;
+            mDamageFlashing    = true;
+        }
+
+        private void ClearDamageFlash()
+        {
+            mDamageFlashing = false;
+
+            if (mDamageImage != null)
+            {
+                mDamageImage.color = Color.clear;
+            }
+        }
+
+        /// <summary>
+        /// 쿨다운 게이지를 줄인다. 다 줄면 숨긴다 — 슬라이더의 maxValue 를 0 으로 두면
+        /// 채움 영역이 사라진다(원본 Countdown 이 쓰던 방법이다).
+        /// </summary>
+        private void UpdateCooldownGauge(float elapseSeconds)
+        {
+            if (mCooldownRemaining <= 0f || mCountdownSlider == null) return;
+
+            mCooldownRemaining -= elapseSeconds;
+            if (mCooldownRemaining <= 0f)
+            {
+                HideCooldownGauge();
+                return;
+            }
+
+            mCountdownSlider.value = mCooldownRemaining;
+        }
+
+        private void BeginCooldownGauge(float cooldown)
+        {
+            if (mCountdownSlider == null) return;
+
+            mCooldownRemaining = cooldown;
+
+            mCountdownSlider.minValue = 0f;
+            mCountdownSlider.maxValue = cooldown;
+            mCountdownSlider.value    = cooldown;
+        }
+
+        private void HideCooldownGauge()
+        {
+            mCooldownRemaining = 0f;
+
+            if (mCountdownSlider != null)
+            {
+                mCountdownSlider.minValue = 0f;
+                mCountdownSlider.maxValue = 0f;
+                mCountdownSlider.value    = 0f;
+            }
         }
 
         // ─── 이벤트 구독 ───
@@ -202,9 +304,9 @@ namespace ToyBoxNightmare
             }
 
             // 스폰 통보(비율이 그대로인 경우)에는 화면을 번쩍이지 않는다.
-            if (ne.IsDamage && mDamageFlash != null)
+            if (ne.IsDamage)
             {
-                mDamageFlash.Flash();
+                BeginDamageFlash();
             }
         }
 
@@ -217,9 +319,7 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            if (mCountdown == null) return;
-
-            mCountdown.BeginCountdown(ne.Cooldown);
+            BeginCooldownGauge(ne.Cooldown);
         }
 
         /// <summary>소환 가부가 뒤집힐 때만 온다. 매 점수마다 오지 않는다.</summary>

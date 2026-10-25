@@ -49,7 +49,7 @@ namespace ToyBoxNightmare
 
         /// <summary>
         /// 파생 로직들은 자기 정리를 먼저 하고 <c>base.OnHide</c> 를 <b>마지막에</b> 부른다
-        /// (Player, Enemy 둘 다 그렇다). 그래서 데이터 반납은 이 메서드의 맨 끝이어야
+        /// (PlayerLogic, EnemyLogic 둘 다 그렇다). 그래서 데이터 반납은 이 메서드의 맨 끝이어야
         /// 파생이 아직 데이터를 읽고 있는 시점을 앞지르지 않는다.
         /// </summary>
         protected internal override void OnHide(bool isShutdown, object userData)

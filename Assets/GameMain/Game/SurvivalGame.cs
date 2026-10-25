@@ -15,7 +15,10 @@ namespace ToyBoxNightmare
         private const string BoyCharacterKey  = "Boy";
 
         /// <summary>플레이어·선택 캐릭터가 들어가는 엔티티 그룹. GameFramework.prefab 의 mEntityGroups 와 일치해야 한다.</summary>
-        private const string PlayerEntityGroup = "Player";
+        public const string PlayerEntityGroup = "Player";
+
+        /// <summary>선택 화면 조명. 캐릭터를 고르는 동안에만 떠 있는 엔티티다.</summary>
+        private const string SpotlightAsset = "CharacterSelectSpotlight";
 
         /// <summary>
         /// EntityData 의 TypeId. 아직 타입 테이블이 없어 프로젝트 전체가 1 로 고정이다.
@@ -27,16 +30,14 @@ namespace ToyBoxNightmare
         private static readonly Vector3 GirlSelectPosition = new Vector3(-2f, 0f, 0f);
         private static readonly Vector3 BoySelectPosition  = new Vector3( 2f, 0f, 0f);
 
-        // ─── 싱글턴 ───
-        public static SurvivalGame Instance { get; private set; }
-
         // ─── 런타임 상태 ───
-        private Player            mPlayer     = null;
+        private PlayerLogic            mPlayer     = null;
 
         /// <summary>아군 소환 경제. 판 단위 상태라 게임 객체가 소유한다.</summary>
         private readonly AllySquad mAllySquad = new AllySquad();
         private PlayerSelectLogic mGirlSelect = null;
         private PlayerSelectLogic mBoySelect  = null;
+        private CharacterSelectSpotlightLogic mSpotlight = null;
 
         // CharacterSelected 는 선택 순간 스스로 해제하므로, Shutdown 시점에 아직
         // 구독 중인지 알아야 한다. 미등록 핸들러를 Unsubscribe 하면 코어가 예외를 던진다.
@@ -60,15 +61,13 @@ namespace ToyBoxNightmare
         /// 현재 플레이어. 선택 전이거나 이미 회수된 뒤에는 null.
         /// 엔티티는 풀에서 재사용되므로 참조가 살아 있어도 Available 을 확인해야 한다.
         /// </summary>
-        public Player Player => (mPlayer != null && mPlayer.Available) ? mPlayer : null;
+        public PlayerLogic Player => (mPlayer != null && mPlayer.Available) ? mPlayer : null;
 
         // ─── 초기화 ───
 
         public override void Initialize()
         {
             base.Initialize();
-
-            Instance = this;
 
             // 스폰 테이블 정합성은 판이 시작될 때 한 번만 본다.
             // [Conditional] 이라 릴리스 빌드에서는 이 호출 자체가 사라진다.
@@ -83,7 +82,6 @@ namespace ToyBoxNightmare
         {
             UnsubscribeEvents();
 
-            Instance = null;
             base.Shutdown();
         }
 
@@ -97,21 +95,10 @@ namespace ToyBoxNightmare
             mPlayer     = null;
             mGirlSelect = null;
             mBoySelect  = null;
+            mSpotlight  = null;
 
             mSpawner.Reset();
             mAllySquad.Reset();
-        }
-
-        /// <summary>
-        /// 적이 쫓아야 할 좌표. 아군이 소환돼 있으면 아군, 아니면 넘겨받은 기본값(플레이어)이다.
-        ///
-        /// 원본 <c>GameManager.EnemyTarget</c> 을 대신한다. Transform 을 그대로 넘기지 않는 이유는
-        /// 엔티티가 풀에서 재사용되기 때문이다 — 회수된 아군의 Transform 을 적이 계속 물고 있으면
-        /// 다음에 그 인스턴스가 다른 용도로 살아났을 때 엉뚱한 곳으로 몰려간다.
-        /// </summary>
-        public Vector3 GetChaseTargetPosition(Vector3 fallback)
-        {
-            return mAllySquad.GetLurePosition(fallback);
         }
 
         private void SubscribeEvents()
@@ -189,7 +176,7 @@ namespace ToyBoxNightmare
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.digit1Key.wasPressedThisFrame) return;
 
-            Player player = Player;
+            PlayerLogic player = Player;
             if (player == null) return;
 
             // 원본은 소환 시점의 플레이어 위치를 목적지로 준다. 아군은 그리로 한 번 걸어갈 뿐이다.
@@ -222,6 +209,25 @@ namespace ToyBoxNightmare
         {
             SpawnSelectCharacter(GirlCharacterKey, GirlSelectPosition);
             SpawnSelectCharacter(BoyCharacterKey,  BoySelectPosition);
+            SpawnSelectSpotlight();
+        }
+
+        /// <summary>
+        /// 선택 화면 조명을 띄운다. 조명은 "선택 중" 이라는 상태 그 자체라서,
+        /// 선택 캐릭터와 같이 띄우고 같이 치운다(<see cref="DismissSelectCharacters"/>).
+        /// </summary>
+        private void SpawnSelectSpotlight()
+        {
+            EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
+            if (entityComponent == null) return;
+
+            int id = EntitySerialId.Next();
+            entityComponent.ShowEntity(
+                id,
+                typeof(CharacterSelectSpotlightLogic),
+                SpotlightAsset,
+                WeaponTable.EffectGroup,
+                CharacterSelectSpotlightData.Create(id, DefaultEntityTypeId));
         }
 
         /// <summary>
@@ -243,7 +249,7 @@ namespace ToyBoxNightmare
                 typeof(PlayerSelectLogic),
                 characterKey,
                 PlayerEntityGroup,
-                CharacterSelectData.Create(id, DefaultEntityTypeId, characterKey, position));
+                PlayerSelectData.Create(id, DefaultEntityTypeId, characterKey, position));
         }
 
         private void SpawnPlayer(string characterKey)
@@ -258,7 +264,7 @@ namespace ToyBoxNightmare
             int id = EntitySerialId.Next();
             entityComponent.ShowEntity(
                 id,
-                typeof(Player),
+                typeof(PlayerLogic),
                 characterKey,
                 PlayerEntityGroup,
                 PlayerData.Create(id, DefaultEntityTypeId));
@@ -317,11 +323,18 @@ namespace ToyBoxNightmare
                 unselected.DisableAndHide();
             }
 
+            // 조명이 아직 로드 중이면 null 이다. 그 경우는 도착하는 순간 CacheSpotlight 가 돌려보낸다.
+            if (mSpotlight != null)
+            {
+                mSpotlight.SafeHide();
+            }
+
             // 회수한 뒤에는 참조를 반드시 비운다.
             // 엔티티는 풀에서 재사용되므로, 남겨 두면 나중에 같은 인스턴스가 다른 용도로
             // 살아났을 때 그걸 선택 캐릭터로 착각해 건드리게 된다.
             mGirlSelect = null;
             mBoySelect  = null;
+            mSpotlight  = null;
         }
 
         private void OnEnemyDied(object sender, GameEventArgs e)
@@ -363,19 +376,25 @@ namespace ToyBoxNightmare
                 return;
             }
 
-            if (ne.EntityLogicType == typeof(Ally))
+            if (ne.EntityLogicType == typeof(CharacterSelectSpotlightLogic))
+            {
+                CacheSpotlight(ne.Entity);
+                return;
+            }
+
+            if (ne.EntityLogicType == typeof(AllyLogic))
             {
                 mAllySquad.CacheAlly(ne.Entity);
                 return;
             }
 
-            if (ne.EntityLogicType == typeof(Enemy))
+            if (ne.EntityLogicType == typeof(EnemyLogic))
             {
                 mSpawner.DecrementPendingSpawn(ne.Entity.EntityAssetName);
                 return;
             }
 
-            if (ne.EntityLogicType == typeof(Player))
+            if (ne.EntityLogicType == typeof(PlayerLogic))
             {
                 CachePlayer(ne.Entity);
             }
@@ -401,12 +420,32 @@ namespace ToyBoxNightmare
             }
         }
 
+        private void CacheSpotlight(Entity entity)
+        {
+            CharacterSelectSpotlightLogic spotlight = entity.Logic as CharacterSelectSpotlightLogic;
+            if (spotlight == null)
+            {
+                Log.Error("CharacterSelectSpotlightLogic 으로 스폰했는데 로직이 그 타입이 아니다: {0}", entity.EntityAssetName);
+                return;
+            }
+
+            // 조명이 로드되는 사이에 이미 캐릭터를 골랐다. 선택 화면이 끝났으니 바로 돌려보낸다.
+            // (CharacterSelected 구독은 선택 순간에 스스로 풀리므로 그 플래그로 판별한다.)
+            if (!mCharacterSelectSubscribed)
+            {
+                spotlight.SafeHide();
+                return;
+            }
+
+            mSpotlight = spotlight;
+        }
+
         private void CachePlayer(Entity entity)
         {
-            Player player = entity.Logic as Player;
+            PlayerLogic player = entity.Logic as PlayerLogic;
             if (player == null)
             {
-                Log.Error("Player 로 스폰했는데 로직이 그 타입이 아니다: {0}", entity.EntityAssetName);
+                Log.Error("PlayerLogic 으로 스폰했는데 로직이 그 타입이 아니다: {0}", entity.EntityAssetName);
                 return;
             }
 
@@ -432,14 +471,14 @@ namespace ToyBoxNightmare
             ReleaseSpawnData(ne);
 
             // 플레이어 실패만 Warning 이 아니라 Error 로 따로 다룬다. 아래 주석 참조.
-            if (ne.EntityLogicType == typeof(Player))
+            if (ne.EntityLogicType == typeof(PlayerLogic))
             {
                 FailRoundOnPlayerSpawnFailure(ne);
                 return;
             }
 
             // 실패해도 대기 카운트를 빼야 한다. 안 그러면 그 종은 영원히 상한에 걸린 것으로 보인다.
-            if (ne.EntityLogicType == typeof(Enemy))
+            if (ne.EntityLogicType == typeof(EnemyLogic))
             {
                 mSpawner.DecrementPendingSpawn(ne.EntityAssetName);
             }

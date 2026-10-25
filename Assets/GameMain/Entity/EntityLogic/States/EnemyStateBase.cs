@@ -12,13 +12,13 @@ namespace ToyBoxNightmare
     ///
     /// 상태는 무상태다. 모든 값은 <c>fsm.Owner</c> 에서 읽는다.
     /// </summary>
-    public abstract class EnemyStateBase : FsmState<Enemy>
+    public abstract class EnemyStateBase : FsmState<EnemyLogic>
     {
-        protected sealed override void OnUpdate(IFsm<Enemy> fsm, float elapseSeconds, float realElapseSeconds)
+        protected sealed override void OnUpdate(IFsm<EnemyLogic> fsm, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(fsm, elapseSeconds, realElapseSeconds);
 
-            Enemy owner = fsm.Owner;
+            EnemyLogic owner = fsm.Owner;
 
             // 데이터 없이 떴거나 이미 회수 요청이 나간 엔티티는 아무것도 하지 않는다.
             if (!owner.CanRunStates) return;
@@ -29,10 +29,10 @@ namespace ToyBoxNightmare
         }
 
         /// <summary>디버프를 굴린 뒤의 상태별 갱신.</summary>
-        protected abstract void OnStateUpdate(IFsm<Enemy> fsm, Enemy owner, float elapseSeconds);
+        protected abstract void OnStateUpdate(IFsm<EnemyLogic> fsm, EnemyLogic owner, float elapseSeconds);
 
         /// <summary>살아있는 상태들이 공통으로 보는 전이. 사망이 시작됐으면 사망 연출로 넘어간다.</summary>
-        protected bool TryChangeToDying(IFsm<Enemy> fsm, Enemy owner)
+        protected bool TryChangeToDying(IFsm<EnemyLogic> fsm, EnemyLogic owner)
         {
             if (!owner.IsDying) return false;
 

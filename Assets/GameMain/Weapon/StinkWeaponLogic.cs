@@ -10,15 +10,10 @@ namespace ToyBoxNightmare
     /// 원본과 같이 <b>버튼을 뗄 때</b> 발사하고, 레티클이 마우스 지점을 따라다니며
     /// 3색으로 상태를 알린다. 사거리 밖이면 던지지 않는다(쿨다운도 걸리지 않는다).
     /// </summary>
-    public class StinkWeapon : WeaponBase
+    public class StinkWeaponLogic : WeaponLogicBase
     {
-        protected override string VfxRootPath => "Antenna/StinkAttack";
-
-        /// <summary>마우스 지면 지점을 가리키는 원본 레티클.</summary>
-        protected override string ReticlePath => "Antenna/StinkAttack/TargetRing";
-
-        /// <summary>발사에 성공하면 로드아웃이 이 값으로 전역 쿨다운을 건다. 원본과 같은 5초.</summary>
-        public override float Cooldown => WeaponTable.StinkCooldown;
+        /// <summary>마우스 지면 지점을 가리키는 원본 레티클. 무기 프리팹(StinkAttack) 루트 기준이다.</summary>
+        protected override string ReticlePath => "TargetRing";
 
         /// <summary>
         /// 레티클을 마우스 지점에 두고 색을 정한다. 원본 UpdateReticule 과 같은 순서다 —
@@ -51,13 +46,16 @@ namespace ToyBoxNightmare
         /// </summary>
         protected override bool OnFireReleased()
         {
+            StinkWeaponData stats = DataAs<StinkWeaponData>();
+            if (stats == null) return false;
+
             Vector3 aimPoint = Owner.AimPoint;
             if (!CanReach(aimPoint)) return false;
 
             EntityComponent entityComponent = GameEntry.GetComponent<EntityComponent>();
             if (entityComponent == null)
             {
-                Log.Error("StinkWeapon: EntityComponent 를 찾지 못했다. 투사체를 띄울 수 없다.");
+                Log.Error("StinkWeaponLogic: EntityComponent 를 찾지 못했다. 투사체를 띄울 수 없다.");
                 return false;
             }
 
@@ -72,10 +70,10 @@ namespace ToyBoxNightmare
             int id = EntitySerialId.Next();
             entityComponent.ShowEntity(
                 id,
-                typeof(StinkProjectile),
-                WeaponTable.StinkProjectileAsset,
+                typeof(StinkProjectileLogic),
+                stats.ProjectileAsset,
                 WeaponTable.ProjectileGroup,
-                ArcProjectileData.Create(id, 1, origin, impact, WeaponTable.StinkSpeed));
+                StinkProjectileData.Create(id, 1, origin, impact, stats));
 
             return true;
         }
@@ -90,11 +88,14 @@ namespace ToyBoxNightmare
         {
             if (!Owner.HasAimPoint) return false;
 
+            StinkWeaponData stats = DataAs<StinkWeaponData>();
+            if (stats == null) return false;
+
             // 사거리 판정은 캐릭터 원점 기준이다(원본은 안테나 기준이지만 안테나가 캐릭터에
             // 붙어 있어 차이가 사거리 오차 범위 안이다). 높이차에 흔들리지 않도록 평면 거리.
             float distance = WeaponUtil.PlanarDistance(aimPoint, Owner.CachedTransform.position);
 
-            return distance <= WeaponTable.StinkThrowRange;
+            return distance <= stats.ThrowRange;
         }
     }
 }

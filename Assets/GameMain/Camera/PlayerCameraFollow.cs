@@ -6,6 +6,11 @@ namespace ToyBoxNightmare
     /// <summary>
     /// 플레이어를 따라다니는 카메라. MainCamera 에 붙인다.
     ///
+    /// <b>프레임워크 컴포넌트다</b>(<see cref="GameFrameworkComponent"/>). 판이 바뀌어도 살아 있는
+    /// 전역 시스템은 이렇게 프레임워크에 등록한다 — <c>GameEntry.GetComponent&lt;PlayerCameraFollow&gt;()</c>
+    /// 로 닿을 수 있다. 따라갈 플레이어도 정적 싱글턴이 아니라 프레임워크에 물어서 찾는다
+    /// (<see cref="EntityFinder.FindPlayer"/>).
+    ///
     /// 원본 ZombieToys 의 CameraFollow 를 대체한다(그쪽은 GameManager.Instance 를
     /// 참조해 이 프로젝트에서는 NRE 가 난다).
     ///
@@ -13,7 +18,7 @@ namespace ToyBoxNightmare
     /// 카메라는 씬에 배치된 선택 앵글에 그대로 머문다. 플레이어가 스폰되면
     /// 위치와 회전을 함께 보간해 게임 앵글로 넘어간다.
     /// </summary>
-    public class PlayerCameraFollow : MonoBehaviour
+    public class PlayerCameraFollow : GameFrameworkComponent
     {
         // offset 이 이보다 짧으면 방향을 구할 수 없다. 길이 0 벡터를 LookRotation 에
         // 넘기면 Unity 가 에러를 뱉는다.
@@ -64,12 +69,13 @@ namespace ToyBoxNightmare
 
         /// <summary>
         /// 따라갈 플레이어의 Transform. 아직 스폰 전이거나 이미 회수됐으면 null.
-        /// 엔티티는 풀에서 재사용되므로 참조가 살아 있어도 Available 을 확인해야 한다.
+        /// 매 프레임 프레임워크에 묻는다. 한 번 받은 참조를 들고 있지 않으므로
+        /// 회수된 인스턴스를 가리킬 일이 없다.
         /// </summary>
         private static Transform FindFollowTarget()
         {
-            Player player = Player.Instance;
-            if (player == null || !player.Available) return null;
+            PlayerLogic player = EntityFinder.FindPlayer();
+            if (player == null) return null;
 
             return player.CachedTransform;
         }

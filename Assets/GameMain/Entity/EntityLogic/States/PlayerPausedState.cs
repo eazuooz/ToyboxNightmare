@@ -10,14 +10,14 @@ namespace ToyBoxNightmare
     /// </summary>
     public sealed class PlayerPausedState : PlayerStateBase
     {
-        protected override void OnEnter(IFsm<Player> fsm)
+        protected override void OnEnter(IFsm<PlayerLogic> fsm)
         {
             base.OnEnter(fsm);
 
             fsm.Owner.ClearMoveInput();
         }
 
-        protected override void OnUpdate(IFsm<Player> fsm, float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(IFsm<PlayerLogic> fsm, float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(fsm, elapseSeconds, realElapseSeconds);
 
